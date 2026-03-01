@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 700">
+  <rect width="800" height="700" fill="#0a0a0a"/>
+  
+  <defs>
+    <radialGradient id="marsGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#ff8866"/>
+      <stop offset="50%" style="stop-color:#cc4400"/>
+      <stop offset="100%" style="stop-color:#992200"/>
+    </radialGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff6b00"/>
+      <stop offset="100%" style="stop-color:#ff9500"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 1: Glow behind bigger -->
+  <text x="30" y="45" font-family="sans-serif" font-size="20" fill="#888">1. Big glow</text>
+  <circle cx="220" cy="110" r="110" fill="url(#marsGrad)" opacity="0.6"/>
+  <text x="30" y="110" font-family="sans-serif" font-size="50" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 2: Smaller glow -->
+  <text x="30" y="200" font-family="sans-serif" font-size="20" fill="#888">2. Small glow</text>
+  <circle cx="200" cy="240" r="40" fill="url(#marsGrad)" opacity="0.8"/>
+  <text x="30" y="240" font-family="sans-serif" font-size="48" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 3: Glow left side -->
+  <text x="30" y="340" font-family="sans-serif" font-size="20" fill="#888">3. Glow left</text>
+  <ellipse cx="100" cy="380" rx="60" ry="80" fill="url(#marsGrad)" opacity="0.5"/>
+  <text x="150" y="380" font-family="sans-serif" font-size="50" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 4: Orange underline -->
+  <text x="30" y="480" font-family="sans-serif" font-size="20" fill="#888">4. Orange underline</text>
+  <text x="30" y="470" font-family="sans-serif" font-size="50" fill="white" font-weight="700">AMARSBODY</text>
+  <rect x="30" y="480" width="320" height="6" fill="url(#orangeGrad)"/>
+  
+  <!-- 5: Orange dot -->
+  <text x="30" y="560" font-family="sans-serif" font-size="20" fill="#888">5. Orange dot</text>
+  <text x="30" y="550" font-family="sans-serif" font-size="50" fill="white" font-weight="700">AMARS</text>
+  <circle cx="180" cy="560" r="12" fill="url(#orangeGrad)"/>
+  <text x="210" y="550" font-family="sans-serif" font-size="50" fill="white" font-weight="700">BODY</text>
+  
+  <!-- 6: Top accent -->
+  <text x="420" y="45" font-family="sans-serif" font-size="20" fill="#888">6. Top bar</text>
+  <rect x="420" y="55" width="300" height="8" fill="url(#orangeGrad)"/>
+  <text x="420" y="115" font-family="sans-serif" font-size="50" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 7: Circle outline -->
+  <text x="420" y="200" font-family="sans-serif" font-size="20" fill="#888">7. Circle outline</text>
+  <circle cx="570" cy="250" r="60" fill="none" stroke="url(#marsGrad)" stroke-width="6"/>
+  <text x="420" y="250" font-family="sans-serif" font-size="48" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 8: Split orange -->
+  <text x="420" y="340" font-family="sans-serif" font-size="20" fill="#888">8. AR orange</text>
+  <text x="420" y="340" font-family="sans-serif" font-size="48" fill="url(#orangeGrad)" font-weight="700">AR</text>
+  <text x="510" y="340" font-family="sans-serif" font-size="48" fill="white" font-weight="700">SBODY</text>
+  
+  <!-- 9: MS orange -->
+  <text x="420" y="430" font-family="sans-serif" font-size="20" fill="#888">9. MS orange</text>
+  <text x="420" y="430" font-family="sans-serif" font-size="48" fill="white" font-weight="700">A</text>
+  <text x="450" y="430" font-family="sans-serif" font-size="48" fill="url(#orangeGrad)" font-weight="700">MARS</text>
+  <text x="590" y="430" font-family="sans-serif" font-size="48" fill="white" font-weight="700">BODY</text>
+  
+  <!-- 10: Bottom accent -->
+  <text x="420" y="520" font-family="sans-serif" font-size="20" fill="#888">10. Bottom bar</text>
+  <text x="420" y="510" font-family="sans-serif" font-size="50" fill="white" font-weight="700">AMARSBODY</text>
+  <rect x="420" y="525" width="300" height="6" fill="url(#marsGrad)"/>
+  
+  <!-- 11: Just icon small -->
+  <text x="420" y="600" font-family="sans-serif" font-size="20" fill="#888">11. Small icon</text>
+  <circle cx="450" cy="640" r="15" fill="url(#marsGrad)"/>
+  <text x="480" y="650" font-family="sans-serif" font-size="42" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 12: Ring around -->
+  <text x="30" y="640" font-family="sans-serif" font-size="20" fill="#888">12. Ring around</text>
+  <ellipse cx="200" cy="665" rx="140" ry="30" fill="none" stroke="url(#marsGrad)" stroke-width="4"/>
+  <text x="80" y="680" font-family="sans-serif" font-size="38" fill="white" font-weight="700">AMARSBODY</text>
+</svg>

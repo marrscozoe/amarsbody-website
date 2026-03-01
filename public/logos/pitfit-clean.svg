@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#0a0a0a"/>
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00ff87"/>
+      <stop offset="100%" style="stop-color:#00cc6a"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 1: Bold Italic -->
+  <text x="40" y="80" font-family="sans-serif" font-size="36" fill="white" font-weight="bold" font-style="italic">1. AMARSBODY</text>
+  <text x="40" y="110" font-family="sans-serif" font-size="60" fill="white" font-weight="bold" font-style="italic">AMARSBODY</text>
+  
+  <!-- 2: Split -->
+  <text x="40" y="200" font-family="sans-serif" font-size="36" fill="white" font-weight="bold" font-style="italic">2. Split</text>
+  <text x="40" y="240" font-family="sans-serif" font-size="60" fill="url(#grad1)" font-weight="bold" font-style="italic">AMARS</text>
+  <text x="280" y="240" font-family="sans-serif" font-size="60" fill="white" font-weight="bold" font-style="italic">BODY</text>
+  
+  <!-- 3: Heavy Impact -->
+  <text x="40" y="320" font-family="sans-serif" font-size="36" fill="white" font-weight="bold">3. Heavy Impact</text>
+  <text x="40" y="370" font-family="sans-serif" font-size="60" fill="white" font-weight="900" letter-spacing="2">AMARSBODY</text>
+  
+  <!-- 4: Gradient -->
+  <text x="40" y="450" font-family="sans-serif" font-size="36" fill="white" font-weight="bold">4. Gradient</text>
+  <text x="40" y="500" font-family="sans-serif" font-size="60" fill="url(#grad1)" font-weight="bold">AMARSBODY</text>
+  
+  <!-- 5: White + Green -->
+  <text x="40" y="580" font-family="sans-serif" font-size="36" fill="white" font-weight="bold">5. White + Green</text>
+  <text x="40" y="630" font-family="sans-serif" font-size="60" fill="white" font-weight="bold" font-style="italic">AMARS</text>
+  <text x="280" y="630" font-family="sans-serif" font-size="60" fill="url(#grad1)" font-weight="bold" font-style="italic">BODY</text>
+  
+  <!-- 6: Simple with space -->
+  <text x="40" y="710" font-family="sans-serif" font-size="36" fill="white" font-weight="bold">6. With space</text>
+  <text x="40" y="760" font-family="sans-serif" font-size="55" fill="url(#grad1)" font-weight="bold">AMARS BODY</text>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#0a0a0a"/>
+  
+  <defs>
+    <radialGradient id="marsGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#ff8866"/>
+      <stop offset="50%" style="stop-color:#cc4400"/>
+      <stop offset="100%" style="stop-color:#992200"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- 1: Mars gradient behind -->
+  <text x="30" y="50" font-family="sans-serif" font-size="22" fill="#888">1. Planet glow behind</text>
+  <circle cx="200" cy="130" r="90" fill="url(#marsGrad)" opacity="0.8"/>
+  <text x="30" y="120" font-family="sans-serif" font-size="48" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 2: Mars dot -->
+  <text x="30" y="220" font-family="sans-serif" font-size="22" fill="#888">2. Planet dot accent</text>
+  <circle cx="280" cy="265" r="18" fill="url(#marsGrad)"/>
+  <text x="30" y="270" font-family="sans-serif" font-size="52" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 3: Mars ring -->
+  <text x="30" y="370" font-family="sans-serif" font-size="22" fill="#888">3. Planet ring</text>
+  <circle cx="200" cy="420" r="40" fill="none" stroke="url(#marsGrad)" stroke-width="5"/>
+  <circle cx="200" cy="420" r="28" fill="none" stroke="url(#marsGrad)" stroke-width="5"/>
+  <text x="30" y="390" font-family="sans-serif" font-size="48" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 4: Icon + text -->
+  <text x="420" y="50" font-family="sans-serif" font-size="22" fill="#888">4. Icon + text</text>
+  <circle cx="450" cy="90" r="25" fill="url(#marsGrad)"/>
+  <text x="490" y="105" font-family="sans-serif" font-size="40" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 5: Planet color text -->
+  <text x="420" y="200" font-family="sans-serif" font-size="22" fill="#888">5. Planet color</text>
+  <text x="420" y="250" font-family="sans-serif" font-size="50" fill="url(#marsGrad)" font-weight="700">AMARSBODY</text>
+  
+  <!-- 6: White + orange split -->
+  <text x="420" y="330" font-family="sans-serif" font-size="22" fill="#888">6. White + orange</text>
+  <text x="420" y="380" font-family="sans-serif" font-size="50" fill="white" font-weight="700">AMARS</text>
+  <text x="620" y="380" font-family="sans-serif" font-size="50" fill="url(#marsGrad)" font-weight="700">BODY</text>
+  
+  <!-- 7: Half circle accent -->
+  <text x="420" y="450" font-family="sans-serif" font-size="22" fill="#888">7. Half circle</text>
+  <path d="M420 470 Q420 420 470 420 L620 420 Q670 420 670 470 L670 520 L420 520 Z" fill="url(#marsGrad)" opacity="0.3"/>
+  <text x="420" y="510" font-family="sans-serif" font-size="48" fill="white" font-weight="700">AMARSBODY</text>
+  
+  <!-- 8: Simple -->
+  <text x="420" y="570" font-family="sans-serif" font-size="22" fill="#888">8. Simple bold</text>
+  <text x="420" y="600" font-family="sans-serif" font-size="45" fill="white" font-weight="700">AMARSBODY</text>
+</svg>

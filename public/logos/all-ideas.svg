@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#0a0a0a"/>
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00ff87"/>
+      <stop offset="100%" style="stop-color:#00cc6a"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Row 1 -->
+  <!-- 1: Bold Monogram -->
+  <rect x="20" y="20" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="40" y="60" font-family="Arial" font-size="14" fill="#888">1. Bold Monogram</text>
+  <text x="40" y="100" font-family="Arial Black" font-size="40" fill="url(#grad1)">AM</text>
+  <text x="40" y="125" font-family="Arial" font-size="11" fill="#666">Sharp angles, modern</text>
+  
+  <!-- 2: Arrow A -->
+  <rect x="220" y="20" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="240" y="60" font-family="Arial" font-size="14" fill="#888">2. Arrow A</text>
+  <polygon points="280,110 310,60 295,60 295,90 265,90 265,60 250,60" fill="url(#grad1)"/>
+  <text x="240" y="125" font-family="Arial" font-size="11" fill="#666">Upward progress</text>
+  
+  <!-- 3: Mountain Peak -->
+  <rect x="420" y="20" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="440" y="60" font-family="Arial" font-size="14" fill="#888">3. Mountain Peak</text>
+  <polygon points="480,100 510,50 540,100" fill="url(#grad1)"/>
+  <text x="440" y="125" font-family="Arial" font-size="11" fill="#666">Strength journey</text>
+  
+  <!-- 4: Hexagon -->
+  <rect x="620" y="20" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="640" y="60" font-family="Arial" font-size="14" fill="#888">4. Hexagon</text>
+  <polygon points="700,50 740,65 740,95 700,110 660,95 660,65" fill="none" stroke="url(#grad1)" stroke-width="3"/>
+  <text x="680" y="85" font-family="Arial Black" font-size="20" fill="white">AM</text>
+  <text x="640" y="125" font-family="Arial" font-size="11" fill="#666">Modern, techy</text>
+  
+  <!-- Row 2 -->
+  <!-- 5: Muscle Arc -->
+  <rect x="20" y="170" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="40" y="210" font-family="Arial" font-size="14" fill="#888">5. Muscle Arc</text>
+  <path d="M60 260 Q100 200 140 260" stroke="url(#grad1)" stroke-width="8" fill="none"/>
+  <text x="40" y="285" font-family="Arial" font-size="11" fill="#666">Bicep silhouette</text>
+  
+  <!-- 6: Flame A -->
+  <rect x="220" y="170" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="240" y="210" font-family="Arial" font-size="14" fill="#888">6. Flame A</text>
+  <polygon points="280,260 310,200 320,230 350,170 335,260" fill="url(#grad1)"/>
+  <text x="240" y="285" font-family="Arial" font-size="11" fill="#666">Transformation</text>
+  
+  <!-- 7: Diamond Shield -->
+  <rect x="420" y="170" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="440" y="210" font-family="Arial" font-size="14" fill="#888">7. Diamond Shield</text>
+  <polygon points="510,200 540,230 510,270 480,230" fill="none" stroke="url(#grad1)" stroke-width="3"/>
+  <text x="495" y="240" font-family="Arial Black" font-size="18" fill="white">AM</text>
+  <text x="440" y="285" font-family="Arial" font-size="11" fill="#666">Protection, strength</text>
+  
+  <!-- 8: Barbell O -->
+  <rect x="620" y="170" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="640" y="210" font-family="Arial" font-size="14" fill="#888">8. Barbell O</text>
+  <rect x="670" y="220" width="12" height="50" rx="6" fill="url(#grad1)"/>
+  <rect x="720" y="220" width="12" height="50" rx="6" fill="url(#grad1)"/>
+  <rect x="665" y="235" width="75" height="12" fill="url(#grad1)"/>
+  <text x="640" y="285" font-family="Arial" font-size="11" fill="#666">O = barbell</text>
+  
+  <!-- Row 3 -->
+  <!-- 15: Rings -->
+  <rect x="20" y="320" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="40" y="360" font-family="Arial" font-size="14" fill="#888">15. Ring Icon</text>
+  <circle cx="70" cy="400" r="18" fill="none" stroke="white" stroke-width="3"/>
+  <circle cx="110" cy="400" r="18" fill="none" stroke="white" stroke-width="3"/>
+  <circle cx="150" cy="400" r="18" fill="none" stroke="url(#grad1)" stroke-width="3"/>
+  <text x="40" y="435" font-family="Arial" font-size="11" fill="#666">3 rings (A-M-B)</text>
+  
+  <!-- 16: Checkmark -->
+  <rect x="220" y="320" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="240" y="360" font-family="Arial" font-size="14" fill="#888">16. Checkmark Badge</text>
+  <circle cx="310" cy="410" r="35" fill="none" stroke="url(#grad1)" stroke-width="3"/>
+  <polyline points="290,410 305,425 335,390" fill="none" stroke="url(#grad1)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="240" y="435" font-family="Arial" font-size="11" fill="#666">Seal with check</text>
+  
+  <!-- 17: Crown -->
+  <rect x="420" y="320" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="440" y="360" font-family="Arial" font-size="14" fill="#888">17. Crown</text>
+  <polygon points="470,420 500,380 530,420 560,380 560,430 470,430" fill="url(#grad1)"/>
+  <text x="440" y="435" font-family="Arial" font-size="11" fill="#666">King/queen of your body</text>
+  
+  <!-- 18: Lightning -->
+  <rect x="620" y="320" width="180" height="130" rx="10" fill="#151515" stroke="#333"/>
+  <text x="640" y="360" font-family="Arial" font-size="14" fill="#888">18. Lightning Bolt</text>
+  <text x="660" y="420" font-family="Arial Black" font-size="50" fill="white">A</text>
+  <polygon points="720,350 690,400 710,400 680,460" fill="url(#grad1)"/>
+  <text x="640" y="435" font-family="Arial" font-size="11" fill="#666">Energy, power</text>
+</svg>
