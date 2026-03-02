@@ -236,7 +236,7 @@ export default function Home() {
                   <div className="text-sm text-gray-400">Based</div>
                 </div>
                 <div className="bg-gray-800 border border-gray-700 rounded-xl px-6 py-3">
-                  <div className="text-2xl font-bold text-gray-100">10+ Years</div>
+                  <div className="text-2xl font-bold text-gray-100">15+ Years</div>
                   <div className="text-sm text-gray-400">Experience</div>
                 </div>
                 <div className="bg-gray-800 border border-gray-700 rounded-xl px-6 py-3">
