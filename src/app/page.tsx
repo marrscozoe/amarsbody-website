@@ -91,7 +91,7 @@ export default function Home() {
             <div className="text-gray-400 text-sm">Clients Transformed</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">10+</div>
+            <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">15+</div>
             <div className="text-gray-400 text-sm">Years Experience</div>
           </div>
           <div className="text-center">
