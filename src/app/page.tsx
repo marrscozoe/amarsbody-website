@@ -330,7 +330,7 @@ export default function Home() {
           </h2>
           <p className="text-xl text-gray-400 mb-10">Fill out the form below and I'll get back to you within 24 hours.</p>
           
-          <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST" className="text-left space-y-4">
+          <form id="contact-form" className="text-left space-y-4">
             <div>
               <label htmlFor="name" className="block text-gray-400 text-sm mb-2">NAME</label>
               <input type="text" id="name" name="name" required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Your name" />
@@ -347,10 +347,49 @@ export default function Home() {
               <label htmlFor="message" className="block text-gray-400 text-sm mb-2">WHAT ARE YOUR GOALS?</label>
               <textarea id="message" name="message" rows={4} required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors resize-none" placeholder="Tell me about your fitness goals..."></textarea>
             </div>
-            <button type="submit" className="w-full bg-orange-500 text-gray-100 font-bold py-4 px-12 rounded-full text-lg hover:bg-orange-400 transition-all transform hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)]">
+            <button type="submit" id="submit-btn" className="w-full bg-orange-500 text-gray-100 font-bold py-4 px-12 rounded-full text-lg hover:bg-orange-400 transition-all transform hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)]">
               SEND MESSAGE
             </button>
+            <p id="form-status" className="text-center text-sm hidden"></p>
           </form>
+          <script dangerouslySetInnerHTML={{ __html: `
+            document.getElementById('contact-form').addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const btn = document.getElementById('submit-btn');
+              const status = document.getElementById('form-status');
+              const formData = new FormData(e.target);
+              const data = Object.fromEntries(formData);
+              
+              btn.disabled = true;
+              btn.textContent = 'SENDING...';
+              status.classList.add('hidden');
+              
+              try {
+                const res = await fetch('/api/contact', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                  btn.textContent = 'MESSAGE SENT!';
+                  btn.classList.remove('bg-orange-500');
+                  btn.classList.add('bg-green-500');
+                  e.target.reset();
+                  status.textContent = 'Thanks! I\'ll be in touch within 24 hours.';
+                  status.className = 'text-center text-sm text-green-400 mt-2';
+                  status.classList.remove('hidden');
+                } else {
+                  throw new Error('Failed');
+                }
+              } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'SEND MESSAGE';
+                status.textContent = 'Something went wrong. Please try again or email me directly.';
+                status.className = 'text-center text-sm text-red-400 mt-2';
+                status.classList.remove('hidden');
+              }
+            });
+          ` }} />
         </div>
       </section>
 
