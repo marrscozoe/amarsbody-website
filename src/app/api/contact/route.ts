@@ -1,7 +1,37 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { appendFileSync, existsSync, mkdirSync } from 'fs';
+import { dirname } from 'path';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 'dummy-key-for-build');
+
+// Store submissions in a simple JSON file
+const SUBMISSIONS_FILE = '/tmp/amarsbody-submissions.json';
+
+function saveSubmission(data: any) {
+  try {
+    const dir = dirname(SUBMISSIONS_FILE);
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    
+    let submissions: any[] = [];
+    if (existsSync(SUBMISSIONS_FILE)) {
+      const content = require('fs').readFileSync(SUBMISSIONS_FILE, 'utf8');
+      submissions = JSON.parse(content);
+    }
+    
+    submissions.unshift({
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Keep only last 100
+    submissions = submissions.slice(0, 100);
+    
+    require('fs').writeFileSync(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2));
+  } catch (e) {
+    console.error('Error saving submission:', e);
+  }
+}
 
 export async function POST(request: Request) {
   if (!process.env.RESEND_API_KEY) {
@@ -21,6 +51,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Send email notification
     const data = await resend.emails.send({
       from: 'AMarsBody Contact <onboarding@resend.dev>',
       to: 'marrsco.zoe@gmail.com',
@@ -35,6 +66,9 @@ export async function POST(request: Request) {
       `,
       replyTo: email,
     });
+
+    // Save submission
+    saveSubmission({ name, email, phone, message });
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
