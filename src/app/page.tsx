@@ -227,6 +227,9 @@ export default function Home() {
               <p className="text-xl text-gray-300 mb-6 leading-relaxed">
                 I'm Allen — personal trainer specializing in nutrition and fat loss. I help people get in the best shape of their lives.
               </p>
+              <p className="text-gray-400 mb-6 leading-relaxed">
+                I'm a husband and proud dad of 2 sons. When I'm not training, I love camping, building stuff, and tinkering with tech. I believe in making fitness fit your life — not the other way around.
+              </p>
               <p className="text-gray-400 mb-8 leading-relaxed">
                 I focus on what matters: helping you hit your goals with real food, real training, and accountability.
               </p>
@@ -247,6 +250,11 @@ export default function Home() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-gray-800/20 rounded-3xl blur-3xl"></div>
+              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 border border-gray-700 mb-6">
+                {/* Family Photo */}
+                <img src="/family-photo.jpg" alt="Allen and family" className="w-full h-64 object-cover rounded-2xl mb-4" />
+                <p className="text-center text-gray-400 text-sm">My family — the reason I do what I do</p>
+              </div>
               <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 border border-gray-700">
                 <h3 className="text-2xl font-bold mb-6 text-orange-400">Credentials</h3>
                 <div className="space-y-4">
@@ -320,11 +328,29 @@ export default function Home() {
             <span className="text-gray-100">READY TO </span>
             <span className="text-orange-400">START?</span>
           </h2>
-          <p className="text-xl text-gray-400 mb-10">Book a free consultation. Let's talk about your goals.</p>
-          <a href="mailto:marrsco.zoe@gmail.com" className="inline-block bg-orange-500 text-gray-100 font-bold py-5 px-12 rounded-full text-lg hover:bg-orange-400 transition-all transform hover:scale-105 hover:shadow-[0_0_40px_rgba(249,115,22,0.5)]">
-            EMAIL ME
-          </a>
-          <p className="mt-8 text-gray-500">marrsco.zoe@gmail.com</p>
+          <p className="text-xl text-gray-400 mb-10">Fill out the form below and I'll get back to you within 24 hours.</p>
+          
+          <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST" className="text-left space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-gray-400 text-sm mb-2">NAME</label>
+              <input type="text" id="name" name="name" required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Your name" />
+            </div>
+            <div>
+              <label htmlFor="email" className="block text-gray-400 text-sm mb-2">EMAIL</label>
+              <input type="email" id="email" name="email" required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors" placeholder="your@email.com" />
+            </div>
+            <div>
+              <label htmlFor="phone" className="block text-gray-400 text-sm mb-2">PHONE (OPTIONAL)</label>
+              <input type="tel" id="phone" name="phone" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors" placeholder="(555) 123-4567" />
+            </div>
+            <div>
+              <label htmlFor="message" className="block text-gray-400 text-sm mb-2">WHAT ARE YOUR GOALS?</label>
+              <textarea id="message" name="message" rows={4} required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors resize-none" placeholder="Tell me about your fitness goals..."></textarea>
+            </div>
+            <button type="submit" className="w-full bg-orange-500 text-gray-100 font-bold py-4 px-12 rounded-full text-lg hover:bg-orange-400 transition-all transform hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)]">
+              SEND MESSAGE
+            </button>
+          </form>
         </div>
       </section>
 
