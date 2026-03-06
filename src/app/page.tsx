@@ -330,7 +330,7 @@ export default function Home() {
           </h2>
           <p className="text-xl text-gray-400 mb-10">Fill out the form below and I'll get back to you within 24 hours.</p>
           
-          <form id="contact-form" className="text-left space-y-4">
+          <form id="contact-form" method="POST" className="text-left space-y-4">
             <div>
               <label htmlFor="name" className="block text-gray-400 text-sm mb-2">NAME</label>
               <input type="text" id="name" name="name" required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Your name" />
