@@ -56,10 +56,10 @@ export default function Home() {
         </div>
       </nav>
 
-      <section className="relative h-screen flex pt-24 items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden mt-16">
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-900/40 via-gray-900 to-gray-900" />
-          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <img src="/hero-gym.jpg" alt="Gym" className="w-full h-full object-cover object-[70%_center]" />
+          <div className="absolute inset-0 bg-black/30" />
         </div>
         
         <div className="relative z-10 text-center px-6 max-w-5xl pt-10">
