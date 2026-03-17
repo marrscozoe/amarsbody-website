@@ -58,7 +58,7 @@ export default function Home() {
 
       <section className="relative h-screen flex items-center justify-center overflow-hidden mt-16">
         <div className="absolute inset-0">
-          <img src="/hero-gym.jpg" alt="Gym" className="w-full h-full object-cover object-[70%_center]" />
+          <img src="/hero-gym.jpg" alt="Gym" className="w-full h-full object-cover object-[90%_center]" />
           <div className="absolute inset-0 bg-black/30" />
         </div>
         
@@ -74,12 +74,9 @@ export default function Home() {
           <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
             Personal training and nutrition programs designed for your goals. No gimmicks. Just results.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center -mt-6">
+          <div className="flex justify-center -mt-6">
             <a href="#contact" className="bg-orange-500 text-gray-100 font-bold py-3 px-10 rounded-full hover:bg-orange-400 transition-all transform hover:scale-105 hover:shadow-[0_0_30px_rgba(249,115,22,0.4)]">
               GET STARTED
-            </a>
-            <a href="#programs" className="border border-white/30 text-gray-100 font-semibold py-3 px-10 rounded-full hover:bg-white/10 transition-all">
-              VIEW PROGRAMS
             </a>
           </div>
         </div>
