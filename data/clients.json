@@ -1,0 +1,62 @@
+[
+  {
+    "firstName": "Test",
+    "lastName": "Client",
+    "age": 35,
+    "gender": "F",
+    "conditions": [
+      "Bad knees"
+    ],
+    "sessionLength": 60,
+    "emphasize": "",
+    "email": "",
+    "phone": "",
+    "notes": "",
+    "id": "mmtk84cj3oavkywtb17",
+    "createdAt": "2026-03-16T19:11:51.811Z",
+    "lastWorkoutWeek": 12
+  },
+  {
+    "firstName": "Sara ",
+    "lastName": "Tester",
+    "age": 50,
+    "gender": "F",
+    "conditions": [],
+    "sessionLength": 60,
+    "emphasize": "",
+    "email": "",
+    "phone": "",
+    "notes": "",
+    "id": "mmtkuw0bffrnw0maiii",
+    "createdAt": "2026-03-16T19:29:34.091Z"
+  },
+  {
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "age": 30,
+    "gender": "F",
+    "conditions": [
+      "Bad knees"
+    ],
+    "sessionLength": 60,
+    "emphasize": "chest",
+    "email": "jane@test.com",
+    "phone": "555-1234",
+    "notes": "Test note",
+    "id": "mmtojk9g95i51hhy45",
+    "createdAt": "2026-03-16T21:12:44.116Z"
+  },
+  {
+    "firstName": "New",
+    "lastName": "Client",
+    "gender": "F",
+    "conditions": [],
+    "sessionLength": 60,
+    "emphasize": "",
+    "email": "",
+    "phone": "",
+    "notes": "",
+    "id": "mmtokye3ut6jm4m12v",
+    "createdAt": "2026-03-16T21:13:49.083Z"
+  }
+]

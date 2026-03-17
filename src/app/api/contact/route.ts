@@ -1,46 +1,64 @@
 import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
-import { appendFileSync, existsSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
+import { promises as fs } from 'fs';
+import path from 'path';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 'dummy-key-for-build');
+const SUBMISSIONS_FILE = path.join(process.cwd(), 'submissions.json');
 
-// Store submissions in a simple JSON file
-const SUBMISSIONS_FILE = '/tmp/amarsbody-submissions.json';
-
-function saveSubmission(data: any) {
+async function getSubmissions() {
   try {
-    const dir = dirname(SUBMISSIONS_FILE);
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    
-    let submissions: any[] = [];
-    if (existsSync(SUBMISSIONS_FILE)) {
-      const content = require('fs').readFileSync(SUBMISSIONS_FILE, 'utf8');
-      submissions = JSON.parse(content);
-    }
-    
-    submissions.unshift({
-      ...data,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Keep only last 100
-    submissions = submissions.slice(0, 100);
-    
-    require('fs').writeFileSync(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2));
-  } catch (e) {
-    console.error('Error saving submission:', e);
+    const data = await fs.readFile(SUBMISSIONS_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return [];
   }
 }
 
-export async function POST(request: Request) {
-  if (!process.env.RESEND_API_KEY) {
-    return NextResponse.json(
-      { error: 'API key not configured' },
-      { status: 500 }
-    );
+async function saveSubmissions(submissions: any[]) {
+  await fs.writeFile(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2));
+}
+
+// Send auto-reply email using Resend
+async function sendAutoReply(toEmail: string, name: string) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  
+  if (!resendApiKey) {
+    console.log('RESEND_API_KEY not found, skipping auto-reply');
+    return;
   }
 
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${resendApiKey}`,
+      },
+      body: JSON.stringify({
+        from: 'Zoe ~ Allen\'s Assistant <onboarding@resend.dev>',
+        to: toEmail,
+        subject: 'Thanks for reaching out to Allen!',
+        html: `
+          <h2>Hi ${name},</h2>
+          <p>Thanks for contacting Allen! He'll be in touch within 1 business day.</p>
+          <p>In the meantime, feel free to check out his website at <a href="https://amarsbody.com">amarsbody.com</a> to learn more about his training programs.</p>
+          <p>Looking forward to helping you reach your fitness goals!</p>
+          <p>Best,<br/>Zoe ~ Allen's Assistant</p>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Resend error:', error);
+    } else {
+      console.log('Auto-reply sent to:', toEmail);
+    }
+  } catch (error) {
+    console.error('Failed to send auto-reply:', error);
+  }
+}
+
+export async function POST(request: any) {
   try {
     const { name, email, phone, message } = await request.json();
 
@@ -51,29 +69,32 @@ export async function POST(request: Request) {
       );
     }
 
-    // Send email notification
-    const data = await resend.emails.send({
-      from: 'AMarsBody Contact <onboarding@resend.dev>',
-      to: 'marrsco.zoe@gmail.com',
-      subject: `New Contact Form Submission from ${name}`,
-      html: `
-        <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message}</p>
-      `,
-      replyTo: email,
+    // Save submission to local JSON file
+    const submissions = await getSubmissions();
+    const newSubmission = {
+      id: Date.now().toString(),
+      name,
+      email,
+      phone: phone || '',
+      message,
+      timestamp: new Date().toISOString(),
+    };
+    submissions.push(newSubmission);
+    await saveSubmissions(submissions);
+
+    console.log('Contact form submission saved:', newSubmission);
+
+    // Send auto-reply email
+    await sendAutoReply(email, name);
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Thank you! Allen will be in touch within 1 business day.'
     });
-
-    // Save submission
-    saveSubmission({ name, email, phone, message });
-
-    return NextResponse.json({ success: true, data });
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Contact form error:', error);
     return NextResponse.json(
-      { error: 'Failed to send email' },
+      { error: error.message || 'Unknown error' },
       { status: 500 }
     );
   }

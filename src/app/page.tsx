@@ -328,68 +328,11 @@ export default function Home() {
             <span className="text-gray-100">READY TO </span>
             <span className="text-orange-400">START?</span>
           </h2>
-          <p className="text-xl text-gray-400 mb-10">Fill out the form below and I'll get back to you within 24 hours.</p>
+          <p className="text-xl text-gray-400 mb-10">Email me directly and I'll get back to you within 1 business day.</p>
           
-          <form id="contact-form" method="POST" className="text-left space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-gray-400 text-sm mb-2">NAME</label>
-              <input type="text" id="name" name="name" required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Your name" />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-gray-400 text-sm mb-2">EMAIL</label>
-              <input type="email" id="email" name="email" required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors" placeholder="your@email.com" />
-            </div>
-            <div>
-              <label htmlFor="phone" className="block text-gray-400 text-sm mb-2">PHONE (OPTIONAL)</label>
-              <input type="tel" id="phone" name="phone" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors" placeholder="(555) 123-4567" />
-            </div>
-            <div>
-              <label htmlFor="message" className="block text-gray-400 text-sm mb-2">WHAT ARE YOUR GOALS?</label>
-              <textarea id="message" name="message" rows={4} required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-orange-500 focus:outline-none transition-colors resize-none" placeholder="Tell me about your fitness goals..."></textarea>
-            </div>
-            <button type="submit" id="submit-btn" className="w-full bg-orange-500 text-gray-100 font-bold py-4 px-12 rounded-full text-lg hover:bg-orange-400 transition-all transform hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)]">
-              SEND MESSAGE
-            </button>
-            <p id="form-status" className="text-center text-sm hidden"></p>
-          </form>
-          <script dangerouslySetInnerHTML={{ __html: `
-            document.getElementById('contact-form').addEventListener('submit', async (e) => {
-              e.preventDefault();
-              const btn = document.getElementById('submit-btn');
-              const status = document.getElementById('form-status');
-              const formData = new FormData(e.target);
-              const data = Object.fromEntries(formData);
-              
-              btn.disabled = true;
-              btn.textContent = 'SENDING...';
-              status.classList.add('hidden');
-              
-              try {
-                const res = await fetch('/api/contact', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(data)
-                });
-                if (res.ok) {
-                  btn.textContent = 'MESSAGE SENT!';
-                  btn.classList.remove('bg-orange-500');
-                  btn.classList.add('bg-green-500');
-                  e.target.reset();
-                  status.textContent = 'Thanks! I\'ll be in touch within 24 hours.';
-                  status.className = 'text-center text-sm text-green-400 mt-2';
-                  status.classList.remove('hidden');
-                } else {
-                  throw new Error('Failed');
-                }
-              } catch (err) {
-                btn.disabled = false;
-                btn.textContent = 'SEND MESSAGE';
-                status.textContent = 'Something went wrong. Please try again or email me directly.';
-                status.className = 'text-center text-sm text-red-400 mt-2';
-                status.classList.remove('hidden');
-              }
-            });
-          ` }} />
+          <a href="mailto:marrsco.zoe@gmail.com?subject=AMarsBody Inquiry" className="inline-block bg-orange-500 text-gray-100 font-bold py-4 px-12 rounded-full text-lg hover:bg-orange-400 transition-all transform hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)]">
+            EMAIL ME
+          </a>
         </div>
       </section>
 

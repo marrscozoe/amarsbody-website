@@ -2,11 +2,18 @@
   "name": "amarsbody-website",
   "version": "1.0.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3004",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
+    "@upstash/redis": "^1.37.0",
+    "@vercel/kv": "^3.0.0",
+    "@vercel/postgres": "^0.10.0",
+    "axios": "^1.13.6",
+    "better-sqlite3": "^12.6.2",
+    "googleapis": "^171.4.0",
+    "lucide-react": "^0.577.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
@@ -14,6 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "latest",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "latest",
     "@types/react": "latest",
     "autoprefixer": "latest",

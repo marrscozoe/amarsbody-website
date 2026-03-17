@@ -1,0 +1,36 @@
+[
+  {
+    "id": "1773333288822",
+    "name": "Test Lead",
+    "email": "testlead@gmail.com",
+    "phone": "555-1234",
+    "message": "I want to get fit!",
+    "status": "replied",
+    "createdAt": "2026-03-12T16:34:48.822Z",
+    "repliedAt": "2026-03-12T16:34:53.390Z"
+  },
+  {
+    "id": "1773545510569",
+    "name": "Test User",
+    "email": "test@example.com",
+    "phone": "555-1234",
+    "message": "This is a test submission",
+    "timestamp": "2026-03-15T03:31:50.569Z"
+  },
+  {
+    "id": "1773545627639",
+    "name": "Curl Test",
+    "email": "curl@test.com",
+    "phone": "555-0000",
+    "message": "Testing local save",
+    "timestamp": "2026-03-15T03:33:47.639Z"
+  },
+  {
+    "id": "1773545948588",
+    "name": "Subagent Test",
+    "email": "subagent@test.com",
+    "phone": "555-000-0000",
+    "message": "Testing contact form via subagent",
+    "timestamp": "2026-03-15T03:39:08.588Z"
+  }
+]
