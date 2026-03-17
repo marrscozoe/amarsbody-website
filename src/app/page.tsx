@@ -70,8 +70,9 @@ export default function Home() {
               DREAM BODY
             </span>
           </h1>
+          <p className="text-3xl md:text-4xl text-orange-400 font-bold mb-2">Allen Marrs</p>
           <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Custom training and nutrition programs designed for your goals. No gimmicks. Just results.
+            Personal training and nutrition programs designed for your goals. No gimmicks. Just results.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="#contact" className="bg-orange-500 text-gray-100 font-bold py-3 px-10 rounded-full hover:bg-orange-400 transition-all transform hover:scale-105 hover:shadow-[0_0_30px_rgba(249,115,22,0.4)]">
@@ -85,22 +86,14 @@ export default function Home() {
       </section>
 
       <section className="py-16 bg-gray-900 border-y border-gray-800">
-        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 gap-8">
           <div className="text-center">
-            <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">500+</div>
+            <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">300+</div>
             <div className="text-gray-400 text-sm">Clients Transformed</div>
           </div>
           <div className="text-center">
             <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">15+</div>
             <div className="text-gray-400 text-sm">Years Experience</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">95%</div>
-            <div className="text-gray-400 text-sm">Goal Achievement</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">24/7</div>
-            <div className="text-gray-400 text-sm">Support</div>
           </div>
         </div>
       </section>
@@ -117,12 +110,43 @@ export default function Home() {
         <div ref={scrollRef} className="flex overflow-x-auto gap-6 px-6 pb-8 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
           {[...whoItForItems, ...whoItForItems].map((item, index) => (
             <div key={index} className="flex-shrink-0 w-72 bg-gray-800 border border-gray-700 rounded-2xl p-6 text-center hover:border-orange-500/50 hover:shadow-xl transition-all cursor-pointer">
-              <div className="w-16 h-16 mx-auto rounded-full bg-orange-500/20 flex items-center justify-center mb-4">
-                <span className="text-2xl">{item.icon}</span>
-              </div>
               <p className="text-gray-200 font-medium">{item.text}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 px-6 bg-gray-900">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-center text-white mb-4">
+            HOW IT <span className="text-orange-500">WORKS</span>
+          </h2>
+          <p className="text-center text-gray-400 mb-16 text-lg">Simple steps to get started</p>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-orange-500 flex items-center justify-center mb-4">
+                <span className="text-2xl font-bold text-white">1</span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Book a Call</h3>
+              <p className="text-gray-400">Schedule a free consultation to discuss your goals and fitness background.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-orange-500 flex items-center justify-center mb-4">
+                <span className="text-2xl font-bold text-white">2</span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Set Your Goals</h3>
+              <p className="text-gray-400">Receive a customized training and nutrition plan tailored to your goals.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-orange-500 flex items-center justify-center mb-4">
+                <span className="text-2xl font-bold text-white">3</span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">See Results</h3>
+              <p className="text-gray-400">Train with guidance and accountability to achieve lasting results.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -181,7 +205,6 @@ export default function Home() {
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="group bg-gray-800 border border-gray-700 rounded-3xl p-8 hover:border-orange-500/50 transition-all duration-300 hover:-translate-y-2">
-              <div className="text-5xl mb-6">💪</div>
               <h3 className="text-2xl font-bold mb-4 text-gray-100 group-hover:text-orange-400 transition-colors">Personal Training</h3>
               <p className="text-gray-400 mb-6 leading-relaxed">One-on-one sessions tailored to YOUR goals. Build strength and transform your body.</p>
               <ul className="space-y-2">
@@ -192,7 +215,6 @@ export default function Home() {
             </div>
             
             <div className="group bg-gray-800 border border-gray-700 rounded-3xl p-8 hover:border-orange-500/50 transition-all duration-300 hover:-translate-y-2">
-              <div className="text-5xl mb-6">🥗</div>
               <h3 className="text-2xl font-bold mb-4 text-gray-100 group-hover:text-orange-400 transition-colors">Nutrition Coaching</h3>
               <p className="text-gray-400 mb-6 leading-relaxed">Eat to support your goals. No starvation — just proper nutrition that fits your life.</p>
               <ul className="space-y-2">
@@ -203,7 +225,6 @@ export default function Home() {
             </div>
             
             <div className="group bg-gray-800 border border-gray-700 rounded-3xl p-8 hover:border-orange-500/50 transition-all duration-300 hover:-translate-y-2">
-              <div className="text-5xl mb-6">🎯</div>
               <h3 className="text-2xl font-bold mb-4 text-gray-100 group-hover:text-orange-400 transition-colors">Online Coaching</h3>
               <p className="text-gray-400 mb-6 leading-relaxed">Train anywhere. Personalized programming with weekly check-ins.</p>
               <ul className="space-y-2">
