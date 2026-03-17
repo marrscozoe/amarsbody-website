@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,19 +42,49 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50">
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white border-b border-gray-200 shadow-md py-3" : "py-4 bg-transparent"}`}>
         <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
+          {/* Hamburger Menu */}
+          <button 
+            className="md:hidden text-gray-700 mr-3"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+
           <a href="#" className="flex items-center gap-2">
             <img src="/logo.svg" alt="AMarsBody" className="h-12" />
           </a>
-          <div className="flex gap-6 text-sm font-medium text-gray-700">
+          
+          {/* Desktop Menu */}
+          <div className="hidden md:flex gap-6 text-sm font-medium text-gray-700">
             <a href="#programs" className="hover:text-orange-500 transition-colors">PROGRAMS</a>
             <a href="#services" className="hover:text-orange-500 transition-colors">SERVICES</a>
             <a href="#about" className="hover:text-orange-500 transition-colors">ABOUT</a>
             <a href="#contact" className="hover:text-orange-500 transition-colors">CONTACT</a>
           </div>
-          <a href="#contact" className="bg-orange-500 text-gray-100 font-bold px-5 py-2 rounded-full text-sm hover:bg-orange-600 transition-all">
+
+          {/* Desktop CTA */}
+          <a href="#contact" className="hidden md:block bg-orange-500 text-gray-100 font-bold px-5 py-2 rounded-full text-sm hover:bg-orange-600 transition-all">
             START NOW
           </a>
         </div>
+
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden bg-white border-t py-4 px-6">
+            <div className="flex flex-col gap-4 text-sm font-medium">
+              <a href="#programs" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>PROGRAMS</a>
+              <a href="#services" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>SERVICES</a>
+              <a href="#about" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>ABOUT</a>
+              <a href="#contact" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>CONTACT</a>
+            </div>
+          </div>
+        )}
       </nav>
 
       <section className="relative h-screen flex items-center justify-center overflow-hidden mt-16">
@@ -95,33 +126,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-900 overflow-hidden">
-        <div className="max-w-6xl mx-auto px-6 mb-10 text-center">
-          <h2 className="text-4xl font-bold mb-4">
-            <span className="text-gray-100">WHO THIS IS </span>
-            <span className="text-orange-400">FOR</span>
-          </h2>
-          <p className="text-gray-400">You put in the work. You just need a plan that works.</p>
-        </div>
-        
-        <div ref={scrollRef} className="flex overflow-x-auto gap-6 px-6 pb-8 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {[...whoItForItems, ...whoItForItems].map((item, index) => (
-            <div key={index} className="flex-shrink-0 w-72 bg-gray-800 border border-gray-700 rounded-2xl p-6 text-center hover:border-orange-500/50 hover:shadow-xl transition-all cursor-pointer">
-              <p className="text-gray-200 font-medium">{item.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* How It Works */}
       <section className="py-20 px-6 bg-gray-900">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center text-white mb-4">
             HOW IT <span className="text-orange-500">WORKS</span>
           </h2>
-          <p className="text-center text-gray-400 mb-16 text-lg">Simple steps to get started</p>
+          <p className="text-center text-gray-400 mb-16 text-lg"></p>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto rounded-full bg-orange-500 flex items-center justify-center mb-4">
                 <span className="text-2xl font-bold text-white">1</span>
@@ -141,8 +154,60 @@ export default function Home() {
                 <span className="text-2xl font-bold text-white">3</span>
               </div>
               <h3 className="text-xl font-bold text-white mb-2">See Results</h3>
-              <p className="text-gray-400">Train with guidance and accountability to achieve lasting results.</p>
+              <p className="text-gray-400">We workout 2 to 3 times a week to achieve your goal.</p>
             </div>
+            <div className="text-center bg-gray-800 rounded-xl p-4 border border-gray-700">
+              <p className="text-gray-400 text-lg">In person sessions</p>
+              <p className="text-gray-400 text-lg mb-2">at</p>
+              <p className="text-orange-400 text-xl font-bold">Park Cities Personal Training</p>
+              <p className="text-orange-400 text-xl">4514 Travis St #115</p>
+              <p className="text-orange-400 text-xl">Dallas TX 75205</p>
+              <p className="text-orange-400 text-xl mt-2">(214) 526-4224</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-gray-900 overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6 mb-10 text-center">
+          <h2 className="text-4xl font-bold mb-4">
+            <span className="text-gray-100">WHO THIS IS </span>
+            <span className="text-orange-400">FOR</span>
+          </h2>
+          <p className="text-gray-400">You put in the work. You just need a plan that works.</p>
+        </div>
+        
+        <div ref={scrollRef} className="flex overflow-x-auto gap-6 px-6 pb-8 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {[...whoItForItems, ...whoItForItems].map((item, index) => (
+            <div key={index} className="flex-shrink-0 w-72 bg-gray-800 border border-gray-700 rounded-2xl p-6 text-center hover:border-orange-500/50 hover:shadow-xl transition-all cursor-pointer">
+              <p className="text-gray-200 font-medium">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Gallery Section */}
+      <section className="py-16 bg-gray-900 overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-4xl md:text-5xl font-bold text-center text-white mb-4">
+            PARK CITIES <span className="text-orange-500">GYM</span>
+          </h2>
+          <p className="text-center text-gray-400 mb-12 text-lg">Take a look at our gym</p>
+          
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4" style={{ scrollbarWidth: 'none' }}>
+            <video autoPlay muted loop playsInline className="h-64 md:h-80 rounded-lg flex-shrink-0">
+              <source src="/gym-video-1.mp4" type="video/mp4" />
+            </video>
+            <video autoPlay muted loop playsInline className="h-64 md:h-80 rounded-lg flex-shrink-0">
+              <source src="/gym-video-2.mp4" type="video/mp4" />
+            </video>
+            <img src="/gym-photo-1.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
+            <img src="/gym-photo-2.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
+            <img src="/gym-photo-3.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
+            <img src="/gym-photo-4.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
+            <img src="/gym-photo-5.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
+            <img src="/gym-photo-6.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
+            <img src="/gym-photo-7.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
           </div>
         </div>
       </section>
@@ -226,7 +291,6 @@ export default function Home() {
               <p className="text-gray-400 mb-6 leading-relaxed">Train anywhere. Personalized programming with weekly check-ins.</p>
               <ul className="space-y-2">
                 <li className="flex items-center gap-2 text-sm text-gray-300"><span className="text-orange-400">✓</span> Remote training</li>
-                <li className="flex items-center gap-2 text-sm text-gray-300"><span className="text-orange-400">✓</span> Video analysis</li>
                 <li className="flex items-center gap-2 text-sm text-gray-300"><span className="text-orange-400">✓</span> Online support</li>
               </ul>
             </div>
