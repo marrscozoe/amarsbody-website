@@ -957,6 +957,72 @@ export default function ProgramsPage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
+  // Delete a session
+  const deleteSession = async (sessionId: string) => {
+    if (!confirm('Are you sure you want to delete this session?')) return;
+    
+    try {
+      await fetch(`/api/sessions?id=${sessionId}`, { method: 'DELETE' });
+      setSessions(sessions.filter(s => s.id !== sessionId));
+    } catch (e) {
+      console.error('Failed to delete session:', e);
+    }
+  };
+
+  // Get exercise category based on keywords
+  const getExerciseCategory = (name: string): string => {
+    const n = name.toLowerCase();
+    if (n.includes('squat') || n.includes('leg press') || n.includes('leg extension') || n.includes('leg curl') || n.includes('lung') || n.includes('calf') || n.includes('quad') || n.includes('hamstring') || n.includes('hip thrust') || n.includes('glute')) return 'legs';
+    if (n.includes('bench press') || n.includes('push-up') || n.includes('pushup') || n.includes('chest press') || n.includes('flye') || n.includes('incline') || n.includes('chest')) return 'chest';
+    if (n.includes('row') || n.includes('pull') || n.includes('lat') || n.includes('back') || n.includes('deadlift') || n.includes('pendlay')) return 'back';
+    if (n.includes('shoulder') || n.includes('press') || n.includes('raise') || n.includes('face pull') || n.includes('shrug') || n.includes('overhead')) return 'shoulders';
+    if (n.includes('curl') || n.includes('bicep') || n.includes('hammer')) return 'biceps';
+    if (n.includes('tricep') || n.includes('dip') || n.includes('pushdown') || n.includes('extension')) return 'triceps';
+    if (n.includes('plank') || n.includes('crunch') || n.includes('russian twist') || n.includes('pallof') || n.includes('core') || n.includes('ab')) return 'core';
+    return 'other';
+  };
+
+  // Get replacement exercise from same category
+  const getReplacementExercise = (removedName: string, currentExercises: any[]): any => {
+    const category = getExerciseCategory(removedName);
+    const currentNames = currentExercises.map(e => e.name);
+    
+    // Search in fullBody standard pool first
+    const pool = EXERCISE_POOL.fullBody?.standard || [];
+    const candidates = pool.filter(ex => 
+      getExerciseCategory(ex.name) === category && 
+      !currentNames.includes(ex.name)
+    );
+    
+    if (candidates.length > 0) {
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+    
+    // If no candidates, return a default from the pool
+    const others = pool.filter(ex => !currentNames.includes(ex.name));
+    if (others.length > 0) {
+      return others[Math.floor(Math.random() * others.length)];
+    }
+    
+    return null;
+  };
+
+  // Remove exercise and add replacement
+  const removeAndReplaceExercise = (index: number) => {
+    if (!generatedWorkout) return;
+    
+    const removedExercise = generatedWorkout.exercises[index];
+    const newExercises = [...generatedWorkout.exercises];
+    newExercises.splice(index, 1);
+    
+    const replacement = getReplacementExercise(removedExercise.name, newExercises);
+    if (replacement) {
+      newExercises.push({ ...replacement });
+    }
+    
+    setGeneratedWorkout({ ...generatedWorkout, exercises: newExercises });
+  };
+
   // Login Screen
   if (!isAuthenticated) {
     return (
@@ -1093,7 +1159,16 @@ export default function ProgramsPage() {
                         <span className="text-orange-400 font-bold mr-2">#{i + 1}</span>
                         <span className="font-semibold">{ex.name}</span>
                       </div>
-                      <span className="text-gray-400 text-sm">{ex.sets} × {ex.reps}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400 text-sm">{ex.sets} × {ex.reps}</span>
+                        <button
+                          onClick={() => removeAndReplaceExercise(i)}
+                          className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                          title="Replace with similar exercise"
+                        >
+                          ↻
+                        </button>
+                      </div>
                     </div>
                     <p className="text-gray-400 text-sm mb-3">{ex.notes}</p>
                     <div className="flex items-center gap-2">
@@ -1343,9 +1418,17 @@ export default function ProgramsPage() {
                                 : 'Full Body Circuit'} • {session.workout?.exercises.length} exercises
                             </p>
                           </div>
-                          <span className="bg-green-500/20 text-green-400 text-xs px-3 py-1 rounded-full">
-                            Completed
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="bg-green-500/20 text-green-400 text-xs px-3 py-1 rounded-full">
+                              Completed
+                            </span>
+                            <button
+                              onClick={() => deleteSession(session.id)}
+                              className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                         
                         {session.exercises && session.exercises.length > 0 && (

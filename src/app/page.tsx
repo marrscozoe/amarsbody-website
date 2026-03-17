@@ -78,6 +78,7 @@ export default function Home() {
         {menuOpen && (
           <div className="md:hidden bg-white border-t py-4 px-6">
             <div className="flex flex-col gap-4 text-sm font-medium">
+              <a href="/programs" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>CLIENT PROGRAMS</a>
               <a href="#programs" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>PROGRAMS</a>
               <a href="#services" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>SERVICES</a>
               <a href="#about" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>ABOUT</a>

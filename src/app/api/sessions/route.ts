@@ -106,3 +106,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Missing session ID' }, { status: 400 });
+    }
+    
+    const sessions = await getSessions();
+    const filteredSessions = sessions.filter((s: any) => s.id !== id);
+    await saveSessions(filteredSessions);
+    
+    return NextResponse.json({ success: true });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    console.error('Error in DELETE /api/sessions:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
