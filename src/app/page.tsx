@@ -62,7 +62,7 @@ export default function Home() {
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
         </div>
         
-        <div className="relative z-10 text-center px-6 max-w-5xl">
+        <div className="relative z-10 text-center px-6 max-w-5xl pt-10">
           <h1 className="text-6xl md:text-8xl font-extrabold mb-6 leading-tight tracking-tight">
             <span className="text-white drop-shadow-lg">BUILD YOUR</span>
             <br />
@@ -74,7 +74,7 @@ export default function Home() {
           <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
             Personal training and nutrition programs designed for your goals. No gimmicks. Just results.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center -mt-6">
             <a href="#contact" className="bg-orange-500 text-gray-100 font-bold py-3 px-10 rounded-full hover:bg-orange-400 transition-all transform hover:scale-105 hover:shadow-[0_0_30px_rgba(249,115,22,0.4)]">
               GET STARTED
             </a>
@@ -201,7 +201,7 @@ export default function Home() {
             <span className="text-gray-100">WHAT I </span>
             <span className="text-orange-400">DO</span>
           </h2>
-          <p className="text-gray-400 text-center mb-20 max-w-xl mx-auto">Full-service training and nutrition coaching.</p>
+          <p className="text-gray-400 text-center mb-20 max-w-xl mx-auto">Personal Training and Nutrition Coaching</p>
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="group bg-gray-800 border border-gray-700 rounded-3xl p-8 hover:border-orange-500/50 transition-all duration-300 hover:-translate-y-2">
@@ -249,7 +249,7 @@ export default function Home() {
                 I'm Allen — personal trainer specializing in nutrition and fat loss. I help people get in the best shape of their lives.
               </p>
               <p className="text-gray-400 mb-6 leading-relaxed">
-                I'm a husband and proud dad of 2 sons. When I'm not training, I love camping, building stuff, and tinkering with tech. I believe in making fitness fit your life — not the other way around.
+                I'm a husband and proud dad of 2 sons. When I'm not training, I love hiking and being outdoors. I believe in making fitness fit your life — not the other way around.
               </p>
               <p className="text-gray-400 mb-8 leading-relaxed">
                 I focus on what matters: helping you hit your goals with real food, real training, and accountability.
