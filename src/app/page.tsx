@@ -42,9 +42,9 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50">
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white border-b border-gray-200 shadow-md py-3" : "py-4 bg-transparent"}`}>
         <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
-          {/* Hamburger Menu */}
+          {/* Hamburger Menu - visible on all screens */}
           <button 
-            className="md:hidden text-gray-700 mr-3"
+            className="text-gray-700 mr-3"
             onClick={() => setMenuOpen(!menuOpen)}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,32 +57,33 @@ export default function Home() {
           </button>
 
           <a href="#" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="AMarsBody" className="h-12" />
+            <img src="/logo.svg" alt="AMarsBody" className="h-20 md:h-12" />
           </a>
           
-          {/* Desktop Menu */}
-          <div className="hidden md:flex gap-6 text-sm font-medium text-gray-700">
+          {/* Desktop Menu - hidden on mobile, shown on md+ */}
+          <div className="hidden lg:flex gap-6 text-sm font-medium text-gray-700">
             <a href="#programs" className="hover:text-orange-500 transition-colors">PROGRAMS</a>
             <a href="#services" className="hover:text-orange-500 transition-colors">SERVICES</a>
             <a href="#about" className="hover:text-orange-500 transition-colors">ABOUT</a>
             <a href="#contact" className="hover:text-orange-500 transition-colors">CONTACT</a>
           </div>
 
-          {/* Desktop CTA */}
-          <a href="#contact" className="hidden md:block bg-orange-500 text-gray-100 font-bold px-5 py-2 rounded-full text-sm hover:bg-orange-600 transition-all">
+          {/* CTA Button - hidden on mobile, shown on lg+ */}
+          <a href="#contact" className="hidden lg:block bg-orange-500 text-gray-100 font-bold px-5 py-2 rounded-full text-sm hover:bg-orange-600 transition-all">
             START NOW
           </a>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Menu - Always visible, toggles on/off */}
         {menuOpen && (
-          <div className="md:hidden bg-white border-t py-4 px-6">
+          <div className="bg-white border-t py-4 px-6">
             <div className="flex flex-col gap-4 text-sm font-medium">
               <a href="/programs" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>CLIENT PROGRAMS</a>
               <a href="#programs" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>PROGRAMS</a>
               <a href="#services" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>SERVICES</a>
               <a href="#about" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>ABOUT</a>
               <a href="#contact" className="text-gray-700 hover:text-orange-500" onClick={() => setMenuOpen(false)}>CONTACT</a>
+              <a href="/pipeline" className="text-orange-500 hover:text-orange-600 font-bold" onClick={() => setMenuOpen(false)}>📈 PIPELINE</a>
             </div>
           </div>
         )}
@@ -95,7 +96,7 @@ export default function Home() {
         </div>
         
         <div className="relative z-10 text-center px-6 max-w-5xl pt-10">
-          <h1 className="text-6xl md:text-8xl font-extrabold mb-6 leading-tight tracking-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-extrabold mb-6 leading-tight tracking-tight">
             <span className="text-white drop-shadow-lg">BUILD YOUR</span>
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-300 to-orange-500">
@@ -114,6 +115,18 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Allen Portrait - Above Stats */}
+      <section className="py-12 bg-gray-900">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <img 
+            src="/photo-6-ezcurl.jpg" 
+            alt="Allen Marrs - Personal Trainer" 
+            style={{ maxWidth: '500px', width: '100%', height: 'auto' }}
+            className="rounded-2xl mx-auto shadow-2xl shadow-orange-500/20" 
+          />
+        </div>
+      </section>
+
       <section className="py-16 bg-gray-900 border-y border-gray-800">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 gap-8">
           <div className="text-center">
@@ -126,6 +139,28 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Allen in Action - Training Shot */}
+      <section className="py-12 bg-gray-900">
+        <div className="max-w-6xl mx-auto px-6">
+          <img 
+            src="/photo-2-training.jpg" 
+            alt="Allen Training Clients" 
+            style={{ maxWidth: '800px', width: '100%', height: 'auto' }}
+            className="rounded-2xl mx-auto shadow-2xl" 
+          />
+        </div>
+      </section>
+
+      {/* Location - Above How It Works */}
+      <div className="bg-gray-900 px-6 pt-8">
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="inline-block bg-orange-900/30 border border-orange-500/30 rounded-xl px-6 py-3">
+            <div className="text-2xl font-bold text-orange-400">New Braunfels TX</div>
+            <div className="text-sm text-gray-400">Based</div>
+          </div>
+        </div>
+      </div>
 
       {/* How It Works */}
       <section className="py-20 px-6 bg-gray-900">
@@ -148,7 +183,7 @@ export default function Home() {
                 <span className="text-2xl font-bold text-white">2</span>
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Set Your Goals</h3>
-              <p className="text-gray-400">Receive a customized training and nutrition plan tailored to your goals.</p>
+              <p className="text-gray-400">Plan a customized training and nutrition program tailored to your goals.</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 mx-auto rounded-full bg-orange-500 flex items-center justify-center mb-4">
@@ -160,10 +195,9 @@ export default function Home() {
             <div className="text-center bg-gray-800 rounded-xl p-4 border border-gray-700">
               <p className="text-gray-400 text-lg">In person sessions</p>
               <p className="text-gray-400 text-lg mb-2">at</p>
-              <p className="text-orange-400 text-xl font-bold">Park Cities Personal Training</p>
-              <p className="text-orange-400 text-xl">4514 Travis St #115</p>
-              <p className="text-orange-400 text-xl">Dallas TX 75205</p>
-              <p className="text-orange-400 text-xl mt-2">(214) 526-4224</p>
+              <p className="text-orange-400 text-xl font-bold">Eisbar Strength & Fitness</p>
+              <p className="text-orange-400 text-xl">1260 FM1863 BLDG 4, New Braunfels TX 78132</p>
+              <p className="text-orange-400 text-xl mt-2"></p>
             </div>
           </div>
         </div>
@@ -175,7 +209,7 @@ export default function Home() {
             <span className="text-gray-100">WHO THIS IS </span>
             <span className="text-orange-400">FOR</span>
           </h2>
-          <p className="text-gray-400">You put in the work. You just need a plan that works.</p>
+
         </div>
         
         <div ref={scrollRef} className="flex overflow-x-auto gap-6 px-6 pb-8 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -191,24 +225,17 @@ export default function Home() {
       <section className="py-16 bg-gray-900 overflow-hidden">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-4xl md:text-5xl font-bold text-center text-white mb-4">
-            PARK CITIES <span className="text-orange-500">GYM</span>
+            EISBAR <span className="text-orange-500">GYM</span>
           </h2>
-          <p className="text-center text-gray-400 mb-12 text-lg">Take a look at our gym</p>
           
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4" style={{ scrollbarWidth: 'none' }}>
-            <video autoPlay muted loop playsInline className="h-64 md:h-80 rounded-lg flex-shrink-0">
-              <source src="/gym-video-1.mp4" type="video/mp4" />
-            </video>
-            <video autoPlay muted loop playsInline className="h-64 md:h-80 rounded-lg flex-shrink-0">
-              <source src="/gym-video-2.mp4" type="video/mp4" />
-            </video>
-            <img src="/gym-photo-1.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
-            <img src="/gym-photo-2.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
-            <img src="/gym-photo-3.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
-            <img src="/gym-photo-4.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
-            <img src="/gym-photo-5.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
-            <img src="/gym-photo-6.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
-            <img src="/gym-photo-7.jpg" alt="Gym facility" className="h-64 md:h-80 rounded-lg flex-shrink-0 object-cover" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <img src="/file_100---d17df01a-ecb4-4185-b3ef-e9b93c498e96.jpg" alt="Dumbbells and kettlebells" className="h-48 md:h-64 rounded-lg object-cover" />
+            <img src="/file_101---b4bb9591-06a3-49bc-bb21-0d92d57d9866.jpg" alt="Cardio and strength" className="h-48 md:h-64 rounded-lg object-cover" />
+            <img src="/file_102---209c8f54-f71e-48d4-bf16-64fa24dd14dc.jpg" alt="Benches and plates" className="h-48 md:h-64 rounded-lg object-cover" />
+            <img src="/file_103---86f751b9-67bd-47c6-adc0-7af6a68ea5e8.jpg" alt="Power racks" className="h-48 md:h-64 rounded-lg object-cover" />
+            <img src="/file_104---232bc9e2-a851-4056-9be0-21a1a8c271ed.jpg" alt="Leg machines" className="h-48 md:h-64 rounded-lg object-cover" />
+            <img src="/file_105---ccb832bf-1bc5-4de6-b944-9712c069d36e.jpg" alt="Main power rack" className="h-48 md:h-64 rounded-lg object-cover" />
+            <img src="/file_106---4a0b2012-ebf6-489e-9dfd-df59d433088e.jpg" alt="Dumbbell area" className="h-48 md:h-64 rounded-lg object-cover" />
           </div>
         </div>
       </section>
@@ -224,10 +251,10 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="group bg-white border border-gray-200 rounded-3xl p-8 hover:border-orange-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
               
-              <h3 className="text-2xl font-bold mb-4 text-gray-900 group-hover:text-orange-600 transition-colors">SHRED</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">Fat loss program combining strength training and cardio intervals to torch fat while preserving muscle.</p>
+              <h3 className="text-2xl font-bold mb-4 text-gray-900 group-hover:text-orange-600 transition-colors">EVENT READY</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">Get ready for your big moment — weddings, beach trips, reunions, photoshoots. 12-week focused program.</p>
               <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-sm text-gray-700"><span className="text-orange-600">✓</span> Fat loss focused</li>
+                <li className="flex items-center gap-2 text-sm text-gray-700"><span className="text-orange-600">✓</span> Event-specific training</li>
                 <li className="flex items-center gap-2 text-sm text-gray-700"><span className="text-orange-600">✓</span> Nutrition guide</li>
                 <li className="flex items-center gap-2 text-sm text-gray-700"><span className="text-orange-600">✓</span> Weekly check-ins</li>
               </ul>
@@ -255,6 +282,13 @@ export default function Home() {
               </ul>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Photo 3 - Above Services */}
+      <section className="py-12 px-6 bg-gray-900">
+        <div className="max-w-6xl mx-auto">
+          <img src="/photo-3-smile.jpg" alt="Allen Marrs" style={{ maxWidth: '400px', width: '100%', height: 'auto' }} className="rounded-2xl mx-auto shadow-2xl" />
         </div>
       </section>
 
@@ -317,47 +351,33 @@ export default function Home() {
                 I focus on what matters: helping you hit your goals with real food, real training, and accountability.
               </p>
               <div className="flex flex-wrap gap-4">
-                <div className="bg-orange-900/30 border border-orange-500/30 rounded-xl px-6 py-3">
-                  <div className="text-2xl font-bold text-orange-400">Uptown Dallas</div>
-                  <div className="text-sm text-gray-400">Based</div>
-                </div>
-                <div className="bg-gray-800 border border-gray-700 rounded-xl px-6 py-3">
-                  <div className="text-2xl font-bold text-gray-100">15+ Years</div>
-                  <div className="text-sm text-gray-400">Experience</div>
-                </div>
-                <div className="bg-gray-800 border border-gray-700 rounded-xl px-6 py-3">
-                  <div className="text-2xl font-bold text-gray-100">Cooper Inst.</div>
-                  <div className="text-sm text-gray-400">Certified</div>
-                </div>
               </div>
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-gray-800/20 rounded-3xl blur-3xl"></div>
               <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 border border-gray-700 mb-6">
-                {/* Family Photo */}
-                <img src="/family-photo.jpg" alt="Allen and family" className="w-full h-64 object-cover rounded-2xl mb-4" />
-                <p className="text-center text-gray-400 text-sm">My family — the reason I do what I do</p>
+                {/* Professional Portrait */}
+                <img src="/photo-1-bench.jpg" alt="Allen Marrs - Personal Trainer" style={{ maxWidth: '100%', width: '100%', height: 'auto' }} className="rounded-2xl mb-4" />
+                <p className="text-center text-gray-400 text-sm">Allen Marrs — Personal Training & Nutrition</p>
               </div>
               <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 border border-gray-700">
                 <h3 className="text-2xl font-bold mb-6 text-orange-400">Credentials</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center py-3 border-b border-gray-700">
+                  <div className="grid grid-cols-[auto_1fr] gap-4 py-3 border-b border-gray-700">
                     <span className="text-gray-400">Certification</span>
-                    <span className="font-semibold text-gray-100">Cooper Institute for Aerobics Research</span>
+                    <span className="font-semibold text-gray-100 text-right">Cooper Institute for Aerobics Research</span>
                   </div>
-                  <div className="flex justify-between items-center py-3 border-b border-gray-700">
+                  <div className="grid grid-cols-[auto_1fr] gap-4 py-3 border-b border-gray-700">
                     <span className="text-gray-400">Specialty</span>
-                    <span className="font-semibold text-gray-100">Fat Loss + Nutrition</span>
+                    <span className="font-semibold text-gray-100 text-right">Fat Loss + Nutrition</span>
                   </div>
-                  <div className="flex justify-between items-center py-3 border-b border-gray-700">
+                  <div className="grid grid-cols-[auto_1fr] gap-4 py-3 border-b border-gray-700">
                     <span className="text-gray-400">Training</span>
-                    <span className="font-semibold text-gray-100">In-person</span>
-                    <span className="font-semibold text-gray-100">Online</span>
+                    <span className="font-semibold text-gray-100 text-right">In-person · Online</span>
                   </div>
-                  <div className="flex justify-between items-center py-3 border-b border-gray-700">
+                  <div className="grid grid-cols-[auto_1fr] gap-4 py-3 border-b border-gray-700">
                     <span className="text-gray-400">Nutrition</span>
-                    <span className="font-semibold text-gray-100">In-person</span>
-                    <span className="font-semibold text-gray-100">Online</span>
+                    <span className="font-semibold text-gray-100 text-right">In-person · Online</span>
                   </div>
                 </div>
               </div>
@@ -381,7 +401,7 @@ export default function Home() {
               </div>
               <p className="text-gray-700 mb-6 italic">"Lost 25 lbs in 12 weeks. Best decision I ever made. No gimmicks, just hard work and a solid plan."</p>
               <div className="font-semibold text-gray-900">— Danielle P.</div>
-              <div className="text-sm text-gray-500">SHRED Program</div>
+              <div className="text-sm text-gray-500">EVENT READY Program</div>
             </div>
             <div className="bg-white border border-gray-200 rounded-3xl p-8">
               <div className="flex gap-1 mb-4">
@@ -413,8 +433,26 @@ export default function Home() {
           </h2>
           <p className="text-xl text-gray-400 mb-10">Email me directly and I'll get back to you within 1 business day.</p>
           
-          <a href="mailto:marrsco.zoe@gmail.com?subject=AMarsBody Inquiry" className="inline-block bg-orange-500 text-gray-100 font-bold py-4 px-12 rounded-full text-lg hover:bg-orange-400 transition-all transform hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)]">
-            EMAIL ME
+          <a href="mailto:amarsbody@gmail.com?subject=AMarsBody Inquiry" className="inline-block bg-orange-500 text-gray-100 font-bold py-4 px-12 rounded-full text-lg hover:bg-orange-400 transition-all transform hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)]">
+            EMAIL ME: amarsbody@gmail.com
+          </a>
+        </div>
+      </section>
+
+      {/* Google Reviews Link */}
+      <section className="py-16 px-6 bg-gray-50 border-t border-gray-200">
+        <div className="max-w-2xl mx-auto text-center">
+          <p className="text-gray-600 mb-6">Have you trained with me? Share your experience!</p>
+          <a 
+            href="https://g.page/r/CQO0WubS7G7REAI/review" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-orange-500 text-white font-bold px-8 py-3 rounded-full hover:bg-orange-600 transition-all"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            Leave a Google Review
           </a>
         </div>
       </section>
@@ -422,13 +460,9 @@ export default function Home() {
       <footer className="py-8 px-6 bg-gray-950 border-t border-gray-800">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-xl font-extrabold">
-            <span className="text-gray-700">AM</span><span className="text-orange-600">ars</span><span className="text-gray-700">Body</span>
+            <span className="text-gray-700">A</span><span className="text-orange-600">Mars</span><span className="text-gray-700">Body</span>
           </div>
           <p className="text-gray-500 text-sm">© 2026 AMarsBody. All rights reserved.</p>
-          <div className="flex gap-6 text-sm text-gray-500">
-            <a href="#" className="hover:text-orange-500 transition-colors">Instagram</a>
-            <a href="#" className="hover:text-orange-500 transition-colors">YouTube</a>
-          </div>
         </div>
       </footer>
     </main>
