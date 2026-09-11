@@ -15,6 +15,7 @@
     "googleapis": "^171.4.0",
     "lucide-react": "^0.577.0",
     "next": "latest",
+    "nodemailer": "^10.0.6",
     "react": "latest",
     "react-dom": "latest",
     "resend": "^6.9.3"
