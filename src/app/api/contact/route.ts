@@ -7,8 +7,7 @@ async function emailAllen(name: string, email: string, phone: string, message: s
   const resendApiKey = process.env.RESEND_API_KEY;
 
   if (!resendApiKey) {
-    console.log('RESEND_API_KEY not set — skipping email to Allen');
-    return;
+    throw new Error('RESEND_API_KEY not set — cannot email Allen');
   }
 
   const res = await fetch('https://api.resend.com/emails', {
