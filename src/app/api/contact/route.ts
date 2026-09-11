@@ -37,7 +37,7 @@ async function emailAllen(name: string, email: string, phone: string, message: s
   if (!res.ok) {
     const err = await res.text();
     console.error('Resend error:', err);
-    throw new Error('Failed to send email');
+    throw new Error(err);
   }
 
   console.log('Email sent to Allen for:', name, email);
@@ -129,8 +129,9 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Contact form error:', error);
+    const msg = error?.message || 'Failed to send email';
     return NextResponse.json(
-      { error: 'Failed to send your message. Please email amarsbody@gmail.com directly.' },
+      { error: 'Failed to send your message. Please email amarsbody@gmail.com directly.', detail: msg },
       { status: 500 }
     );
   }
