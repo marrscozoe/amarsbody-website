@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ed16ff0d-05ec-488e-9418-25b876d95fa3",
+    "personalEventTitle": "Nolan's Graduation",
+    "date": "2026-05-14",
+    "startTime": "12:00",
+    "endTime": "18:30",
+    "status": "scheduled",
+    "createdAt": "2026-05-14T13:36:08.456Z"
+  },
+  {
+    "id": "0ce73b5e-3d68-45a0-834b-2bdbe1fa6eb7",
+    "personalEventTitle": "Nolan's Graduation",
+    "date": "2026-05-15",
+    "startTime": "08:00",
+    "endTime": "18:30",
+    "status": "scheduled",
+    "createdAt": "2026-05-14T13:36:08.647Z"
+  }
+]

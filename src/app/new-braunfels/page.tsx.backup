@@ -1,0 +1,345 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+function WaitlistForm() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus('loading');
+    
+    try {
+      const res = await fetch('/api/new-braunfels-waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email }),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setStatus('success');
+        setMessage(data.message || 'You\'re on the list!');
+        setName('');
+        setEmail('');
+      } else {
+        setStatus('error');
+        setMessage(data.error || 'Something went wrong');
+      }
+    } catch {
+      setStatus('error');
+      setMessage('Connection failed. Try again.');
+    }
+  }
+
+  if (status === 'success') {
+    return (
+      <div className="bg-green-500/20 border border-green-500/40 rounded-xl p-6 text-center">
+        <div className="text-4xl mb-2">✅</div>
+        <h3 className="text-xl font-bold text-green-400 mb-2">You\'re on the list!</h3>
+        <p className="text-slate-300 text-sm">{message}</p>
+        <p className="text-slate-400 text-xs mt-2">I\'ll email you when pre-sale opens.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input
+          type="text"
+          placeholder="Your name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+          className="flex-1 px-5 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-orange-500 transition-colors"
+        />
+        <input
+          type="email"
+          placeholder="Your email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          className="flex-1 px-5 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-orange-500 transition-colors"
+        />
+        <button
+          type="submit"
+          disabled={status === 'loading'}
+          className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50"
+        >
+          {status === 'loading' ? '...' : 'Join →'}
+        </button>
+      </div>
+      {status === 'error' && (
+        <p className="text-red-400 text-sm mt-2">{message}</p>
+      )}
+      <p className="text-slate-500 text-xs mt-3">
+        No spam. Just early access updates. Unsubscribe anytime.
+      </p>
+    </form>
+  );
+}
+
+export default function NewBraunfelsLanding() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+      {/* Nav */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-900/95 backdrop-blur shadow-lg py-3' : 'py-5 bg-transparent'}`}>
+        <div className="max-w-5xl mx-auto px-6 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="bg-white rounded-lg p-1">
+              <img src="/logo.svg" alt="AMarsBody" className="h-10" />
+            </div>
+          </Link>
+          <Link href="/" className="text-sm text-slate-300 hover:text-white transition-colors">
+            ← Back to AMarsBody
+          </Link>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="relative min-h-screen flex items-center justify-center px-6 pt-20">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-orange-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl" />
+        </div>
+        <div className="relative z-10 text-center max-w-3xl">
+          <div className="inline-block bg-orange-500/20 text-orange-400 px-4 py-1.5 rounded-full text-sm font-semibold mb-6 border border-orange-500/30">
+            🚀 Opening in New Braunfels, TX — June 2026
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black leading-tight mb-6">
+            Get Your Dream Body<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300">
+              Before Your Next Big Event
+            </span>
+          </h1>
+          <img src="/photo-3-smile.jpg" alt="Allen Marrs" className="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover mx-auto mb-6 border-4 border-orange-500 shadow-lg" />
+          <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-xl mx-auto">
+            Allen Marrs, Personal training & nutrition coaching — now coming to New Braunfels. 
+            Brides, beach-goers, reunion preppers: be first to get access.
+          </p>
+
+          <div className="w-full max-w-md mx-auto text-center">
+            <p className="text-slate-300 mb-4">Have questions about getting event-ready?</p>
+            <a 
+              href="mailto:amarsbody@gmail.com?subject=NB%20Waitlist%20Inquiry" 
+              className="inline-block bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-10 py-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 text-lg"
+            >
+              Email Allen →
+            </a>
+            <p className="text-slate-500 text-sm mt-4">amarsbody@gmail.com</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Who It's For */}
+      <section className="py-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-4">Who This Is For</h2>
+          <p className="text-slate-400 text-center mb-12 max-w-xl mx-auto">
+            Not a one-size-fits-all program. Custom training for people with specific goals.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                emoji: '💍',
+                title: 'Brides & Grooms',
+                desc: 'Look absolutely incredible in your wedding photos. Custom nutrition + training to fit into your dream dress or suit.',
+              },
+              {
+                emoji: '🏖️',
+                title: 'Beach & Vacation Ready',
+                desc: 'Whether it\'s a cruise, resort trip, or summer at Canyon Lake — show up feeling your absolute best.',
+              },
+              {
+                emoji: '👔',
+                title: 'Reunions & Events',
+                desc: 'Class reunions, milestone birthdays, galas — whatever the event, I\'ll help you walk in confident.',
+              },
+            ].map(({ emoji, title, desc }) => (
+              <div key={title} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
+                <div className="text-4xl mb-4">{emoji}</div>
+                <h3 className="text-lg font-bold mb-2">{title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 px-6 bg-black/20">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-12">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              { num: '01', title: 'Sign Up Free', desc: 'Join the waitlist above. No commitment, no cost.' },
+              { num: '02', title: 'Get Early Access', desc: 'Be first to know when I open — and get pre-sale member pricing.' },
+              { num: '03', title: 'Free Consult', desc: 'We\'ll talk about your goals, your timeline, and your lifestyle.' },
+              { num: '04', title: 'Your Plan Starts', desc: 'Custom training + nutrition, 1-on-1 coaching, ongoing support.' },
+            ].map(({ num, title, desc }) => (
+              <div key={num} className="text-center">
+                <div className="text-5xl font-black text-orange-500/30 mb-3">{num}</div>
+                <h3 className="font-bold text-lg mb-2">{title}</h3>
+                <p className="text-slate-400 text-sm">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Preview */}
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-4">Programs</h2>
+          <p className="text-slate-400 text-center mb-12">Structured programs with nutrition coaching included. Pre sale member pricing.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            {/* 30 Minute */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
+              <div className="text-sm font-semibold text-orange-400 uppercase tracking-wider mb-2">Express Sessions</div>
+              <div className="text-4xl font-black mb-1">$540<span className="text-lg font-normal text-slate-400">/6 weeks</span></div>
+              <div className="text-4xl font-black text-slate-400 line-through mb-1">$660</div>
+              <div className="text-slate-400 text-sm mb-2">12 sessions (30 min each)</div>
+              <div className="text-green-400 text-sm font-semibold mb-6">Pre-sale rate — goes up when I open</div>
+              <ul className="space-y-3 text-sm">
+                {['2 sessions per week', 'Nutrition coaching included', 'Daily text support', 'Weekly progress check-ins', 'Custom program'].map(f => (
+                  <li key={f} className="flex items-center gap-2">
+                    <span className="text-green-400">✓</span>
+                    <span className="text-slate-300">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* 60 Minute */}
+            <div className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-orange-500/30 rounded-2xl p-8 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full">
+                MOST POPULAR
+              </div>
+              <div className="text-sm font-semibold text-orange-400 uppercase tracking-wider mb-2">Full Sessions</div>
+              <div className="text-4xl font-black mb-1">$840<span className="text-lg font-normal text-slate-400">/6 weeks</span></div>
+              <div className="text-4xl font-black text-slate-400 line-through mb-1">$960</div>
+              <div className="text-slate-400 text-sm mb-2">12 sessions (60 min each)</div>
+              <div className="text-green-400 text-sm font-semibold mb-6">Pre-sale rate — goes up when I open</div>
+              <ul className="space-y-3 text-sm">
+                {['2 sessions per week', 'Everything in Express', 'Deeper training focus', 'Priority scheduling', 'Bonus: event prep guide'].map(f => (
+                  <li key={f} className="flex items-center gap-2">
+                    <span className="text-green-400">✓</span>
+                    <span className="text-slate-300">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* Event Package */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
+              <div className="text-sm font-semibold text-orange-400 uppercase tracking-wider mb-2">Event Package</div>
+              <div className="text-4xl font-black mb-1">$1,200<span className="text-lg font-normal text-slate-400">/6 weeks</span></div>
+              <div className="text-4xl font-black text-slate-400 line-through mb-1">$1,380</div>
+              <div className="text-slate-400 text-sm mb-2">18 sessions (60 min each)</div>
+              <div className="text-green-400 text-sm font-semibold mb-6">Pre-sale rate — Goes up when I open</div>
+              <ul className="space-y-3 text-sm">
+                {['3 sessions per week', 'Full nutrition coaching', 'Daily text support', 'Weekly progress check-ins', 'Custom program', 'Event day prep'].map(f => (
+                  <li key={f} className="flex items-center gap-2">
+                    <span className="text-green-400">✓</span>
+                    <span className="text-slate-300">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <p className="text-center text-slate-500 text-xs mt-8">
+            These are Pre-sale rates. Prices go up $10/session once I open in New Braunfels.
+          </p>
+        </div>
+      </section>
+
+      {/* The Gym */}
+      <section className="py-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-4">The Gym</h2>
+          <p className="text-slate-400 text-center mb-12 max-w-xl mx-auto">Training at Eisbar Strength & Fitness in New Braunfels — top-notch equipment for every goal.</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <img src="/file_100---d17df01a-ecb4-4185-b3ef-e9b93c498e96.jpg" alt="Dumbbells and kettlebells" className="w-full h-48 object-cover rounded-xl" />
+            <img src="/file_101---b4bb9591-06a3-49bc-bb21-0d92d57d9866.jpg" alt="Cardio and strength" className="w-full h-48 object-cover rounded-xl" />
+            <img src="/file_102---209c8f54-f71e-48d4-bf16-64fa24dd14dc.jpg" alt="Benches and plates" className="w-full h-48 object-cover rounded-xl" />
+            <img src="/file_103---86f751b9-67bd-47c6-adc0-7af6a68ea5e8.jpg" alt="Power racks" className="w-full h-48 object-cover rounded-xl" />
+            <img src="/file_104---232bc9e2-a851-4056-9be0-21a1a8c271ed.jpg" alt="Leg machines" className="w-full h-48 object-cover rounded-xl" />
+            <img src="/file_105---ccb832bf-1bc5-4de6-b944-9712c069d36e.jpg" alt="Main power rack" className="w-full h-48 object-cover rounded-xl" />
+            <img src="/file_106---4a0b2012-ebf6-489e-9dfd-df59d433088e.jpg" alt="Dumbbell area" className="w-full h-48 object-cover rounded-xl" />
+          </div>
+          <p className="text-slate-400 text-center text-sm mt-6">Eisbar Strength & Fitness • 1260 FM1863 BLDG 4, New Braunfels, TX 78132</p>
+        </div>
+      </section>
+
+      {/* About Allen */}
+      <section className="py-20 px-6 bg-black/20">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-black mb-8">Meet Your Trainer</h2>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 md:p-12">
+            <img src="/photo-1-bench.jpg" alt="Allen Marrs" className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover mx-auto mb-4 border-4 border-orange-500" />
+            <h3 className="text-2xl font-bold mb-2">Allen Marrs</h3>
+            <p className="text-orange-400 font-semibold mb-6">Personal Trainer & Nutrition Coach</p>
+            <p className="text-slate-300 leading-relaxed mb-6">
+              Personal trainer specializing in nutrition and fitness for women and men who want real, sustainable results — not quick fixes or fad diets.
+            </p>
+            <p className="text-slate-300 leading-relaxed mb-6">
+              I help people get ready for the events that matter: weddings, beach trips, class reunions, or just feeling confident again. Every plan is custom, every client is family.
+            </p>
+            <p className="text-slate-300 leading-relaxed">
+              Originally from Dallas, now bringing my training to New Braunfels. Over 15 years helping clients transform — not just their bodies, but their confidence.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-24 px-6">
+        <div className="max-w-2xl mx-auto text-center">
+          <img src="/photo-3-smile.jpg" alt="Allen Marrs" className="w-32 h-32 rounded-full object-cover mx-auto mb-8 border-4 border-orange-500 shadow-lg" />
+          <h2 className="text-3xl md:text-5xl font-black mb-4">
+            Don't Wait.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300">
+              Your Event Won't.
+            </span>
+          </h2>
+          <p className="text-slate-400 mb-10 mt-4">
+            Spots for pre-sale members are limited. Join the waitlist to be first in line when I open in New Braunfels.
+          </p>
+          <div className="w-full max-w-md mx-auto text-center">
+            <p className="text-slate-300 mb-4">Have questions? Ready to join?</p>
+            <a 
+              href="mailto:amarsbody@gmail.com?subject=NB%20Waitlist%20Inquiry" 
+              className="inline-block bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-10 py-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 text-lg"
+            >
+              Email Allen →
+            </a>
+            <p className="text-slate-500 text-sm mt-4">amarsbody@gmail.com</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 px-6 border-t border-white/10 text-center text-slate-500 text-sm">
+        <div className="flex justify-center mb-3">
+          <div className="bg-white rounded-lg p-1">
+            <img src="/logo.svg" alt="AMarsBody" className="h-8" />
+          </div>
+        </div>
+        <p>AMarsBody Personal Training — Dallas, TX → New Braunfels, TX</p>
+        <p className="mt-1">Questions? Email <a href="mailto:amarsbody@gmail.com?subject=NB%20Waitlist%20Inquiry" className="text-orange-400 hover:text-orange-300">amarsbody@gmail.com</a></p>
+      </footer>
+    </div>
+  );
+}

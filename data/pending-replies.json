@@ -1,0 +1,35 @@
+[
+  {
+    "to_email": "jenny@peptides-plus.com",
+    "to_name": "Jenny Anderson",
+    "subject": "Re: hey",
+    "lead_name": "Jenny Anderson",
+    "lead_email": "jenny@peptides-plus.com",
+    "lead_subject": "hey",
+    "lead_body": "hey, came across your page, do you guys sell any supplements to your members?\r\n\r\njenny",
+    "created_at": "2026-05-28T22:09:37.302483",
+    "status": "pending"
+  },
+  {
+    "to_email": "marrs.allen@gmail.com",
+    "to_name": "Allen Marrs",
+    "subject": "Re: AMarsBody Inquiry",
+    "lead_name": "Allen Marrs",
+    "lead_email": "marrs.allen@gmail.com",
+    "lead_subject": "AMarsBody Inquiry",
+    "lead_body": "",
+    "created_at": "2026-05-29T07:48:55.300916",
+    "status": "pending"
+  },
+  {
+    "to_email": "shawn@eisbarstrength.com",
+    "to_name": "Shawn Jones",
+    "subject": "Re: Trainer Opportunity - Eisb\u00e4r Strength & Fitness",
+    "lead_name": "Shawn Jones",
+    "lead_email": "shawn@eisbarstrength.com",
+    "lead_subject": "Trainer Opportunity - Eisb\u00e4r Strength & Fitness",
+    "lead_body": "Howdy Allen,\r\n\r\nThanks again for reaching out last week. I\u2019m glad we had a chance to\r\nconnect at the gym and talk through your move to New Braunfels and what\r\nyou\u2019re looking for.\r\n\r\nWhen I took over the gym last June, one of my goals was to allow a small\r\nnumber of independent trainers to operate out of the space. I know\r\nfirsthand that being fully independent means finding the right environment\r\nto run your own business, and I think Eisb\u00e4r Strength can provide that if\r\nit\u2019s the right fit.\r\n\r\nBased on what you shared about your Dallas setup, this will be a bit\r\ndifferent, but in a good way once you get established here.\r\n\r\nHere\u2019s the model I'm building out:\r\n\r\n   -\r\n\r\n   You operate as an independent trainer and run your own business\r\n   -\r\n\r\n   No employment or contractor relationship with the gym\r\n   -\r\n\r\n   No revenue split, just a flat monthly rate\r\n\r\nMonthly rate is based on overall usage:\r\n\r\n   -\r\n\r\n   $500: light usage\r\n   -\r\n\r\n   $750: moderate usage\r\n   -\r\n\r\n   $1,000: high us",
+    "created_at": "2026-05-29T07:48:55.768848",
+    "status": "pending"
+  }
+]
