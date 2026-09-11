@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
 const PENDING_FILE = path.join(process.cwd(), 'data', 'pending-replies.json');
 const LEADS_FILE = path.join(process.cwd(), 'data', 'leads.json');
@@ -18,7 +20,8 @@ function savePending(pending: any[]) {
 }
 
 async function sendReply(toEmail: string, toName: string, subject: string) {
-  const nodemailer = (await import('nodemailer')).default;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const nodemailer = require('nodemailer');
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
