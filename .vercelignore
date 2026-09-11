@@ -1,0 +1,21 @@
+# Exclude untracked API directories that are not in git
+src/app/api/pending-replies/
+src/app/api/leads/
+src/app/api/pipeline/
+src/app/api/calendar/personal-events/
+src/app/calendar/admin/page.tsx.bak
+src/app/calendar/admin/page.tsx.backup
+src/app/calendar/components/GoogleCalendar.tsx.bak
+src/app/calendar/components/GoogleCalendar.tsx.bak2
+src/app/calendar/components/GoogleCalendar.tsx.bak3
+src/app/calendar/components/GoogleCalendar.tsx.bak4
+src/app/calendar/components/GoogleCalendar.tsx.bak5
+src/app/api/calendar/appointments/route.ts.bak
+src/app/page.tsx.backup-2026-03-29
+src/app/page.tsx.backup-2026-05-23
+src/app/programs/page.tsx.backup.20260319_091941
+src/app/gsd/
+src/app/leads/
+src/app/new-braunfels/
+src/app/pipeline/
+src/app/my-appointments/
