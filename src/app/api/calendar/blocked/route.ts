@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       recurringPattern: recurringPattern || null,
       endDate: endDate || null,
       daysOfWeek: daysOfWeek || null,
+      label: body.label || null,
       createdAt: new Date().toISOString()
     };
     

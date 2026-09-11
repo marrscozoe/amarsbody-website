@@ -40,8 +40,8 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"calendar" | "block" | "schedule" | "clients">("calendar");
   const [loading, setLoading] = useState(true);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [bookingDate, setBookingDate] = useState("");
-  const [bookingTime, setBookingTime] = useState("");
+  const [showPersonalTimeModal, setShowPersonalTimeModal] = useState(false);
+  const [personalTimeForm, setPersonalTimeForm] = useState({ label: "", date: "", startTime: "08:00", endTime: "09:00" });
   
   // Form states
   const [blockType, setBlockType] = useState<"single" | "recurring">("single");
@@ -345,6 +345,39 @@ export default function AdminPage() {
     setShowBookingModal(true);
   }, []);
 
+  const handleAddPersonalTime = useCallback((date: string) => {
+    setPersonalTimeForm({ label: "", date, startTime: "08:00", endTime: "09:00" });
+    setShowPersonalTimeModal(true);
+  }, []);
+
+  const handleCreatePersonalTime = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/calendar/blocked", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "block",
+          date: personalTimeForm.date,
+          startTime: personalTimeForm.startTime,
+          endTime: personalTimeForm.endTime,
+          isRecurring: false,
+          label: personalTimeForm.label || null
+        })
+      });
+      if (res.ok) {
+        setShowPersonalTimeModal(false);
+        loadData();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to add personal time");
+      }
+    } catch (err) {
+      console.error("Failed to add personal time:", err);
+      alert("Failed to add personal time");
+    }
+  };
+
   const handleCancel = useCallback(async (id: string) => {
     await handleCancelAppointment(id);
   }, []);
@@ -446,6 +479,7 @@ export default function AdminPage() {
             onBook={handleBook}
             onCancel={handleCancel}
             onReschedule={handleRescheduleClick}
+            onAddPersonalTime={handleAddPersonalTime}
           />
         )}
 
@@ -907,6 +941,77 @@ export default function AdminPage() {
                   className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors"
                 >
                   {rescheduleId ? "Update" : "Book"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Personal Time Modal */}
+      {showPersonalTimeModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl max-w-md w-full">
+            <div className="p-4 border-b border-gray-800">
+              <h3 className="text-xl font-bold">Add My Time</h3>
+              <p className="text-gray-400 text-sm">
+                {personalTimeForm.date && new Date(personalTimeForm.date + "T00:00:00").toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric"
+                })}
+              </p>
+            </div>
+            <form onSubmit={handleCreatePersonalTime} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Label (optional)</label>
+                <input
+                  type="text"
+                  value={personalTimeForm.label}
+                  onChange={(e) => setPersonalTimeForm({ ...personalTimeForm, label: e.target.value })}
+                  placeholder="e.g. BNI, errands, personal"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Start Time</label>
+                  <select
+                    value={personalTimeForm.startTime}
+                    onChange={(e) => setPersonalTimeForm({ ...personalTimeForm, startTime: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  >
+                    {timeSlots.map(time => (
+                      <option key={time} value={time}>{formatTime(time)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">End Time</label>
+                  <select
+                    value={personalTimeForm.endTime}
+                    onChange={(e) => setPersonalTimeForm({ ...personalTimeForm, endTime: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  >
+                    {timeSlots.map(time => (
+                      <option key={time} value={time}>{formatTime(time)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPersonalTimeModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors"
+                >
+                  Add Time
                 </button>
               </div>
             </form>

@@ -40,6 +40,7 @@ interface CalendarProps {
   onBook?: (date: string, startTime: string, endTime: string) => void;
   onCancel?: (id: string) => void;
   onReschedule?: (appointment: Appointment) => void;
+  onAddPersonalTime?: (date: string) => void;
 }
 
 type ViewType = "month" | "week" | "day";
@@ -87,6 +88,7 @@ export default function GoogleCalendar({
   onBook,
   onCancel,
   onReschedule,
+  onAddPersonalTime,
 }: CalendarProps) {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -615,24 +617,41 @@ export default function GoogleCalendar({
             </div>
 
             <div className="p-4">
-              {selectedDayAppointments.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">No appointments for this day</p>
-                  {mode === "admin" && (
-                    <button
-                      onClick={() => {
-                        setShowDayModal(false);
-                        if (onBook) {
-                          onBook(selectedDate, "08:00", "09:00");
-                        }
-                      }}
-                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
-                    >
-                      Add Appointment
-                    </button>
-                  )}
+              {/* Two-action buttons — always visible in admin mode */}
+              {mode === "admin" && (
+                <div className="flex gap-3 mb-4">
+                  <button
+                    onClick={() => {
+                      setShowDayModal(false);
+                      if (onBook) {
+                        onBook(selectedDate, "08:00", "09:00");
+                      }
+                    }}
+                    className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 rounded-lg font-semibold"
+                  >
+                    + Appointment
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDayModal(false);
+                      if (onAddPersonalTime) {
+                        onAddPersonalTime(selectedDate);
+                      }
+                    }}
+                    className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold"
+                  >
+                    + My Time
+                  </button>
                 </div>
-              ) : (
+              )}
+
+              {selectedDayAppointments.length === 0 && mode !== "admin" && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No appointments for this day</p>
+                </div>
+              )}
+
+              {selectedDayAppointments.length > 0 && (
                 <div className="space-y-3">
                   {selectedDayAppointments.map(apt => (
                     <div
