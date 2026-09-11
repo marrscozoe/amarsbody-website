@@ -38,6 +38,7 @@ const timeToMinutes = (time: string): number => {
 
 const formatTime = (time: string): string => {
   const [h, m] = time.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return time || "--:--";
   return `${h > 12 ? h - 12 : h}:${m.toString().padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
 };
 
@@ -378,7 +379,7 @@ export default function BookPage() {
         const slots = getAvailableSlots(ds, rescheduleApt.id);
         // For reschedule: allow old date if it has other apts (they keep it blocked)
         // but also check same-day rule: if client has OTHER apt on old date, can't book new on same day
-        if (slots.length > 0) {
+        if (slots.length > 0 && !clientHasAppointmentOnDate(ds, rescheduleApt.id)) {
           dates.push(new Date(cur));
         }
         cur.setDate(cur.getDate() + 1);
@@ -410,7 +411,7 @@ export default function BookPage() {
             <p className="font-medium">{oldDateLabel} at {formatTime(rescheduleApt.startTime)}</p>
           </div>
 
-          {!selectedDate || step === "reschedule" && !selectedTime ? (
+          {!selectedDate || (step === "reschedule" && !selectedTime) ? (
             <>
               <h2 className="text-lg font-semibold mb-3">Pick a new date</h2>
               {rescheduleMonthGroups.length === 0 ? (
