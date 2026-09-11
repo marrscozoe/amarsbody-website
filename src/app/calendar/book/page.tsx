@@ -88,6 +88,8 @@ export default function BookPage() {
   const [duration, setDuration] = useState<number>(60);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  // In reschedule: has user picked a NEW date yet (vs. the pre-filled old date)?
+  const [newDatePicked, setNewDatePicked] = useState(false);
   const [rescheduleApt, setRescheduleApt] = useState<Appointment | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
@@ -276,6 +278,7 @@ export default function BookPage() {
     setSelectedTime("");
     setDuration(60); // default; could derive from apt
     setStep("reschedule");
+    setNewDatePicked(false); // reset: user hasn't picked new date yet
   };
 
   const handleCancelAppointment = async (id: string) => {
@@ -350,7 +353,7 @@ export default function BookPage() {
             <div className="flex justify-between"><span className="text-gray-400">Duration</span><span className="font-medium">{duration} min</span></div>
             <div className="flex justify-between"><span className="text-gray-400">Ref</span><span className="font-mono text-sm text-orange-500">{bookingRef.slice(0, 8).toUpperCase()}</span></div>
           </div>
-          <button onClick={() => { setStep("date"); setRescheduleApt(null); setSelectedDate(""); setSelectedTime(""); }} className="w-full mt-4 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg">Book Another</button>
+          <button onClick={() => { setStep("date"); setRescheduleApt(null); setSelectedDate(""); setSelectedTime(""); setNewDatePicked(false); }} className="w-full mt-4 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg">Book Another</button>
           <button onClick={() => setViewMode("appointments")} className="w-full mt-2 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg">My Appointments</button>
           <button onClick={logout} className="w-full mt-2 py-2 text-gray-500 hover:text-white text-sm">Logout</button>
         </div>
@@ -365,6 +368,7 @@ export default function BookPage() {
     const handleRescheduleDatePick = (date: Date) => {
       setSelectedDate(formatDateKey(date));
       setSelectedTime("");
+      setNewDatePicked(true); // now show time picker
     };
 
     // Step A: choose new date (same logic as getBookableDates but allowing the old date too)
@@ -402,7 +406,7 @@ export default function BookPage() {
       <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-3 mb-6 pt-4">
-            <button onClick={() => { setStep("date"); setRescheduleApt(null); setViewMode("appointments"); }} className="text-gray-400 hover:text-white">← Back</button>
+            <button onClick={() => { setStep("date"); setRescheduleApt(null); setViewMode("appointments"); setNewDatePicked(false); }} className="text-gray-400 hover:text-white">← Back</button>
             <h1 className="text-xl font-bold text-orange-500">Reschedule Appointment</h1>
           </div>
 
@@ -411,7 +415,7 @@ export default function BookPage() {
             <p className="font-medium">{oldDateLabel} at {formatTime(rescheduleApt.startTime)}</p>
           </div>
 
-          {!selectedDate || (step === "reschedule" && !selectedTime) ? (
+          {step === "reschedule" && !newDatePicked ? (
             <>
               <h2 className="text-lg font-semibold mb-3">Pick a new date</h2>
               {rescheduleMonthGroups.length === 0 ? (
