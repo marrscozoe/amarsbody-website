@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import nodemailer from 'nodemailer';
 
 const PENDING_FILE = path.join(process.cwd(), 'data', 'pending-replies.json');
 const LEADS_FILE = path.join(process.cwd(), 'data', 'leads.json');
@@ -18,7 +17,8 @@ function savePending(pending: any[]) {
   fs.writeFileSync(PENDING_FILE, JSON.stringify(pending, null, 2));
 }
 
-function sendReply(toEmail: string, toName: string, subject: string) {
+async function sendReply(toEmail: string, toName: string, subject: string) {
+  const nodemailer = (await import('nodemailer')).default;
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
