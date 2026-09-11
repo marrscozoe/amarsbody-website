@@ -1,12 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Disable Turbopack - use Webpack bundler instead
+  // Turbopack has issues resolving certain packages like nodemailer
   experimental: {
-    turbo: {
-      // Disable Turbopack due to nodemailer resolution issues
-      resolveAlias: {},
-    },
+    turbo: false,
   },
-  // Treat nodemailer as an external package that should not be bundled
   serverExternalPackages: ['nodemailer'],
 };
 
