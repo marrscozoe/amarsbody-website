@@ -49,7 +49,7 @@ export default function Home() {
           name: heroFormData.firstName,
           email: heroFormData.email,
           phone: heroFormData.phone,
-          message: heroFormData.goal ? `Goal/Event: ${heroFormData.goal}` : "",
+          message: heroFormData.goal ? `Goal/Event: ${heroFormData.goal}` : 'Interested in getting started with training',
         }),
       });
       if (res.ok) {
@@ -64,7 +64,7 @@ export default function Home() {
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contactFormData.name || !contactFormData.email || !contactFormData.message) return;
+    if (!contactFormData.name || !contactFormData.email) return;
     setContactFormStatus("loading");
     try {
       const res = await fetch("/api/contact", {

@@ -62,12 +62,15 @@ export async function POST(request: any) {
   try {
     const { name, email, phone, message } = await request.json();
 
-    if (!name || !email || !message) {
+    if (!name || !email) {
       return NextResponse.json(
-        { error: 'Name, email, and message are required' },
+        { error: 'Name and email are required' },
         { status: 400 }
       );
     }
+
+    // Default empty message to a placeholder so it's always stored
+    const finalMessage = message && message.trim() ? message.trim() : 'No message provided';
 
     // Save submission to local JSON file
     const submissions = await getSubmissions();
@@ -76,7 +79,7 @@ export async function POST(request: any) {
       name,
       email,
       phone: phone || '',
-      message,
+      message: finalMessage,
       timestamp: new Date().toISOString(),
     };
     submissions.push(newSubmission);
