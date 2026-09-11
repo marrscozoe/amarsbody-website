@@ -186,7 +186,7 @@ export default function Home() {
             </h1>
             <p className="text-3xl md:text-4xl text-orange-400 font-bold mb-2">Allen Marrs</p>
             <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-              Personal training and nutrition programs designed for your goals. No gimmicks. Just results.
+              Personal training built for men <span className="text-orange-400 font-semibold">and women</span> in New Braunfels — weddings, beach trips, reunions, photoshoots, whatever you&apos;re training for. No gimmicks. Real results.
             </p>
           </div>
 
@@ -546,7 +546,7 @@ export default function Home() {
                 <span className="text-orange-400">ME</span>
               </h2>
               <p className="text-xl text-gray-300 mb-6 leading-relaxed">
-                I&apos;m Allen — personal trainer specializing in nutrition and fat loss. I help people get in the best shape of their lives.
+                I&apos;m Allen — personal trainer specializing in nutrition and fat loss. I help <strong className="text-orange-300">men and women</strong> get in the best shape of their lives — ready for what matters most.
               </p>
               <p className="text-gray-400 mb-6 leading-relaxed">
                 I&apos;m a husband and proud dad of 2 sons. When I&apos;m not training, I love hiking and being outdoors. I believe in making fitness fit your life — not the other way around.
