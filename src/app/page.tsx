@@ -710,7 +710,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="py-8 px-6 bg-gray-950 border-t border-gray-800">
+      <footer className="py-8 px-6 pb-20 bg-gray-950 border-t border-gray-800">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-xl font-extrabold">
             <span className="text-gray-700">A</span>
