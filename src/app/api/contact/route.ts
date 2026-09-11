@@ -1,64 +1,108 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 
-const SUBMISSIONS_FILE = path.join(process.cwd(), 'submissions.json');
+// Email Allen directly via Resend — the source of truth for lead capture.
+// No disk writes. No submissions.json. Mailto backup is in the UI.
 
-async function getSubmissions() {
-  try {
-    const data = await fs.readFile(SUBMISSIONS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-async function saveSubmissions(submissions: any[]) {
-  await fs.writeFile(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2));
-}
-
-// Send auto-reply email using Resend
-async function sendAutoReply(toEmail: string, name: string) {
+async function emailAllen(name: string, email: string, phone: string, message: string): Promise<void> {
   const resendApiKey = process.env.RESEND_API_KEY;
-  
+
   if (!resendApiKey) {
-    console.log('RESEND_API_KEY not found, skipping auto-reply');
+    console.log('RESEND_API_KEY not set — skipping email to Allen');
     return;
   }
 
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${resendApiKey}`,
+    },
+    body: JSON.stringify({
+      from: 'AMarsBody Lead <onboarding@resend.dev>',
+      to: ['amarsbody@gmail.com'],
+      subject: `New lead from ${name} — amarsbody.com`,
+      html: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+        <hr />
+        <p><em>Sent from amarsbody.com contact form</em></p>
+      `,
+      text: `New Contact Form Submission\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\n\nMessage:\n${message}\n\n---\nSent from amarsbody.com contact form`,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('Resend error:', err);
+    throw new Error('Failed to send email');
+  }
+
+  console.log('Email sent to Allen for:', name, email);
+}
+
+// Optional: also save to Vercel KV so leads show in the admin pipeline
+async function saveLeadToKV(name: string, email: string, phone: string, message: string): Promise<void> {
   try {
-    const response = await fetch('https://api.resend.com/emails', {
+    const { kv } = await import('@vercel/kv');
+    const id = Date.now();
+    await kv.set(`lead:${id}`, {
+      id,
+      name,
+      email,
+      phone: phone || '',
+      message,
+      source: 'website-contact',
+      timestamp: new Date().toISOString(),
+      status: 'new',
+    });
+    // Add to the leads list
+    const existing = (await kv.get<number[]>('lead-ids')) || [];
+    await kv.set('lead-ids', [...existing, id]);
+    console.log('Lead saved to KV:', id);
+  } catch (e) {
+    // KV is optional — don't fail the request if it errors
+    console.warn('KV save failed, skipping:', e);
+  }
+}
+
+// Send auto-reply to the submitter via Resend
+async function sendAutoReply(toEmail: string, name: string): Promise<void> {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) return;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: 'Zoe ~ Allen\'s Assistant <onboarding@resend.dev>',
-        to: toEmail,
-        subject: 'Thanks for reaching out to Allen!',
+        from: 'Allen Marrs <onboarding@resend.dev>',
+        to: [toEmail],
+        subject: 'Got your message — Allen will reply within 1 business day',
         html: `
           <h2>Hi ${name},</h2>
-          <p>Thanks for contacting Allen! He'll be in touch within 1 business day.</p>
-          <p>In the meantime, feel free to check out his website at <a href="https://amarsbody.com">amarsbody.com</a> to learn more about his training programs.</p>
-          <p>Looking forward to helping you reach your fitness goals!</p>
-          <p>Best,<br/>Zoe ~ Allen's Assistant</p>
+          <p>Thanks for reaching out! Allen will be in touch within <strong>1 business day</strong>.</p>
+          <p>In the meantime, feel free to check out <a href="https://amarsbody.com">amarsbody.com</a> to learn more about his training programs.</p>
+          <p>Looking forward to helping you reach your goals!</p>
+          <p>Best,<br/>Allen</p>
         `,
       }),
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Resend error:', error);
-    } else {
-      console.log('Auto-reply sent to:', toEmail);
+    if (!res.ok) {
+      console.warn('Auto-reply failed:', await res.text());
     }
-  } catch (error) {
-    console.error('Failed to send auto-reply:', error);
+  } catch (e) {
+    console.warn('Auto-reply error:', e);
   }
 }
 
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const { name, email, phone, message } = await request.json();
 
@@ -69,35 +113,25 @@ export async function POST(request: any) {
       );
     }
 
-    // Default empty message to a placeholder so it's always stored
-    const finalMessage = message && message.trim() ? message.trim() : 'No message provided';
+    const finalMessage = message?.trim() || 'No message provided';
 
-    // Save submission to local JSON file
-    const submissions = await getSubmissions();
-    const newSubmission = {
-      id: Date.now().toString(),
-      name,
-      email,
-      phone: phone || '',
-      message: finalMessage,
-      timestamp: new Date().toISOString(),
-    };
-    submissions.push(newSubmission);
-    await saveSubmissions(submissions);
+    // Email Allen — this is the primary action
+    await emailAllen(name, email, phone || '', finalMessage);
 
-    console.log('Contact form submission saved:', newSubmission);
+    // Optional: also persist to Vercel KV
+    await saveLeadToKV(name, email, phone || '', finalMessage);
 
-    // Send auto-reply email
-    await sendAutoReply(email, name);
+    // Send auto-reply to the submitter (non-blocking)
+    sendAutoReply(email, name).catch(() => {});
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: 'Thank you! Allen will be in touch within 1 business day.'
+      message: 'Got it — Allen will reply within 1 business day.',
     });
   } catch (error: any) {
     console.error('Contact form error:', error);
     return NextResponse.json(
-      { error: error.message || 'Unknown error' },
+      { error: 'Failed to send your message. Please email amarsbody@gmail.com directly.' },
       { status: 500 }
     );
   }

@@ -245,7 +245,15 @@ export default function Home() {
                   </div>
                 </div>
                 {heroFormStatus === "error" && (
-                  <p className="text-red-500 text-sm mt-2 text-center">Something went wrong. Please try again.</p>
+                  <div className="mt-3 text-center">
+                    <p className="text-red-400 text-sm mb-2">Something went wrong. Please try again.</p>
+                    <p className="text-gray-400 text-sm">
+                      Or email Allen directly:{' '}
+                      <a href="mailto:amarsbody@gmail.com" className="text-orange-400 hover:text-orange-300 font-medium">
+                        amarsbody@gmail.com
+                      </a>
+                    </p>
+                  </div>
                 )}
                 <button
                   type="submit"
