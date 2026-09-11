@@ -31,6 +31,32 @@ interface BlockedTime {
   endDate?: string | null;
 }
 
+// Time slot helpers
+const timeToMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+// 60-min: :00 only. 30-min: :00 and :30
+const generateTimeSlots = (duration: number, startHour = 5, endHour = 20) => {
+  const slots: string[] = [];
+  for (let hour = startHour; hour <= endHour; hour++) {
+    if (duration === 60) {
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+    } else {
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+      slots.push(`${hour.toString().padStart(2, "0")}:30`);
+    }
+  }
+  return slots;
+};
+
+const formatTime = (time: string) => {
+  const [hours, minutes] = time.split(":");
+  const h = parseInt(hours);
+  return `${h > 12 ? h - 12 : h}:${minutes} ${h >= 12 ? "PM" : "AM"}`;
+};
+
 export default function BookPage() {
   const router = useRouter();
   const [client, setClient] = useState<Client | null>(null);
@@ -53,7 +79,7 @@ export default function BookPage() {
       router.push("/calendar");
       return;
     }
-    
+
     const clientData = JSON.parse(stored);
     setClient(clientData);
     loadAppointments(clientData.id);
@@ -65,7 +91,7 @@ export default function BookPage() {
         fetch(`/api/calendar/appointments?clientId=${clientId}`),
         fetch(`/api/calendar/blocked`)
       ]);
-      
+
       setAppointments(await aptRes.json());
       setBlockedTimes(await blockedRes.json());
     } catch (err) {
@@ -75,6 +101,57 @@ export default function BookPage() {
     }
   };
 
+  // Get blocked times for a date (including recurring)
+  const getBlockedForDate = (dateStr: string): BlockedTime[] => {
+    const date = new Date(dateStr + "T00:00:00");
+    const dayOfWeek = date.getDay();
+
+    return blockedTimes.filter(blk => {
+      if (blk.date === dateStr) return true;
+      if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.length > 0) {
+        if (!blk.daysOfWeek.includes(dayOfWeek)) return false;
+        if (blk.endDate && dateStr > blk.endDate) return false;
+        return true;
+      }
+      return false;
+    });
+  };
+
+  // Check if a slot is blocked for a date
+  const isSlotBlocked = (dateStr: string, time: string): boolean => {
+    const blocked = getBlockedForDate(dateStr);
+    const mins = timeToMinutes(time);
+    return blocked.some(blk => {
+      const startMins = timeToMinutes(blk.startTime);
+      const endMins = timeToMinutes(blk.endTime);
+      return mins >= startMins && mins < endMins;
+    });
+  };
+
+  // Get available time slots for a date (respects duration)
+  const getAvailableSlots = useCallback((dateStr: string, duration: number): string[] => {
+    const durationNum = parseInt(String(duration));
+    const allSlots = generateTimeSlots(durationNum);
+    const clientId = client?.id;
+
+    return allSlots.filter(time => {
+      if (isSlotBlocked(dateStr, time)) return false;
+
+      // Check if slot conflicts with any OTHER appointment on this date
+      const hasConflict = appointments.some(apt => {
+        if (apt.status === "cancelled") return false;
+        if (apt.clientId !== clientId) return false;
+        if (apt.date !== dateStr) return false;
+        const slotMins = timeToMinutes(time);
+        const aptStart = timeToMinutes(apt.startTime);
+        const aptEnd = timeToMinutes(apt.endTime);
+        return slotMins >= aptStart && slotMins < aptEnd;
+      });
+
+      return !hasConflict;
+    });
+  }, [blockedTimes, appointments, client]);
+
   // Handle booking from calendar
   const handleBook = useCallback((date: string, startTime: string, endTime: string) => {
     setBookingForm({ date, startTime, duration: "60" });
@@ -83,13 +160,14 @@ export default function BookPage() {
 
   const handleConfirmBooking = async () => {
     if (!client || !bookingForm.date || !bookingForm.startTime) return;
-    
+
+    const duration = parseInt(bookingForm.duration);
     const [hours, minutes] = bookingForm.startTime.split(":").map(Number);
-    const endMinutes = hours * 60 + minutes + parseInt(bookingForm.duration);
+    const endMinutes = hours * 60 + minutes + duration;
     const endHours = Math.floor(endMinutes / 60);
     const endMins = endMinutes % 60;
     const endTime = `${endHours.toString().padStart(2, "0")}:${endMins.toString().padStart(2, "0")}`;
-    
+
     try {
       const res = await fetch("/api/calendar/appointments", {
         method: "POST",
@@ -102,7 +180,7 @@ export default function BookPage() {
           endTime
         })
       });
-      
+
       if (res.ok) {
         setMessage("Appointment booked successfully!");
         setShowBookingModal(false);
@@ -118,16 +196,15 @@ export default function BookPage() {
 
   const handleCancelAppointment = async (id: string) => {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
-    
     if (!client) return;
-    
+
     try {
       const res = await fetch("/api/calendar/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "cancel", id })
       });
-      
+
       if (res.ok) {
         loadAppointments(client.id);
       }
@@ -139,7 +216,7 @@ export default function BookPage() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!client || !newPassword) return;
-    
+
     try {
       const res = await fetch("/api/calendar/clients", {
         method: "POST",
@@ -150,7 +227,7 @@ export default function BookPage() {
           password: newPassword
         })
       });
-      
+
       if (res.ok) {
         setMessage("Password changed successfully!");
         setNewPassword("");
@@ -168,16 +245,14 @@ export default function BookPage() {
     router.push("/calendar");
   };
 
-  const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(":");
-    const h = parseInt(hours);
-    return `${h > 12 ? h - 12 : h}:${minutes} ${h >= 12 ? "PM" : "AM"}`;
-  };
-
   // Filter appointments for current client only
-  const clientAppointments = client 
+  const clientAppointments = client
     ? appointments.filter(apt => apt.clientId === client.id)
     : [];
+
+  // For the calendar — exclude dates where client already has an active apt
+  // (This prevents them from booking another session on a day they already have one)
+  const calendarAppointments = clientAppointments;
 
   if (loading || !client) {
     return (
@@ -186,6 +261,15 @@ export default function BookPage() {
       </div>
     );
   }
+
+  const duration = parseInt(bookingForm.duration);
+  const availableSlots = bookingForm.date
+    ? getAvailableSlots(bookingForm.date, duration)
+    : [];
+  const allSlots = generateTimeSlots(duration);
+  const unavailableSlots = new Set(
+    allSlots.filter(s => !availableSlots.includes(s))
+  );
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
@@ -247,12 +331,13 @@ export default function BookPage() {
           </div>
         )}
 
-        {/* Google Calendar */}
+        {/* Google Calendar — days with existing appointments are excluded client-side via appointments prop */}
         <GoogleCalendar
           mode="client"
           client={client}
-          appointments={clientAppointments}
+          appointments={calendarAppointments}
           blockedTimes={blockedTimes}
+          duration={60}
           onRefresh={() => loadAppointments(client.id)}
           onBook={handleBook}
           onCancel={handleCancelAppointment}
@@ -266,10 +351,10 @@ export default function BookPage() {
             <div className="p-4 border-b border-gray-800">
               <h3 className="text-xl font-bold">Book Appointment</h3>
               <p className="text-gray-400 text-sm">
-                {bookingForm.date && new Date(bookingForm.date + "T00:00:00").toLocaleDateString("en-US", { 
-                  weekday: "long", 
-                  month: "long", 
-                  day: "numeric" 
+                {bookingForm.date && new Date(bookingForm.date + "T00:00:00").toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric"
                 })}
               </p>
             </div>
@@ -282,15 +367,51 @@ export default function BookPage() {
                 <label className="block text-sm text-gray-400 mb-2">Duration</label>
                 <select
                   value={bookingForm.duration}
-                  onChange={(e) => setBookingForm({ ...bookingForm, duration: e.target.value })}
+                  onChange={(e) => {
+                    const newDuration = e.target.value;
+                    // When duration changes, clear the selected time if it's now invalid
+                    setBookingForm({ ...bookingForm, duration: newDuration, startTime: "" });
+                  }}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
                 >
                   <option value="30">30 minutes</option>
-                  <option value="45">45 minutes</option>
                   <option value="60">60 minutes</option>
-                  <option value="90">90 minutes</option>
                 </select>
               </div>
+
+              {/* Time slot picker — respects duration rule */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  {duration === 60
+                    ? "60-minute sessions — :00 only"
+                    : "30-minute sessions — :00 or :30"}
+                </label>
+                <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                  {generateTimeSlots(duration).map(time => {
+                    const taken = unavailableSlots.has(time) || isSlotBlocked(bookingForm.date, time);
+                    const selected = bookingForm.startTime === time;
+                    return (
+                      <button
+                        key={time}
+                        type="button"
+                        onClick={() => setBookingForm({ ...bookingForm, startTime: time })}
+                        disabled={taken}
+                        className={`px-2 py-2 rounded-lg text-sm transition-colors ${
+                          selected
+                            ? "bg-orange-500 text-white"
+                            : taken
+                              ? "bg-gray-800 text-gray-600 cursor-not-allowed"
+                              : "bg-gray-800 hover:bg-orange-500 text-white"
+                        }`}
+                      >
+                        {formatTime(time)}
+                        {taken && <span className="block text-xs opacity-60">taken</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowBookingModal(false)}
@@ -300,7 +421,8 @@ export default function BookPage() {
                 </button>
                 <button
                   onClick={handleConfirmBooking}
-                  className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors"
+                  disabled={!bookingForm.startTime}
+                  className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors"
                 >
                   Confirm Booking
                 </button>

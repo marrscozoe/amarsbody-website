@@ -40,6 +40,8 @@ interface CalendarProps {
   onBook?: (date: string, startTime: string, endTime: string) => void;
   onCancel?: (id: string) => void;
   onReschedule?: (appointment: Appointment) => void;
+  /** Duration in minutes for client booking. Default 60. */
+  duration?: number;
 }
 
 type ViewType = "month" | "week" | "day";
@@ -65,17 +67,24 @@ const timeToMinutes = (time: string): number => {
   return hours * 60 + minutes;
 };
 
-// Generate time slots
-const generateTimeSlots = (startHour = 4, endHour = 18) => {
-  const slots = [];
+// Generate time slots filtered by duration rule
+// 60-min sessions: :00 only. 30-min sessions: :00 and :30
+const generateTimeSlots = (duration: number, startHour = 4, endHour = 18) => {
+  const slots: string[] = [];
   for (let hour = startHour; hour <= endHour; hour++) {
-    slots.push(`${hour.toString().padStart(2, "0")}:00`);
-    slots.push(`${hour.toString().padStart(2, "0")}:30`);
+    if (duration === 60) {
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+    } else {
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+      slots.push(`${hour.toString().padStart(2, "0")}:30`);
+    }
   }
   return slots;
 };
 
-const timeSlots = generateTimeSlots();
+const timeSlots30 = generateTimeSlots(30);
+const timeSlots60 = generateTimeSlots(60);
+const timeSlots = timeSlots30; // default for full-day grid rendering
 
 export default function GoogleCalendar({
   mode,
@@ -87,6 +96,7 @@ export default function GoogleCalendar({
   onBook,
   onCancel,
   onReschedule,
+  duration = 60,
 }: CalendarProps) {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -684,16 +694,20 @@ export default function GoogleCalendar({
               {mode === "client" && selectedDayAppointments.length === 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-800">
                   <p className="text-gray-400 text-sm mb-3">Available times for this day:</p>
+                  {duration === 60 && (
+                    <p className="text-orange-500/70 text-xs mb-2">60-min sessions: :00 only</p>
+                  )}
                   <div className="grid grid-cols-4 gap-2">
-                    {generateTimeSlots(6, 19).filter((_, i) => i % 2 === 0).map(time => {
+                    {generateTimeSlots(duration, 5, 20).map(time => {
                       const isBlocked = isSlotBlocked(selectedDate, time);
-                      if (isBlocked) return null;
+                      const isBooked = isSlotBooked(selectedDate, time);
+                      if (isBlocked || isBooked) return null;
                       return (
                         <button
                           key={time}
                           onClick={() => {
                             if (onBook) {
-                              const endMins = timeToMinutes(time) + 60;
+                              const endMins = timeToMinutes(time) + duration;
                               const endTime = `${Math.floor(endMins / 60).toString().padStart(2, "0")}:${(endMins % 60).toString().padStart(2, "0")}`;
                               onBook(selectedDate, time, endTime);
                               setShowDayModal(false);

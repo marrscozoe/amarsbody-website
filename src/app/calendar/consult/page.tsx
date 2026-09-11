@@ -1,0 +1,688 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+
+interface Appointment {
+  id: string;
+  clientId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+}
+
+interface BlockedTime {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  isRecurring?: boolean;
+  daysOfWeek?: number[] | null;
+  endDate?: string | null;
+}
+
+// Generate time slots filtered by duration rule
+const generateTimeSlots = (duration: number, startHour = 5, endHour = 20) => {
+  const slots: string[] = [];
+  for (let hour = startHour; hour <= endHour; hour++) {
+    if (duration === 60) {
+      // 60-min: :00 only
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+    } else {
+      // 30-min: :00 and :30
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+      slots.push(`${hour.toString().padStart(2, "0")}:30`);
+    }
+  }
+  return slots;
+};
+
+const formatTime = (time: string) => {
+  const [hours, minutes] = time.split(":");
+  const h = parseInt(hours);
+  return `${h > 12 ? h - 12 : h}:${minutes} ${h >= 12 ? "PM" : "AM"}`;
+};
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr + "T12:00:00");
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+};
+
+const timeToMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+const formatDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+type Step = "info" | "form" | "date" | "time" | "confirm" | "done";
+
+export default function ConsultPage() {
+  const router = useRouter();
+  
+  // Step flow: info → form → date → time → confirm → done
+  const [step, setStep] = useState<Step>("info");
+  
+  // Contact info
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
+  const [duration, setDuration] = useState<number>(30);
+  
+  // Calendar data
+  const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Selected
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+  
+  // Error/success
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Confirmation data
+  const [bookingRef, setBookingRef] = useState("");
+
+  useEffect(() => {
+    loadCalendarData();
+  }, []);
+
+  const loadCalendarData = async () => {
+    setLoading(true);
+    try {
+      const [aptRes, blockedRes] = await Promise.all([
+        fetch("/api/calendar/appointments"),
+        fetch("/api/calendar/blocked")
+      ]);
+      setAppointments(await aptRes.json());
+      setBlockedTimes(await blockedRes.json());
+    } catch (err) {
+      console.error("Failed to load calendar data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getBlockedForDate = (dateStr: string): BlockedTime[] => {
+    const date = new Date(dateStr + "T00:00:00");
+    const dayOfWeek = date.getDay();
+    
+    return blockedTimes.filter(blk => {
+      if (blk.date === dateStr) return true;
+      if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.length > 0) {
+        if (!blk.daysOfWeek.includes(dayOfWeek)) return false;
+        if (blk.endDate && dateStr > blk.endDate) return false;
+        return true;
+      }
+      return false;
+    });
+  };
+
+  const isSlotBlocked = (dateStr: string, time: string): boolean => {
+    const blocked = getBlockedForDate(dateStr);
+    const mins = timeToMinutes(time);
+    return blocked.some(blk => {
+      const startMins = timeToMinutes(blk.startTime);
+      const endMins = timeToMinutes(blk.endTime);
+      return mins >= startMins && mins < endMins;
+    });
+  };
+
+  const isSlotBooked = (dateStr: string, time: string): boolean => {
+    const dayAppts = appointments.filter(apt => apt.date === dateStr && apt.status !== "cancelled");
+    const mins = timeToMinutes(time);
+    return dayAppts.some(apt => {
+      const startMins = timeToMinutes(apt.startTime);
+      const endMins = timeToMinutes(apt.endTime);
+      return mins >= startMins && mins < endMins;
+    });
+  };
+
+  // Get available time slots for a given date
+  const getAvailableSlots = (dateStr: string): string[] => {
+    const allSlots = generateTimeSlots(duration);
+    return allSlots.filter(time => !isSlotBlocked(dateStr, time) && !isSlotBooked(dateStr, time));
+  };
+
+  // Get dates that have at least one available slot (next 8 weeks)
+  const getAvailableDates = (): Date[] => {
+    const dates: Date[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Start from tomorrow
+    const start = new Date(today);
+    start.setDate(start.getDate() + 1);
+    
+    // Go up to 8 weeks out
+    const end = new Date(today);
+    end.setDate(end.getDate() + 56);
+    
+    const current = new Date(start);
+    while (current <= end) {
+      const dateStr = formatDateKey(current);
+      const slots = getAvailableSlots(dateStr);
+      if (slots.length > 0) {
+        dates.push(new Date(current));
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return dates;
+  };
+
+  // Group available dates by month for display
+  const getMonthGroups = (): { month: string; dates: Date[] }[] => {
+    const dates = getAvailableDates();
+    const groups: { [key: string]: Date[] } = {};
+    
+    dates.forEach(date => {
+      const key = date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(date);
+    });
+    
+    return Object.entries(groups).map(([month, dates]) => ({ month, dates }));
+  };
+
+  const handleSubmitForm = () => {
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      setError("First name and last name are required.");
+      return;
+    }
+    if (!form.email.trim()) {
+      setError("Email is required.");
+      return;
+    }
+    setError("");
+    setStep("date");
+  };
+
+  const handleSelectDate = (date: Date) => {
+    setSelectedDate(formatDateKey(date));
+    setSelectedTime("");
+    setStep("time");
+  };
+
+  const handleSelectTime = (time: string) => {
+    setSelectedTime(time);
+    setStep("confirm");
+  };
+
+  const handleConfirm = async () => {
+    setSubmitting(true);
+    setError("");
+    
+    try {
+      // Calculate end time
+      const [hours, minutes] = selectedTime.split(":").map(Number);
+      const endMinutes = hours * 60 + minutes + duration;
+      const endHours = Math.floor(endMinutes / 60);
+      const endMins = endMinutes % 60;
+      const endTime = `${endHours.toString().padStart(2, "0")}:${endMins.toString().padStart(2, "0")}`;
+      
+      // Create a temporary "client" record for the consult
+      // We'll store the consult under a generated clientId
+      const consultClientId = `consult_${Date.now()}`;
+      
+      const res = await fetch("/api/calendar/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create-consult",
+          clientId: consultClientId,
+          clientName: `${form.firstName} ${form.lastName}`,
+          clientEmail: form.email,
+          clientPhone: form.phone,
+          date: selectedDate,
+          startTime: selectedTime,
+          endTime,
+          duration
+        })
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Failed to book. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+      
+      const data = await res.json();
+      setBookingRef(data.id || `CONSULT-${Date.now()}`);
+      setStep("done");
+    } catch (err) {
+      setError("Failed to book. Please try again.");
+      setSubmitting(false);
+    }
+  };
+
+  const monthGroups = getMonthGroups();
+  const availableSlots = selectedDate ? getAvailableSlots(selectedDate) : [];
+  const timeSlots30 = generateTimeSlots(30);
+  const timeSlots60 = generateTimeSlots(60);
+
+  // Info screen
+  if (step === "info") {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-8 pt-8">
+            <h1 className="text-3xl font-bold text-orange-500 mb-2">AMarsBody</h1>
+            <p className="text-gray-400">Free Consultation</p>
+          </div>
+          
+          <div className="bg-gray-900 rounded-xl p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-center mb-4">What to Expect</h2>
+            
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <span className="text-orange-500 text-xl">📅</span>
+                <div>
+                  <p className="font-medium">Pick a time that works for you</p>
+                  <p className="text-sm text-gray-400">Choose from available 30 or 60 minute slots</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-orange-500 text-xl">💬</span>
+                <div>
+                  <p className="font-medium">Free 15-minute call</p>
+                  <p className="text-sm text-gray-400">Discuss your goals and see if we're a good fit</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-orange-500 text-xl">🔒</span>
+                <div>
+                  <p className="font-medium">No commitment</p>
+                  <p className="text-sm text-gray-400">No credit card, no pressure — just a conversation</p>
+                </div>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setStep("form")}
+              className="w-full mt-4 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors text-lg"
+            >
+              Get Started →
+            </button>
+            
+            <button
+              onClick={() => router.push("/calendar")}
+              className="w-full py-2 text-gray-400 hover:text-white transition-colors text-sm"
+            >
+              ← Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Contact form
+  if (step === "form") {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-6 pt-4">
+            <h1 className="text-2xl font-bold text-orange-500 mb-1">Book a Free Consultation</h1>
+            <p className="text-gray-400 text-sm">Step 1 of 3 — Your info</p>
+          </div>
+          
+          <div className="bg-gray-900 rounded-xl p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">First Name *</label>
+                <input
+                  type="text"
+                  value={form.firstName}
+                  onChange={e => setForm({ ...form, firstName: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  placeholder="First"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Last Name *</label>
+                <input
+                  type="text"
+                  value={form.lastName}
+                  onChange={e => setForm({ ...form, lastName: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  placeholder="Last"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Email *</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                placeholder="you@email.com"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Phone</label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={e => setForm({ ...form, phone: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                placeholder="(555) 123-4567"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Consultation Length</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDuration(30)}
+                  className={`py-3 rounded-lg font-medium transition-colors ${
+                    duration === 30
+                      ? "bg-orange-500 text-white"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  }`}
+                >
+                  30 minutes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDuration(60)}
+                  className={`py-3 rounded-lg font-medium transition-colors ${
+                    duration === 60
+                      ? "bg-orange-500 text-white"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  }`}
+                >
+                  60 minutes
+                </button>
+              </div>
+            </div>
+            
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            
+            <button
+              onClick={handleSubmitForm}
+              className="w-full mt-2 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors"
+            >
+              Continue →
+            </button>
+            
+            <button
+              onClick={() => setStep("info")}
+              className="w-full py-2 text-gray-400 hover:text-white transition-colors text-sm"
+            >
+              ← Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Date picker
+  if (step === "date") {
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+          <p className="text-orange-500">Loading availability...</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
+        <div className="max-w-lg mx-auto">
+          <div className="text-center mb-6 pt-4">
+            <h1 className="text-2xl font-bold text-orange-500 mb-1">Book a Free Consultation</h1>
+            <p className="text-gray-400 text-sm">Step 2 of 3 — Pick a date</p>
+          </div>
+          
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-400 text-sm">
+                {duration}-minute consultation for <span className="text-white">{form.firstName}</span>
+              </span>
+              <button
+                onClick={() => setDuration(d => d === 30 ? 60 : 30)}
+                className="text-sm text-orange-500 hover:text-orange-400"
+              >
+                {duration} min ↔
+              </button>
+            </div>
+          </div>
+          
+          <div className="bg-gray-900 rounded-xl p-4 space-y-6">
+            {monthGroups.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-400">No available slots in the next 8 weeks.</p>
+                <p className="text-gray-500 text-sm mt-2">Check back soon or contact us directly.</p>
+              </div>
+            ) : (
+              monthGroups.map(({ month, dates }) => (
+                <div key={month}>
+                  <h3 className="text-gray-400 text-sm font-medium mb-3">{month}</h3>
+                  <div className="grid grid-cols-7 gap-1">
+                    {dates.map(date => {
+                      const dateStr = formatDateKey(date);
+                      const slots = getAvailableSlots(dateStr);
+                      const dayNames = ["S", "M", "T", "W", "T", "F", "S"];
+                      return (
+                        <button
+                          key={dateStr}
+                          onClick={() => handleSelectDate(date)}
+                          className="flex flex-col items-center p-2 rounded-lg bg-gray-800 hover:bg-orange-500 transition-colors"
+                        >
+                          <span className="text-xs text-gray-400">{dayNames[date.getDay()]}</span>
+                          <span className="text-lg font-bold">{date.getDate()}</span>
+                          <span className="text-xs text-gray-500">{slots.length} open</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          
+          <button
+            onClick={() => setStep("form")}
+            className="w-full mt-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
+          >
+            ← Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Time picker
+  if (step === "time") {
+    const dateObj = new Date(selectedDate + "T12:00:00");
+    const dateLabel = dateObj.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    
+    // Show filtered slots based on duration
+    const slots = duration === 60 ? timeSlots60 : timeSlots30;
+    const available = getAvailableSlots(selectedDate);
+    const availableSet = new Set(available);
+    
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-6 pt-4">
+            <h1 className="text-2xl font-bold text-orange-500 mb-1">{dateLabel}</h1>
+            <p className="text-gray-400 text-sm">Step 3 of 3 — Pick a time</p>
+          </div>
+          
+          {duration === 60 && (
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 mb-4 text-sm text-center">
+              60-minute sessions are available at :00 only (e.g., 9:00, 10:00)
+            </div>
+          )}
+          
+          <div className="grid grid-cols-3 gap-2">
+            {slots.map(time => {
+              const isAvail = availableSet.has(time);
+              return (
+                <button
+                  key={time}
+                  onClick={() => isAvail && handleSelectTime(time)}
+                  disabled={!isAvail}
+                  className={`py-3 rounded-lg font-medium transition-colors ${
+                    isAvail
+                      ? "bg-gray-800 hover:bg-orange-500 text-white"
+                      : "bg-gray-900 text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  {formatTime(time)}
+                  {!isAvail && <span className="block text-xs opacity-50">taken</span>}
+                </button>
+              );
+            })}
+          </div>
+          
+          {available.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-400">No available times on this date.</p>
+              <button
+                onClick={() => setStep("date")}
+                className="mt-3 text-orange-500 hover:text-orange-400"
+              >
+                Choose another date →
+              </button>
+            </div>
+          )}
+          
+          <button
+            onClick={() => setStep("date")}
+            className="w-full mt-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
+          >
+            ← Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Confirmation
+  if (step === "confirm") {
+    const dateObj = new Date(selectedDate + "T12:00:00");
+    
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-6 pt-4">
+            <div className="text-5xl mb-3">📅</div>
+            <h1 className="text-2xl font-bold text-white mb-1">Confirm Your Consultation</h1>
+          </div>
+          
+          <div className="bg-gray-900 rounded-xl p-6 space-y-4">
+            <div className="space-y-3 text-center">
+              <div>
+                <p className="text-gray-400 text-sm">Name</p>
+                <p className="text-lg font-semibold">{form.firstName} {form.lastName}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Date</p>
+                <p className="text-lg font-semibold">{formatDate(selectedDate)}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Time</p>
+                <p className="text-lg font-semibold">{formatTime(selectedTime)}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Duration</p>
+                <p className="text-lg font-semibold">{duration} minutes</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Contact</p>
+                <p className="text-sm">{form.email}</p>
+                {form.phone && <p className="text-sm text-gray-500">{form.phone}</p>}
+              </div>
+            </div>
+            
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            
+            <button
+              onClick={handleConfirm}
+              disabled={submitting}
+              className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
+            >
+              {submitting ? "Booking..." : "Confirm Booking"}
+            </button>
+            
+            <button
+              onClick={() => setStep("time")}
+              disabled={submitting}
+              className="w-full py-2 text-gray-400 hover:text-white transition-colors text-sm"
+            >
+              ← Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Done
+  if (step === "done") {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
+        <div className="max-w-md mx-auto text-center">
+          <div className="pt-16 mb-6">
+            <div className="text-6xl mb-4">✅</div>
+            <h1 className="text-3xl font-bold text-white mb-2">You're Booked!</h1>
+            <p className="text-gray-400">We'll send a confirmation to {form.email}</p>
+          </div>
+          
+          <div className="bg-gray-900 rounded-xl p-6 text-left space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Date</span>
+              <span className="font-medium">{formatDate(selectedDate)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Time</span>
+              <span className="font-medium">{formatTime(selectedTime)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Duration</span>
+              <span className="font-medium">{duration} minutes</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Reference</span>
+              <span className="font-mono text-sm text-orange-500">{bookingRef.slice(0, 8).toUpperCase()}</span>
+            </div>
+          </div>
+          
+          <div className="mt-6 space-y-3">
+            <button
+              onClick={() => router.push("/calendar")}
+              className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
+            >
+              Back to Calendar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
