@@ -19,6 +19,8 @@ interface Appointment {
   startTime: string;
   endTime: string;
   status: string;
+  label?: string;
+  isPersonalBlock?: boolean;
 }
 
 interface BlockedTime {
@@ -66,6 +68,9 @@ export default function AdminPage() {
   });
   const [appointmentForm, setAppointmentForm] = useState({ clientId: "", date: "", startTime: "08:00", endTime: "09:00" });
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
+  const [bookingMode, setBookingMode] = useState<"client" | "personal">("client");
+  const [personalLabel, setPersonalLabel] = useState("");
+  const [viewClientId, setViewClientId] = useState<string | null>(null);
   
   // Create Client form state
   const [showCreateClientModal, setShowCreateClientModal] = useState(false);
@@ -211,15 +216,33 @@ export default function AdminPage() {
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const isPersonal = bookingMode === "personal";
+    const payload: any = {
+      action: "create",
+      date: appointmentForm.date,
+      startTime: appointmentForm.startTime,
+      endTime: appointmentForm.endTime,
+    };
+    
+    if (isPersonal) {
+      payload.clientId = null;
+      payload.label = personalLabel || "Personal Block";
+      payload.isPersonalBlock = true;
+    } else {
+      payload.clientId = appointmentForm.clientId;
+    }
+    
     try {
       const res = await fetch("/api/calendar/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", ...appointmentForm })
+        body: JSON.stringify(payload)
       });
       
       if (res.ok) {
         setAppointmentForm({ clientId: "", date: "", startTime: "08:00", endTime: "09:00" });
+        setPersonalLabel("");
+        setBookingMode("client");
         loadData();
         setShowBookingModal(false);
       } else {
@@ -342,6 +365,8 @@ export default function AdminPage() {
       endTime
     });
     setRescheduleId(null);
+    setBookingMode("client");
+    setPersonalLabel("");
     setShowBookingModal(true);
   }, []);
 
@@ -823,18 +848,22 @@ export default function AdminPage() {
               <div className="space-y-2">
                 {clients.map(client => (
                   <div key={client.id} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
-                    <div>
+                    <button
+                      type="button"
+                      onClick={() => setViewClientId(client.id)}
+                      className="flex-1 text-left hover:bg-gray-700 rounded p-1 -m-1"
+                    >
                       <p className="font-medium">{client.firstName} {client.lastName}</p>
                       <p className="text-sm text-gray-400">
                         {client.email} {client.phone && `• ${client.phone}`}
                       </p>
-                    </div>
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteClient(client.id)}
-                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                      className="ml-3 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm shrink-0"
                     >
-                      🗑️ Delete
+                      🗑️
                     </button>
                   </div>
                 ))}
@@ -843,6 +872,67 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Client Session View Modal */}
+      {viewClientId && (() => {
+        const client = clients.find(c => c.id === viewClientId);
+        const clientAppts = appointments.filter(a => a.clientId === viewClientId && a.status !== 'cancelled');
+        if (!client) return null;
+        return (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-900 rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col">
+              <div className="p-4 border-b border-gray-800 flex justify-between items-center shrink-0">
+                <div>
+                  <h3 className="text-xl font-bold">{client.firstName} {client.lastName}'s Sessions</h3>
+                  <p className="text-sm text-gray-400">{client.email} {client.phone && `• ${client.phone}`}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setViewClientId(null)}
+                  className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto flex-1">
+                {clientAppts.length === 0 ? (
+                  <p className="text-gray-400 text-center py-8">No sessions scheduled for {client.firstName}.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {clientAppts
+                      .sort((a, b) => a.date < b.date ? 1 : -1)
+                      .map(apt => (
+                        <div key={apt.id} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                          <div>
+                            <p className="font-medium">{apt.date}</p>
+                            <p className="text-sm text-gray-400">
+                              {formatTime(apt.startTime)} – {formatTime(apt.endTime)}
+                              <span className={`ml-2 inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                                apt.status === 'completed' ? 'bg-green-900 text-green-300' :
+                                apt.status === 'cancelled' ? 'bg-red-900 text-red-300' :
+                                apt.status === 'consultation' ? 'bg-blue-900 text-blue-300' :
+                                'bg-orange-900 text-orange-300'
+                              }`}>
+                                {apt.status}
+                              </span>
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleCancelAppointment(apt.id)}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Booking Modal */}
       {showBookingModal && (
@@ -853,20 +943,61 @@ export default function AdminPage() {
                 {rescheduleId ? "Reschedule Appointment" : "Book New Appointment"}
               </h3>
             </div>
+            {!rescheduleId && (
+              <div className="px-4 pt-4">
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setBookingMode("client")}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      bookingMode === "client"
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                    }`}
+                  >
+                    Client Appointment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBookingMode("personal")}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      bookingMode === "personal"
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                    }`}
+                  >
+                    Personal / Trainer Block
+                  </button>
+                </div>
+              </div>
+            )}
             <form onSubmit={rescheduleId ? handleReschedule : handleCreateAppointment} className="p-4 space-y-4">
-              <select
-                value={appointmentForm.clientId}
-                onChange={(e) => setAppointmentForm({ ...appointmentForm, clientId: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
-                required
-              >
-                <option value="">Select Client</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.firstName} {client.lastName}
-                  </option>
-                ))}
-              </select>
+              {bookingMode === "client" || rescheduleId ? (
+                <select
+                  value={appointmentForm.clientId}
+                  onChange={(e) => setAppointmentForm({ ...appointmentForm, clientId: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  required={bookingMode === "client" && !rescheduleId}
+                >
+                  <option value="">Select Client</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.firstName} {client.lastName}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Block Label</label>
+                  <input
+                    type="text"
+                    value={personalLabel}
+                    onChange={(e) => setPersonalLabel(e.target.value)}
+                    placeholder="e.g. Personal training, Lunch block, Gym maintenance"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+              )}
               <input
                 type="date"
                 value={appointmentForm.date}
@@ -897,7 +1028,7 @@ export default function AdminPage() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => { setShowBookingModal(false); setRescheduleId(null); }}
+                  onClick={() => { setShowBookingModal(false); setRescheduleId(null); setBookingMode("client"); setPersonalLabel(""); }}
                   className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
                 >
                   Cancel

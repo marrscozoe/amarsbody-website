@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 // POST - Create or update appointment
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { action, id, clientId, clientName, clientEmail, clientPhone, date, startTime, endTime, status, duration, recurringId, recurringPattern } = body;
+  const { action, id, clientId, clientName, clientEmail, clientPhone, date, startTime, endTime, status, duration, recurringId, recurringPattern, label, isPersonalBlock } = body;
 
   const appointments = await getAppointmentsFromRedis();
 
@@ -157,9 +157,11 @@ export async function POST(request: NextRequest) {
       date,
       startTime,
       endTime,
-      status: 'booked',
+      status: isPersonalBlock ? 'personal-block' : 'booked',
       recurringId: recurringId || null,
       recurringPattern: recurringPattern || null,
+      label: label || null,
+      isPersonalBlock: isPersonalBlock || false,
       createdAt: new Date().toISOString()
     };
 
