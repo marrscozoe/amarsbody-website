@@ -689,18 +689,18 @@ export default function GoogleCalendar({
                       </div>
                     </div>
                   ))}
+                  {mode === "admin" && onBook && (
+                    <button
+                      onClick={() => {
+                        setShowDayModal(false);
+                        onBook(selectedDate, "08:00", "09:00");
+                      }}
+                      className="mt-2 w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
+                    >
+                      Add Appointment
+                    </button>
+                  )}
                 </div>
-                {mode === "admin" && onBook && (
-                  <button
-                    onClick={() => {
-                      setShowDayModal(false);
-                      onBook(selectedDate, "08:00", "09:00");
-                    }}
-                    className="mt-4 w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
-                  >
-                    Add Appointment
-                  </button>
-                )}
               )}
 
               {/* Quick Book for Client */}
