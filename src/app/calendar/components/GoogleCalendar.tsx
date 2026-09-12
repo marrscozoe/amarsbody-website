@@ -18,6 +18,8 @@ interface Appointment {
   startTime: string;
   endTime: string;
   status: string;
+  label?: string;
+  isPersonalBlock?: boolean;
 }
 
 interface BlockedTime {
@@ -104,6 +106,7 @@ export default function GoogleCalendar({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showDayModal, setShowDayModal] = useState(false);
   const [selectedDayAppointments, setSelectedDayAppointments] = useState<Appointment[]>([]);
+  const [prefillHour, setPrefillHour] = useState<number | null>(null);
 
   // Get week dates
   const weekDates = useMemo(() => {
@@ -251,11 +254,14 @@ export default function GoogleCalendar({
       setSelectedDayAppointments(dayAppts);
       setShowDayModal(true);
     } else if (mode === "admin" && onBook) {
-      // In admin mode, show booking options
-      const dayAppts = getAppointmentsForDate(dateStr);
-      setSelectedDate(dateStr);
-      setSelectedDayAppointments(dayAppts);
-      setShowDayModal(true);
+      // FIX 2: In admin mode, directly open booking form for empty slots
+      const [hour] = time.split(":").map(Number);
+      setPrefillHour(hour);
+      const endMins = timeToMinutes(time) + 60;
+      const endHour = Math.floor(endMins / 60);
+      const endMin = endMins % 60;
+      const endTimeStr = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
+      onBook(dateStr, time, endTimeStr);
     } else if (mode === "client" && onBook) {
       // In client mode, book the slot
       const endTime = timeToMinutes(time) + 60; // Default 60 min
@@ -408,7 +414,7 @@ export default function GoogleCalendar({
                     <span className={`text-sm ${isToday ? "font-bold" : ""}`}>{day.getDate()}</span>
                   </div>
                   
-                  {/* Appointment indicators */}
+                  {/* Appointment indicators (FIX 5: also show blocked indicator) */}
                   {dayAppts.length > 0 && (
                     <div className="space-y-1">
                       {dayAppts.slice(0, 3).map(apt => (
@@ -417,10 +423,13 @@ export default function GoogleCalendar({
                           className={`
                             text-xs px-1 py-0.5 rounded truncate
                             ${apt.status === "completed" ? "bg-green-900 text-green-300" : 
+                              apt.status === "personal-block" ? "bg-gray-700 text-gray-300" :
                               apt.status === "booked" ? "bg-orange-900 text-orange-300" : "bg-gray-700"}
                           `}
                         >
-                          {formatTime(apt.startTime)} {getClientName(apt.clientId).split(" ")[0]}
+                          {apt.isPersonalBlock || apt.status === "personal-block"
+                            ? `⛔ ${apt.label || "Blocked"}`
+                            : `${formatTime(apt.startTime)} ${getClientName(apt.clientId).split(" ")[0]}`}
                         </div>
                       ))}
                       {dayAppts.length > 3 && (
@@ -428,6 +437,16 @@ export default function GoogleCalendar({
                       )}
                     </div>
                   )}
+                  {/* Show blocked time indicator in month view (FIX 5) */}
+                  {(() => {
+                    const blockedForDay = getBlockedForDate(dateStr);
+                    if (blockedForDay.length === 0) return null;
+                    return (
+                      <div className="mt-1 text-xs text-gray-500 truncate">
+                        ⛔ {blockedForDay.length} blocked
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
@@ -498,19 +517,37 @@ export default function GoogleCalendar({
                           className={`
                             absolute left-1 right-1 p-1 rounded text-xs overflow-hidden
                             ${bookedApt.status === "completed" ? "bg-green-600" : 
+                              bookedApt.status === "personal-block" ? "bg-gray-600" :
                               bookedApt.status === "booked" ? "bg-orange-500" : "bg-gray-600"}
                           `}
                           style={getAppointmentStyle(bookedApt, dateStr)}
                         >
-                          <div className="font-medium truncate">{getClientName(bookedApt.clientId)}</div>
+                          <div className="font-medium truncate">
+                            {bookedApt.isPersonalBlock || bookedApt.status === "personal-block"
+                              ? (bookedApt.label || "Non-Client")
+                              : getClientName(bookedApt.clientId)}
+                          </div>
                           <div className="opacity-80 truncate">{formatTime(bookedApt.startTime)} - {formatTime(bookedApt.endTime)}</div>
+                          {bookedApt.isPersonalBlock && (
+                            <div className="text-[10px] opacity-60 truncate">Non-Client</div>
+                          )}
                         </div>
                       )}
-                      {isBlocked && time === getBlockedForDate(dateStr)[0]?.startTime && (
-                        <div className="absolute inset-x-1 top-1 bottom-1 bg-gray-700 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">Blocked</span>
-                        </div>
-                      )}
+                      {/* Show blocked pill in week view (FIX 5) */}
+                      {isBlocked && (() => {
+                        const blockedList = getBlockedForDate(dateStr);
+                        const firstMatchingBlock = blockedList.find(blk => {
+                          const startMins = timeToMinutes(blk.startTime);
+                          const endMins = timeToMinutes(blk.endTime);
+                          const slotMins = timeToMinutes(time);
+                          return slotMins >= startMins && slotMins < endMins && time === blk.startTime;
+                        });
+                        return firstMatchingBlock ? (
+                          <div className="absolute inset-x-1 top-1 bottom-1 bg-gray-700/80 rounded flex items-center justify-center">
+                            <span className="text-xs text-gray-400 truncate px-1">⛔ Blocked</span>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   );
                 })}
@@ -523,10 +560,23 @@ export default function GoogleCalendar({
       {/* Day View */}
       {view === "day" && (
         <div className="bg-gray-900 rounded-lg overflow-hidden">
-          {/* Day header */}
-          <div className="p-4 border-b border-gray-800">
-            <div className="text-2xl font-bold">{currentDate.toLocaleDateString("en-US", { weekday: "long" })}</div>
-            <div className="text-gray-400">{currentDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+          {/* Day header with Add button */}
+          <div className="p-4 border-b border-gray-800 flex justify-between items-start">
+            <div>
+              <div className="text-2xl font-bold">{currentDate.toLocaleDateString("en-US", { weekday: "long" })}</div>
+              <div className="text-gray-400">{currentDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+            </div>
+            {mode === "admin" && (
+              <button
+                onClick={() => {
+                  const dateStr = formatDateToString(currentDate);
+                  if (onBook) onBook(dateStr, "08:00", "09:00");
+                }}
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+              >
+                + Add
+              </button>
+            )}
           </div>
 
           {/* Time grid */}
@@ -539,7 +589,7 @@ export default function GoogleCalendar({
               return (
                 <div
                   key={time}
-                  className="grid grid-cols-[80px_1fr] border-b border-gray-800/50"
+                  className="grid grid-cols-[80px_1fr] border-b border-gray-800/50 min-h-[40px]"
                 >
                   {/* Time label */}
                   <div className="p-3 text-sm text-gray-500 text-right pr-4">
@@ -549,7 +599,7 @@ export default function GoogleCalendar({
                   {/* Slot content */}
                   <div
                     className={`
-                      relative min-h-[60px] cursor-pointer
+                      relative min-h-[40px] cursor-pointer
                       ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}
                     `}
                     onClick={() => handleTimeSlotClick(currentDate, time)}
@@ -559,14 +609,22 @@ export default function GoogleCalendar({
                         className={`
                           absolute left-2 right-2 top-1 p-3 rounded-lg text-sm
                           ${bookedApt.status === "completed" ? "bg-green-600" : 
+                            bookedApt.status === "personal-block" ? "bg-gray-600" :
                             bookedApt.status === "booked" ? "bg-orange-500" : "bg-gray-600"}
                         `}
                         style={getAppointmentStyle(bookedApt, dateStr)}
                       >
-                        <div className="font-semibold text-base">{getClientName(bookedApt.clientId)}</div>
+                        <div className="font-semibold text-base">
+                          {bookedApt.isPersonalBlock || bookedApt.status === "personal-block"
+                            ? (bookedApt.label || "Non-Client Event")
+                            : getClientName(bookedApt.clientId)}
+                        </div>
                         <div className="opacity-90">{formatTime(bookedApt.startTime)} - {formatTime(bookedApt.endTime)}</div>
+                        {bookedApt.isPersonalBlock && (
+                          <div className="text-xs opacity-70 mt-1">🏷️ Non-Client Event</div>
+                        )}
                         {mode === "admin" && (
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 mt-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); onReschedule?.(bookedApt); }}
                               className="text-xs bg-blue-700 px-2 py-1 rounded hover:bg-blue-600"
@@ -583,11 +641,21 @@ export default function GoogleCalendar({
                         )}
                       </div>
                     )}
-                    {isBlocked && time === getBlockedForDate(dateStr)[0]?.startTime && (
-                      <div className="absolute inset-x-2 top-2 bottom-2 bg-gray-700 rounded-lg flex items-center justify-center">
-                        <span className="text-sm text-gray-400">Blocked</span>
-                      </div>
-                    )}
+                    {/* Show blocked pill in day view (FIX 5) */}
+                    {isBlocked && (() => {
+                      const blockedList = getBlockedForDate(dateStr);
+                      const firstMatchingBlock = blockedList.find(blk => {
+                        const startMins = timeToMinutes(blk.startTime);
+                        const endMins = timeToMinutes(blk.endTime);
+                        const slotMins = timeToMinutes(time);
+                        return slotMins >= startMins && slotMins < endMins && time === blk.startTime;
+                      });
+                      return firstMatchingBlock ? (
+                        <div className="absolute inset-x-2 top-2 bottom-2 bg-gray-700/80 rounded-lg flex items-center justify-center">
+                          <span className="text-sm text-gray-400">⛔ Blocked</span>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               );
@@ -632,7 +700,10 @@ export default function GoogleCalendar({
                     <button
                       onClick={() => {
                         if (onBook) {
-                          onBook(selectedDate, "08:00", "09:00");
+                          // FIX 2: Use prefillHour if available, else default to 08:00
+                          const prefill = prefillHour !== null ? `${prefillHour.toString().padStart(2, "0")}:00` : "08:00";
+                          const endH = prefillHour !== null ? prefillHour + 1 : 9;
+                          onBook(selectedDate, prefill, `${endH.toString().padStart(2, "0")}:00`);
                         }
                         setShowDayModal(false);
                       }}
@@ -650,6 +721,7 @@ export default function GoogleCalendar({
                       className={`
                         p-4 rounded-lg
                         ${apt.status === "completed" ? "bg-green-900/50 border border-green-700" : 
+                          apt.status === "personal-block" ? "bg-gray-800/80 border border-gray-600" :
                           apt.status === "booked" ? "bg-orange-900/50 border border-orange-700" : 
                           "bg-gray-800"}
                       `}
@@ -657,7 +729,9 @@ export default function GoogleCalendar({
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-semibold text-lg">
-                            {mode === "client" ? "Your Session" : getClientName(apt.clientId)}
+                            {apt.isPersonalBlock || apt.status === "personal-block"
+                              ? (apt.label || "Non-Client Event")
+                              : mode === "client" ? "Your Session" : getClientName(apt.clientId)}
                           </div>
                           <div className="text-gray-400">
                             {formatTime(apt.startTime)} - {formatTime(apt.endTime)}
@@ -665,9 +739,10 @@ export default function GoogleCalendar({
                           <div className={`
                             text-sm mt-1
                             ${apt.status === "completed" ? "text-green-400" : 
+                              apt.status === "personal-block" ? "text-gray-400" :
                               apt.status === "booked" ? "text-orange-400" : "text-gray-400"}
                           `}>
-                            {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
+                            {apt.status === "personal-block" ? "Non-Client Event" : apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                           </div>
                         </div>
                         {mode === "admin" && (
@@ -692,12 +767,15 @@ export default function GoogleCalendar({
                   {mode === "admin" && onBook && (
                     <button
                       onClick={() => {
-                        onBook(selectedDate, "08:00", "09:00");
+                        // FIX 2: Use prefillHour if available, else default to 08:00
+                        const prefill = prefillHour !== null ? `${prefillHour.toString().padStart(2, "0")}:00` : "08:00";
+                        const endH = prefillHour !== null ? prefillHour + 1 : 9;
+                        onBook(selectedDate, prefill, `${endH.toString().padStart(2, "0")}:00`);
                         setShowDayModal(false);
                       }}
                       className="mt-2 w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
                     >
-                      Add Appointment
+                      + Add Appointment
                     </button>
                   )}
                 </div>

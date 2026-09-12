@@ -439,11 +439,11 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Tabs — consult-style pill tabs */}
-        <div className="flex gap-1.5 mb-8 p-1.5 bg-gray-900/60 border border-gray-800 rounded-2xl w-fit">
+        {/* Tabs — consult-style pill tabs (scrollable on mobile) */}
+        <div className="flex gap-1 sm:gap-1.5 mb-8 p-1.5 bg-gray-900/60 border border-gray-800 rounded-2xl overflow-x-auto scrollbar-hide w-full sm:w-fit">
           <button
             onClick={() => setActiveTab("calendar")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shrink-0 min-w-0 ${
               activeTab === "calendar"
                 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
                 : "text-gray-400 hover:text-white hover:bg-gray-800/80"
@@ -453,7 +453,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("block")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shrink-0 min-w-0 ${
               activeTab === "block"
                 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
                 : "text-gray-400 hover:text-white hover:bg-gray-800/80"
@@ -463,7 +463,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("schedule")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shrink-0 min-w-0 ${
               activeTab === "schedule"
                 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
                 : "text-gray-400 hover:text-white hover:bg-gray-800/80"
@@ -473,7 +473,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("clients")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shrink-0 min-w-0 ${
               activeTab === "clients"
                 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
                 : "text-gray-400 hover:text-white hover:bg-gray-800/80"
@@ -967,9 +967,10 @@ export default function AdminPage() {
                 {rescheduleId ? "Reschedule Appointment" : "Book New Appointment"}
               </h3>
             </div>
-            {!rescheduleId && (
-              <div className="px-5 pt-4">
-                <div className="flex gap-2 p-1 bg-gray-800/80 rounded-xl mb-4">
+            <form onSubmit={rescheduleId ? handleReschedule : handleCreateAppointment} className="p-5 space-y-4">
+              {/* Client / Non-Client toggle */}
+              {!rescheduleId && (
+                <div className="flex gap-2 p-1 bg-gray-800/80 rounded-xl mb-1">
                   <button
                     type="button"
                     onClick={() => setBookingMode("client")}
@@ -990,13 +991,13 @@ export default function AdminPage() {
                         : "text-gray-400 hover:text-white"
                     }`}
                   >
-                    Personal / Trainer
+                    Non-Client Event
                   </button>
                 </div>
-              </div>
-            )}
-            <form onSubmit={rescheduleId ? handleReschedule : handleCreateAppointment} className="p-5 space-y-4">
-              {bookingMode === "client" || rescheduleId ? (
+              )}
+              
+              {/* Client selector (when in client mode, or rescheduling) */}
+              {(bookingMode === "client" || rescheduleId) ? (
                 <select
                   value={appointmentForm.clientId}
                   onChange={(e) => setAppointmentForm({ ...appointmentForm, clientId: e.target.value })}
@@ -1011,15 +1012,17 @@ export default function AdminPage() {
                   ))}
                 </select>
               ) : (
+                /* Non-client event title input */
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Block Label</label>
+                  <label className="block text-sm text-gray-400 mb-1">Event Title</label>
                   <input
                     type="text"
                     value={personalLabel}
                     onChange={(e) => setPersonalLabel(e.target.value)}
-                    placeholder="e.g. Personal training, Lunch block, Gym maintenance"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                    placeholder="e.g. BNI Meeting, Lunch, Personal"
+                    className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Named event without a client (BNI, lunch, personal, etc.)</p>
                 </div>
               )}
               <input
