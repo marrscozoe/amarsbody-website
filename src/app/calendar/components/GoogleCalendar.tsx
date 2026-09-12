@@ -239,10 +239,11 @@ export default function GoogleCalendar({
   };
 
   // Handle clicking on a time slot in week/day view
+  // RULE 1: Admin may book ON TOP of blocked slots (blocked = background only)
+  // RULE 2: Admin may NOT book on top of existing client appointments
   const handleTimeSlotClick = (date: Date, time: string) => {
     const dateStr = formatDateToString(date);
-    if (isSlotBlocked(dateStr, time)) return;
-    
+
     const booked = isSlotBooked(dateStr, time);
     if (booked) {
       // Show appointment details
@@ -267,7 +268,10 @@ export default function GoogleCalendar({
   };
 
   // Get appointment position for week/day view
-  const getAppointmentStyle = (apt: Appointment, dateStr: string) => {
+  // RULE 4: Time alignment — appointment top = (startTime_mins - dayStart_mins) / 30 * slotHeight
+  // e.g. 8:30 AM = 510 mins; day starts at 4 AM = 240 mins; slot=40px
+  // top = (510-240)/30*40 = 360px → correctly places 8:30 at the 8:30 row
+  const getAppointmentStyle = (apt: Appointment, _dateStr: string) => {
     const startMins = timeToMinutes(apt.startTime);
     const endMins = timeToMinutes(apt.endTime);
     const dayStartMins = 4 * 60; // 4 AM
@@ -496,8 +500,8 @@ export default function GoogleCalendar({
                       {bookedApt && time === bookedApt.startTime && (
                         <div
                           className={`
-                            absolute left-1 right-1 p-1 rounded text-xs overflow-hidden
-                            ${bookedApt.status === "completed" ? "bg-green-600" : 
+                            absolute left-1 right-1 p-1 rounded text-xs overflow-hidden z-20
+                            ${bookedApt.status === "completed" ? "bg-green-600" :
                               bookedApt.status === "booked" ? "bg-orange-500" : "bg-gray-600"}
                           `}
                           style={getAppointmentStyle(bookedApt, dateStr)}
@@ -507,7 +511,7 @@ export default function GoogleCalendar({
                         </div>
                       )}
                       {isBlocked && time === getBlockedForDate(dateStr)[0]?.startTime && (
-                        <div className="absolute inset-x-1 top-1 bottom-1 bg-gray-700 rounded flex items-center justify-center">
+                        <div className="absolute inset-x-1 top-1 bottom-1 bg-gray-700 rounded flex items-center justify-center z-0 pointer-events-none">
                           <span className="text-xs text-gray-400">Blocked</span>
                         </div>
                       )}
@@ -535,30 +539,46 @@ export default function GoogleCalendar({
               const dateStr = formatDateToString(currentDate);
               const bookedApt = isSlotBooked(dateStr, time);
               const isBlocked = isSlotBlocked(dateStr, time);
-              
+              // RULE 3: blocked = background only, appointments always on top
+              const showBlocked = isBlocked && !bookedApt;
+
               return (
                 <div
                   key={time}
                   className="grid grid-cols-[80px_1fr] border-b border-gray-800/50"
                 >
-                  {/* Time label */}
+                  {/* Time label — show every slot's actual time for correct alignment */}
                   <div className="p-3 text-sm text-gray-500 text-right pr-4">
-                    {timeIndex % 2 === 0 && formatTime(time)}
+                    {formatTime(time)}
                   </div>
-                  
+
                   {/* Slot content */}
                   <div
                     className={`
-                      relative min-h-[60px] cursor-pointer
+                      relative min-h-[80px] cursor-pointer
                       ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}
                     `}
                     onClick={() => handleTimeSlotClick(currentDate, time)}
                   >
+                    {/*
+                      RULE 3 (Draw Order): Blocked is background (z-0, pointer-events-none).
+                      - Container bg tint shows for ALL slots within a blocked range.
+                      - The "🚫 Blocked" overlay only renders at the FIRST slot of a blocked
+                        range AND only when no appointment occupies that slot (showBlocked guard).
+                      - Appointment card always renders on top (z-20 > z-0) at its correct
+                        time slot via getAppointmentStyle top = (startMins-240)/30*40.
+                      RULE 1: Admin MAY book on top of blocked slots (no rejection based on block).
+                    */}
+                    {showBlocked && time === getBlockedForDate(dateStr)[0]?.startTime && (
+                      <div className="absolute inset-x-2 top-2 bottom-2 bg-gray-700/70 rounded-lg flex items-center justify-center z-0 pointer-events-none">
+                        <span className="text-sm text-gray-400">🚫 Blocked</span>
+                      </div>
+                    )}
                     {bookedApt && time === bookedApt.startTime && (
                       <div
                         className={`
-                          absolute left-2 right-2 top-1 p-3 rounded-lg text-sm
-                          ${bookedApt.status === "completed" ? "bg-green-600" : 
+                          absolute left-2 right-2 p-3 rounded-lg text-sm z-20
+                          ${bookedApt.status === "completed" ? "bg-green-600" :
                             bookedApt.status === "booked" ? "bg-orange-500" : "bg-gray-600"}
                         `}
                         style={getAppointmentStyle(bookedApt, dateStr)}
@@ -566,7 +586,7 @@ export default function GoogleCalendar({
                         <div className="font-semibold text-base">{getClientName(bookedApt.clientId)}</div>
                         <div className="opacity-90">{formatTime(bookedApt.startTime)} - {formatTime(bookedApt.endTime)}</div>
                         {mode === "admin" && (
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 mt-1">
                             <button
                               onClick={(e) => { e.stopPropagation(); onReschedule?.(bookedApt); }}
                               className="text-xs bg-blue-700 px-2 py-1 rounded hover:bg-blue-600"
@@ -581,11 +601,6 @@ export default function GoogleCalendar({
                             </button>
                           </div>
                         )}
-                      </div>
-                    )}
-                    {isBlocked && time === getBlockedForDate(dateStr)[0]?.startTime && (
-                      <div className="absolute inset-x-2 top-2 bottom-2 bg-gray-700 rounded-lg flex items-center justify-center">
-                        <span className="text-sm text-gray-400">Blocked</span>
                       </div>
                     )}
                   </div>
