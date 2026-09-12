@@ -412,48 +412,71 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
-      {/* Header */}
+      {/* Header — AmarsBody branded */}
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-orange-500">Admin Dashboard</h1>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white tracking-tight">AMarsBody</h1>
+                <p className="text-xs text-gray-500 -mt-0.5">Admin Calendar</p>
+              </div>
+            </div>
+          </div>
           <button
             onClick={logout}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+            className="group flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700 hover:border-gray-500 hover:bg-gray-800/60 text-gray-400 hover:text-white transition-all duration-200"
           >
-            Logout
+            <svg className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="text-sm font-medium">Logout</span>
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        {/* Tabs — consult-style pill tabs */}
+        <div className="flex gap-1.5 mb-8 p-1.5 bg-gray-900/60 border border-gray-800 rounded-2xl w-fit">
           <button
             onClick={() => setActiveTab("calendar")}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "calendar" ? "bg-orange-500 text-white" : "bg-gray-800 text-gray-400"
+            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === "calendar"
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/80"
             }`}
           >
             Calendar
           </button>
           <button
             onClick={() => setActiveTab("block")}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "block" ? "bg-orange-500 text-white" : "bg-gray-800 text-gray-400"
+            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === "block"
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/80"
             }`}
           >
             Block Time
           </button>
           <button
             onClick={() => setActiveTab("schedule")}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "schedule" ? "bg-orange-500 text-white" : "bg-gray-800 text-gray-400"
+            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === "schedule"
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/80"
             }`}
           >
             Schedule Client
           </button>
           <button
             onClick={() => setActiveTab("clients")}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "clients" ? "bg-orange-500 text-white" : "bg-gray-800 text-gray-400"
+            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === "clients"
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/80"
             }`}
           >
             Clients ({clients.length})
@@ -476,22 +499,23 @@ export default function AdminPage() {
 
         {/* Block Time Tab */}
         {activeTab === "block" && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Block Form */}
-            <div className="bg-gray-900 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold mb-3">Block Time</h3>
-              
+            <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl">
+              <h3 className="text-base font-semibold text-white mb-1">Block Time</h3>
+              <p className="text-sm text-gray-500 mb-5">Reserve time slots that are unavailable for appointments.</p>
+
               {/* Block Type Toggle */}
-              <div className="flex gap-4 mb-4">
+              <div className="flex gap-3 mb-5">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name="blockType"
                     checked={blockType === "single"}
                     onChange={() => setBlockType("single")}
-                    className="w-4 h-4 text-orange-500"
+                    className="w-4 h-4 accent-orange-500"
                   />
-                  <span className="text-white">Single Day</span>
+                  <span className="text-sm text-gray-300">Single Day</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -499,9 +523,9 @@ export default function AdminPage() {
                     name="blockType"
                     checked={blockType === "recurring"}
                     onChange={() => setBlockType("recurring")}
-                    className="w-4 h-4 text-orange-500"
+                    className="w-4 h-4 accent-orange-500"
                   />
-                  <span className="text-white">Recurring (Days of Week)</span>
+                  <span className="text-sm text-gray-300">Recurring (Days of Week)</span>
                 </label>
               </div>
 
@@ -513,13 +537,13 @@ export default function AdminPage() {
                       type="date"
                       value={blockForm.date}
                       onChange={(e) => setBlockForm({ ...blockForm, date: e.target.value })}
-                      className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                      className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                       required={blockType === "single"}
                     />
                     <select
                       value={blockForm.startTime}
                       onChange={(e) => setBlockForm({ ...blockForm, startTime: e.target.value })}
-                      className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                      className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     >
                       {timeSlots.map(time => (
                         <option key={time} value={time}>{formatTime(time)}</option>
@@ -528,7 +552,7 @@ export default function AdminPage() {
                     <select
                       value={blockForm.endTime}
                       onChange={(e) => setBlockForm({ ...blockForm, endTime: e.target.value })}
-                      className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                      className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     >
                       {timeSlots.map(time => (
                         <option key={time} value={time}>{formatTime(time)}</option>
@@ -536,7 +560,7 @@ export default function AdminPage() {
                     </select>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors"
+                      className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 rounded-xl font-medium transition-all duration-200"
                     >
                       Block
                     </button>
@@ -562,10 +586,10 @@ export default function AdminPage() {
                           <label
                             key={day.num}
                             className={`
-                              flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors border
+                              flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 border
                               ${blockForm.daysOfWeek.includes(day.num)
-                                ? "bg-orange-500/20 border-orange-500 text-orange-500"
-                                : "bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600"
+                                ? "bg-orange-500/15 border-orange-500/60 text-orange-400"
+                                : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500 hover:text-gray-200"
                               }
                             `}
                           >
@@ -579,7 +603,7 @@ export default function AdminPage() {
                                   setBlockForm({ ...blockForm, daysOfWeek: blockForm.daysOfWeek.filter(d => d !== day.num) });
                                 }
                               }}
-                              className="w-4 h-4"
+                              className="w-4 h-4 accent-orange-500"
                             />
                             {day.label}
                           </label>
@@ -590,11 +614,11 @@ export default function AdminPage() {
                     {/* Time Range */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="col-span-1">
-                        <label className="block text-sm text-gray-400 mb-1">Start Time:</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">Start Time:</label>
                         <select
                           value={blockForm.startTime}
                           onChange={(e) => setBlockForm({ ...blockForm, startTime: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                          className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                         >
                           {timeSlots.map(time => (
                             <option key={time} value={time}>{formatTime(time)}</option>
@@ -602,11 +626,11 @@ export default function AdminPage() {
                         </select>
                       </div>
                       <div className="col-span-1">
-                        <label className="block text-sm text-gray-400 mb-1">End Time:</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">End Time:</label>
                         <select
                           value={blockForm.endTime}
                           onChange={(e) => setBlockForm({ ...blockForm, endTime: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                          className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                         >
                           {timeSlots.map(time => (
                             <option key={time} value={time}>{formatTime(time)}</option>
@@ -614,13 +638,13 @@ export default function AdminPage() {
                         </select>
                       </div>
                       <div className="col-span-1">
-                        <label className="block text-sm text-gray-400 mb-1">End Date:</label>
+                        <label className="block text-sm text-gray-400 mb-1.5">End Date:</label>
                         <div className="flex items-center gap-2">
                           <input
                             type="date"
                             value={blockForm.endDate}
                             onChange={(e) => setBlockForm({ ...blockForm, endDate: e.target.value })}
-                            className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                            className="flex-1 px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                             disabled={blockForm.noEndDate}
                           />
                           <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
@@ -628,9 +652,9 @@ export default function AdminPage() {
                               type="checkbox"
                               checked={blockForm.noEndDate}
                               onChange={(e) => setBlockForm({ ...blockForm, noEndDate: e.target.checked, endDate: e.target.checked ? "" : blockForm.endDate })}
-                              className="w-4 h-4 text-orange-500 rounded"
+                              className="w-4 h-4 accent-orange-500 rounded"
                             />
-                            <span className="text-sm text-gray-400">No end date</span>
+                            <span className="text-sm text-gray-400">No end</span>
                           </label>
                         </div>
                       </div>
@@ -638,7 +662,7 @@ export default function AdminPage() {
                         <button
                           type="submit"
                           disabled={blockForm.daysOfWeek.length === 0}
-                          className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors"
+                          className="w-full px-4 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl font-medium transition-all duration-200"
                         >
                           Block
                         </button>
@@ -650,34 +674,34 @@ export default function AdminPage() {
             </div>
 
             {/* Blocked Times List */}
-            <div className="bg-gray-900 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold mb-3">Blocked Times</h3>
+            <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl">
+              <h3 className="text-base font-semibold text-white mb-4">Blocked Times</h3>
               {blockedTimes.length === 0 ? (
-                <p className="text-gray-400">No blocked times</p>
+                <p className="text-gray-500 text-sm py-4 text-center">No blocked times set.</p>
               ) : (
                 <div className="space-y-2">
                   {blockedTimes.map(blk => (
-                    <div key={blk.id} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                    <div key={blk.id} className="flex justify-between items-center p-3.5 bg-gray-800/60 border border-gray-700/50 rounded-xl">
                       <div>
                         {blk.isRecurring && blk.daysOfWeek ? (
-                          <p className="font-medium">
+                          <p className="font-medium text-white">
                             {blk.daysOfWeek.sort().map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(", ")}
                           </p>
                         ) : (
-                          <p className="font-medium">{blk.date}</p>
+                          <p className="font-medium text-white">{blk.date}</p>
                         )}
                         <p className="text-sm text-gray-400">
-                          {formatTime(blk.startTime)} - {formatTime(blk.endTime)}
+                          {formatTime(blk.startTime)} – {formatTime(blk.endTime)}
                           {blk.isRecurring && (
-                            <span className="ml-2 text-orange-500">
-                              {blk.endDate ? `Until ${blk.endDate}` : "No end date"}
+                            <span className="ml-2 text-orange-400/70">
+                              {blk.endDate ? `Until ${blk.endDate}` : "Open-ended"}
                             </span>
                           )}
                         </p>
                       </div>
                       <button
                         onClick={() => handleUnblockTime(blk.id)}
-                        className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 rounded transition-colors"
+                        className="px-3 py-1.5 text-sm bg-red-600/80 hover:bg-red-600 rounded-lg transition-colors font-medium"
                       >
                         Unblock
                       </button>
@@ -691,22 +715,22 @@ export default function AdminPage() {
 
         {/* Schedule Client Tab */}
         {activeTab === "schedule" && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Schedule Client Form */}
-            <div className="bg-gray-900 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold mb-3">Schedule Recurring Client Appointments</h3>
-              <p className="text-gray-400 text-sm mb-4">
-                Create recurring appointments for a client on specific days of the week.
+            <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl">
+              <h3 className="text-base font-semibold text-white mb-1">Schedule Recurring Appointments</h3>
+              <p className="text-gray-500 text-sm mb-5">
+                Create recurring sessions for a client on specific days of the week.
               </p>
               
               <form onSubmit={handleScheduleClient} className="space-y-4">
                 {/* Client Selection */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Select Client:</label>
+                  <label className="block text-sm text-gray-400 mb-2">Client</label>
                   <select
                     value={scheduleClientForm.clientId}
                     onChange={(e) => setScheduleClientForm({ ...scheduleClientForm, clientId: e.target.value })}
-                    className="w-full md:w-1/2 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                    className="w-full md:w-1/2 px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     required
                   >
                     <option value="">Select a client...</option>
@@ -734,10 +758,10 @@ export default function AdminPage() {
                       <label
                         key={day.num}
                         className={`
-                          flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors border
+                          flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 border
                           ${scheduleClientForm.daysOfWeek.includes(day.num)
-                            ? "bg-orange-500/20 border-orange-500 text-orange-500"
-                            : "bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600"
+                            ? "bg-orange-500/15 border-orange-500/60 text-orange-400"
+                            : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500 hover:text-gray-200"
                           }
                         `}
                       >
@@ -751,7 +775,7 @@ export default function AdminPage() {
                               setScheduleClientForm({ ...scheduleClientForm, daysOfWeek: scheduleClientForm.daysOfWeek.filter(d => d !== day.num) });
                             }
                           }}
-                          className="w-4 h-4"
+                          className="w-4 h-4 accent-orange-500"
                         />
                         {day.label}
                       </label>
@@ -762,7 +786,7 @@ export default function AdminPage() {
                 {/* Time Range */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="col-span-1">
-                    <label className="block text-sm text-gray-400 mb-1">Start Time:</label>
+                    <label className="block text-sm text-gray-400 mb-1.5">Start Time:</label>
                     <select
                       value={scheduleClientForm.startTime}
                       onChange={(e) => setScheduleClientForm({ ...scheduleClientForm, startTime: e.target.value })}
@@ -774,7 +798,7 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-sm text-gray-400 mb-1">End Time:</label>
+                    <label className="block text-sm text-gray-400 mb-1.5">End Time:</label>
                     <select
                       value={scheduleClientForm.endTime}
                       onChange={(e) => setScheduleClientForm({ ...scheduleClientForm, endTime: e.target.value })}
@@ -786,7 +810,7 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-sm text-gray-400 mb-1">End Date:</label>
+                    <label className="block text-sm text-gray-400 mb-1.5">End Date:</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="date"
@@ -800,7 +824,7 @@ export default function AdminPage() {
                           type="checkbox"
                           checked={scheduleClientForm.noEndDate}
                           onChange={(e) => setScheduleClientForm({ ...scheduleClientForm, noEndDate: e.target.checked, endDate: e.target.checked ? "" : scheduleClientForm.endDate })}
-                          className="w-4 h-4 text-orange-500 rounded"
+                          className="w-4 h-4 accent-orange-500 rounded"
                         />
                         <span className="text-sm text-gray-400">No end</span>
                       </label>
@@ -831,37 +855,37 @@ export default function AdminPage() {
 
         {/* Clients Tab */}
         {activeTab === "clients" && (
-          <div className="bg-gray-900 p-4 rounded-lg">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-semibold">All Clients</h3>
+          <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-base font-semibold text-white">All Clients</h3>
               <button
                 type="button"
                 onClick={() => setShowCreateClientModal(true)}
-                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm"
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 text-white rounded-xl text-sm font-medium transition-all duration-200"
               >
                 + Add Client
               </button>
             </div>
             {clients.length === 0 ? (
-              <p className="text-gray-400">No clients registered</p>
+              <p className="text-gray-500 text-sm py-6 text-center">No clients registered yet.</p>
             ) : (
               <div className="space-y-2">
                 {clients.map(client => (
-                  <div key={client.id} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                  <div key={client.id} className="flex justify-between items-center p-3.5 bg-gray-800/60 border border-gray-700/50 rounded-xl">
                     <button
                       type="button"
                       onClick={() => setViewClientId(client.id)}
-                      className="flex-1 text-left hover:bg-gray-700 rounded p-1 -m-1"
+                      className="flex-1 text-left hover:bg-gray-700/60 rounded-xl p-1.5 -m-1.5 transition-colors"
                     >
-                      <p className="font-medium">{client.firstName} {client.lastName}</p>
-                      <p className="text-sm text-gray-400">
+                      <p className="font-medium text-white">{client.firstName} {client.lastName}</p>
+                      <p className="text-sm text-gray-500">
                         {client.email} {client.phone && `• ${client.phone}`}
                       </p>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteClient(client.id)}
-                      className="ml-3 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm shrink-0"
+                      className="ml-3 px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white rounded-lg text-sm shrink-0 font-medium transition-colors"
                     >
                       🗑️
                     </button>
@@ -936,23 +960,23 @@ export default function AdminPage() {
 
       {/* Booking Modal */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-xl max-w-md w-full">
-            <div className="p-4 border-b border-gray-800">
-              <h3 className="text-xl font-bold">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full shadow-2xl shadow-black/50">
+            <div className="p-5 border-b border-gray-800/80">
+              <h3 className="text-lg font-semibold text-white">
                 {rescheduleId ? "Reschedule Appointment" : "Book New Appointment"}
               </h3>
             </div>
             {!rescheduleId && (
-              <div className="px-4 pt-4">
-                <div className="flex gap-2 mb-3">
+              <div className="px-5 pt-4">
+                <div className="flex gap-2 p-1 bg-gray-800/80 rounded-xl mb-4">
                   <button
                     type="button"
                     onClick={() => setBookingMode("client")}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       bookingMode === "client"
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                        ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                        : "text-gray-400 hover:text-white"
                     }`}
                   >
                     Client Appointment
@@ -960,23 +984,23 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setBookingMode("personal")}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       bookingMode === "personal"
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                        ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                        : "text-gray-400 hover:text-white"
                     }`}
                   >
-                    Personal / Trainer Block
+                    Personal / Trainer
                   </button>
                 </div>
               </div>
             )}
-            <form onSubmit={rescheduleId ? handleReschedule : handleCreateAppointment} className="p-4 space-y-4">
+            <form onSubmit={rescheduleId ? handleReschedule : handleCreateAppointment} className="p-5 space-y-4">
               {bookingMode === "client" || rescheduleId ? (
                 <select
                   value={appointmentForm.clientId}
                   onChange={(e) => setAppointmentForm({ ...appointmentForm, clientId: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   required={bookingMode === "client" && !rescheduleId}
                 >
                   <option value="">Select Client</option>
@@ -1002,14 +1026,14 @@ export default function AdminPage() {
                 type="date"
                 value={appointmentForm.date}
                 onChange={(e) => setAppointmentForm({ ...appointmentForm, date: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 required
               />
               <div className="grid grid-cols-2 gap-4">
                 <select
                   value={appointmentForm.startTime}
                   onChange={(e) => setAppointmentForm({ ...appointmentForm, startTime: e.target.value })}
-                  className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 >
                   {timeSlots.map(time => (
                     <option key={time} value={time}>{formatTime(time)}</option>
@@ -1018,24 +1042,24 @@ export default function AdminPage() {
                 <select
                   value={appointmentForm.endTime}
                   onChange={(e) => setAppointmentForm({ ...appointmentForm, endTime: e.target.value })}
-                  className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 >
                   {timeSlots.map(time => (
                     <option key={time} value={time}>{formatTime(time)}</option>
                   ))}
                 </select>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => { setShowBookingModal(false); setRescheduleId(null); setBookingMode("client"); setPersonalLabel(""); }}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 rounded-xl transition-all text-gray-300 font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 rounded-xl font-medium transition-all duration-200"
                 >
                   {rescheduleId ? "Update" : "Book"}
                 </button>
@@ -1047,74 +1071,74 @@ export default function AdminPage() {
 
       {/* Create Client Modal */}
       {showCreateClientModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-xl max-w-md w-full">
-            <div className="p-4 border-b border-gray-800">
-              <h3 className="text-xl font-bold">Add New Client</h3>
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full shadow-2xl shadow-black/50">
+            <div className="p-5 border-b border-gray-800/80">
+              <h3 className="text-lg font-semibold text-white">Add New Client</h3>
             </div>
-            <form onSubmit={handleCreateClient} className="p-4 space-y-4">
+            <form onSubmit={handleCreateClient} className="p-5 space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">First Name *</label>
+                <label className="block text-sm text-gray-400 mb-1.5">First Name *</label>
                 <input
                   type="text"
                   value={createClientForm.firstName}
                   onChange={(e) => setCreateClientForm({ ...createClientForm, firstName: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Last Name *</label>
+                <label className="block text-sm text-gray-400 mb-1.5">Last Name *</label>
                 <input
                   type="text"
                   value={createClientForm.lastName}
                   onChange={(e) => setCreateClientForm({ ...createClientForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Email</label>
+                <label className="block text-sm text-gray-400 mb-1.5">Email</label>
                 <input
                   type="email"
                   value={createClientForm.email}
                   onChange={(e) => setCreateClientForm({ ...createClientForm, email: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Phone</label>
+                <label className="block text-sm text-gray-400 mb-1.5">Phone</label>
                 <input
                   type="tel"
                   value={createClientForm.phone}
                   onChange={(e) => setCreateClientForm({ ...createClientForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Password *</label>
+                <label className="block text-sm text-gray-400 mb-1.5">Password *</label>
                 <input
                   type="password"
                   value={createClientForm.password}
                   onChange={(e) => setCreateClientForm({ ...createClientForm, password: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   required
                 />
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     setShowCreateClientModal(false);
                     setCreateClientForm({ firstName: "", lastName: "", email: "", phone: "", password: "" });
                   }}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 rounded-xl transition-all text-gray-300 font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 rounded-xl font-medium transition-all duration-200"
                 >
                   Create Client
                 </button>
