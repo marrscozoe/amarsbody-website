@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 interface Client {
@@ -310,7 +310,7 @@ export default function GoogleCalendar({
   const today = formatDateToString(new Date());
 
   return (
-    <div className="calendar-container">
+    <div className="calendar-container" style={{ "--week-time-col": "72px" } as React.CSSProperties}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">
@@ -442,8 +442,11 @@ export default function GoogleCalendar({
       {/* Week View */}
       {view === "week" && (
         <div className="bg-gray-900 rounded-lg overflow-hidden">
-          {/* Week header */}
-          <div className="grid grid-cols-8 border-b border-gray-800">
+          {/* Week header — shares grid-template-columns with the time body via CSS var */}
+          <div
+            className="grid border-b border-gray-800"
+            style={{ gridTemplateColumns: "var(--week-time-col, 72px) repeat(7, 1fr)" }}
+          >
             <div className="p-3 text-gray-400"></div>
             {weekDates.map((date, index) => {
               const dateStr = formatDateToString(date);
@@ -473,10 +476,17 @@ export default function GoogleCalendar({
             })}
           </div>
 
-          {/* Time grid */}
-          <div className="max-h-[600px] overflow-y-auto">
+          {/* Time grid — uses the SAME column widths as the header */}
+          <div
+            className="max-h-[600px] overflow-y-auto"
+            style={{ scrollbarGutter: "stable" }}
+          >
             {timeSlots.map((time, timeIndex) => (
-              <div key={time} className="grid grid-cols-8 border-b border-gray-800/50">
+              <div
+                key={time}
+                className="grid border-b border-gray-800/50"
+                style={{ gridTemplateColumns: "var(--week-time-col, 72px) repeat(7, 1fr)" }}
+              >
                 {/* Time label */}
                 <div className="p-2 text-xs text-gray-500 text-right pr-3 -mt-2">
                   {timeIndex % 2 === 0 && formatTime(time)}
@@ -647,7 +657,7 @@ export default function GoogleCalendar({
                     <button
                       onClick={() => {
                         setShowDayModal(false);
-                        // Trigger booking - could pass a callback
+                        onBook?.(selectedDate, "08:00", "09:00");
                       }}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
                     >
