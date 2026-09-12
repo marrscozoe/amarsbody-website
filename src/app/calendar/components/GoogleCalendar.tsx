@@ -457,65 +457,74 @@ export default function GoogleCalendar({
       {/* Week View */}
       {view === "week" && (
         <div className="bg-gray-900 rounded-lg overflow-hidden">
-          {/* Week header */}
-          <div className="grid grid-cols-8 border-b border-gray-800">
-            <div className="p-3 text-gray-400 min-w-[72px] shrink-0"></div>
-            {weekDates.map((date, index) => {
-              const dateStr = formatDateToString(date);
-              const isToday = dateStr === today;
-              return (
-                <div
-                  key={index}
-                  onClick={() => {
-                    setCurrentDate(date);
-                    setView("day");
-                  }}
-                  className={`
-                    p-3 text-center cursor-pointer transition-colors
-                    ${isToday ? "bg-orange-500/20" : ""}
-                    hover:bg-gray-800
-                  `}
-                >
-                  <div className="text-gray-400 text-sm">{dayNames[index]}</div>
-                  <div className={`
-                    w-8 h-8 flex items-center justify-center rounded-full mx-auto
-                    ${isToday ? "bg-orange-500 text-white font-bold" : ""}
-                  `}>
-                    {date.getDate()}
+          {/* Week header — flex so time col stays fixed and days fill remaining space */}
+          <div className="flex border-b border-gray-800 overflow-x-auto">
+            {/* Time corner cell — fixed width matching time column below */}
+            <div className="w-[56px] shrink-0"></div>
+            {/* Day header cells — fill remaining space equally */}
+            <div className="flex-1 grid grid-cols-7">
+              {weekDates.map((date, index) => {
+                const dateStr = formatDateToString(date);
+                const isToday = dateStr === today;
+                return (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      setCurrentDate(date);
+                      setView("day");
+                    }}
+                    className={`
+                      px-1 py-2 text-center cursor-pointer transition-colors min-w-0
+                      ${isToday ? "bg-orange-500/20" : ""}
+                      hover:bg-gray-800
+                    `}
+                  >
+                    <div className="text-gray-400 text-xs truncate">{dayNames[index]}</div>
+                    <div className={`
+                      w-7 h-7 flex items-center justify-center rounded-full mx-auto mt-0.5
+                      ${isToday ? "bg-orange-500 text-white font-bold" : ""}
+                    `}>
+                      {date.getDate()}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
-          {/* Time grid */}
+          {/* Time grid — same flex pattern */}
           <div className="max-h-[600px] overflow-y-auto">
             {timeSlots.map((time, timeIndex) => (
-              <div key={time} className="grid grid-cols-8 border-b border-gray-800/50">
-                {/* Time label */}
-                <div className="p-2 text-xs text-gray-500 text-right pr-3 whitespace-nowrap min-w-[72px] shrink-0 leading-tight">
-                  {timeIndex % 2 === 0 && formatTime(time)}
+              <div key={time} className="flex border-b border-gray-800/50">
+                {/* Time label — fixed 56px width, centered vertically */}
+                <div className="w-[56px] shrink-0 flex items-start justify-end pr-2 pt-2">
+                  {timeIndex % 2 === 0 && (
+                    <span className="text-xs text-gray-500 whitespace-nowrap leading-tight">
+                      {formatTime(time)}
+                    </span>
+                  )}
                 </div>
                 
-                {/* Day columns */}
-                {weekDates.map((date, dayIndex) => {
-                  const dateStr = formatDateToString(date);
-                  const bookedApt = isSlotBooked(dateStr, time);
-                  const isBlocked = isSlotBlocked(dateStr, time);
-                  
-                  return (
-                    <div
-                      key={dayIndex}
-                      className={`
-                        relative min-h-[40px] border-l border-gray-800/50 cursor-pointer min-w-0
-                        ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}
-                      `}
-                      onClick={() => handleTimeSlotClick(date, time)}
-                    >
+                {/* Day columns — fill remaining space equally */}
+                <div className="flex-1 grid grid-cols-7">
+                  {weekDates.map((date, dayIndex) => {
+                    const dateStr = formatDateToString(date);
+                    const bookedApt = isSlotBooked(dateStr, time);
+                    const isBlocked = isSlotBlocked(dateStr, time);
+                    
+                    return (
+                      <div
+                        key={dayIndex}
+                        className={`
+                          relative min-h-[40px] border-l border-gray-800/50 cursor-pointer min-w-0
+                          ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}
+                        `}
+                        onClick={() => handleTimeSlotClick(date, time)}
+                      >
                       {bookedApt && time === bookedApt.startTime && (
                         <div
                           className={`
-                            absolute left-0.5 right-0.5 p-1 rounded text-xs overflow-hidden
+                            absolute left-0 right-0 p-1 rounded text-xs overflow-hidden
                             ${bookedApt.status === "completed" ? "bg-green-600" : 
                               bookedApt.status === "personal-block" ? "bg-gray-600" :
                               bookedApt.status === "booked" ? "bg-orange-500" : "bg-gray-600"}
