@@ -631,10 +631,10 @@ export default function GoogleCalendar({
                   {mode === "admin" && (
                     <button
                       onClick={() => {
-                        setShowDayModal(false);
                         if (onBook) {
                           onBook(selectedDate, "08:00", "09:00");
                         }
+                        setShowDayModal(false);
                       }}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
                     >
@@ -692,8 +692,8 @@ export default function GoogleCalendar({
                   {mode === "admin" && onBook && (
                     <button
                       onClick={() => {
-                        setShowDayModal(false);
                         onBook(selectedDate, "08:00", "09:00");
+                        setShowDayModal(false);
                       }}
                       className="mt-2 w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
                     >
