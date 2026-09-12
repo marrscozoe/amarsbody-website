@@ -459,7 +459,7 @@ export default function GoogleCalendar({
         <div className="bg-gray-900 rounded-lg overflow-hidden">
           {/* Week header */}
           <div className="grid grid-cols-8 border-b border-gray-800">
-            <div className="p-3 text-gray-400"></div>
+            <div className="p-3 text-gray-400 min-w-[72px] shrink-0"></div>
             {weekDates.map((date, index) => {
               const dateStr = formatDateToString(date);
               const isToday = dateStr === today;
@@ -493,7 +493,7 @@ export default function GoogleCalendar({
             {timeSlots.map((time, timeIndex) => (
               <div key={time} className="grid grid-cols-8 border-b border-gray-800/50">
                 {/* Time label */}
-                <div className="p-2 text-xs text-gray-500 text-right pr-3 -mt-2">
+                <div className="p-2 text-xs text-gray-500 text-right pr-3 whitespace-nowrap min-w-[72px] shrink-0 leading-tight">
                   {timeIndex % 2 === 0 && formatTime(time)}
                 </div>
                 
@@ -507,7 +507,7 @@ export default function GoogleCalendar({
                     <div
                       key={dayIndex}
                       className={`
-                        relative min-h-[40px] border-l border-gray-800/50 cursor-pointer
+                        relative min-h-[40px] border-l border-gray-800/50 cursor-pointer min-w-0
                         ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}
                       `}
                       onClick={() => handleTimeSlotClick(date, time)}
@@ -515,7 +515,7 @@ export default function GoogleCalendar({
                       {bookedApt && time === bookedApt.startTime && (
                         <div
                           className={`
-                            absolute left-1 right-1 p-1 rounded text-xs overflow-hidden
+                            absolute left-0.5 right-0.5 p-1 rounded text-xs overflow-hidden
                             ${bookedApt.status === "completed" ? "bg-green-600" : 
                               bookedApt.status === "personal-block" ? "bg-gray-600" :
                               bookedApt.status === "booked" ? "bg-orange-500" : "bg-gray-600"}
