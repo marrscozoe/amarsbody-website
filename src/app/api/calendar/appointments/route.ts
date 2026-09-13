@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import path from 'path';
+import fs from 'fs';
 import { kv } from '@vercel/kv';
 
 const APPOINTMENTS_KEY = 'calendar_appointments';
 const BLOCKED_KEY = 'calendar_blocked_times';
+const CALENDAR_CLIENTS_KEY = 'calendar_clients';
+const DATA_DIR = path.join(process.cwd(), 'data');
+const CLIENTS_FILE = path.join(DATA_DIR, 'calendar_clients.json');
 
 async function getAppointmentsFromRedis(): Promise<any[]> {
   try {
@@ -17,6 +22,72 @@ async function getAppointmentsFromRedis(): Promise<any[]> {
 
 async function saveAppointmentsToRedis(appointments: any[]): Promise<void> {
   await kv.set(APPOINTMENTS_KEY, appointments);
+}
+
+// ── Client credit helpers (mirrors clients/route.ts storage) ───────────────
+const hasRedisConfig = !!process.env.KV_REST_API_URL;
+
+function readClientsFromFile(): any[] {
+  try {
+    if (fs.existsSync(CLIENTS_FILE)) {
+      return JSON.parse(fs.readFileSync(CLIENTS_FILE, 'utf-8'));
+    }
+  } catch (e) {
+    console.error('Error reading clients from file:', e);
+  }
+  return [];
+}
+
+function writeClientsToFile(clients: any[]): void {
+  const dir = path.dirname(CLIENTS_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(CLIENTS_FILE, JSON.stringify(clients, null, 2));
+}
+
+async function getClientsFromRedis(): Promise<any[]> {
+  try {
+    const clients = await kv.get<any[]>(CALENDAR_CLIENTS_KEY);
+    return clients || [];
+  } catch (e) {
+    console.error('Error reading clients from Redis:', e);
+    return [];
+  }
+}
+
+async function saveClientsToRedis(clients: any[]): Promise<void> {
+  if (!await kv.set(CALENDAR_CLIENTS_KEY, clients)) {
+    throw new Error('Failed to save clients');
+  }
+}
+
+async function getClients(): Promise<any[]> {
+  if (hasRedisConfig) {
+    const clients = await getClientsFromRedis();
+    if (clients.length > 0) return clients;
+  }
+  return readClientsFromFile();
+}
+
+async function saveClients(clients: any[]): Promise<void> {
+  if (hasRedisConfig) {
+    try {
+      await saveClientsToRedis(clients);
+    } catch (e) {
+      console.error('Failed to save to Redis, falling back to file:', e);
+      writeClientsToFile(clients);
+    }
+  } else {
+    writeClientsToFile(clients);
+  }
+}
+
+async function adjustClientCredit(clientId: string, delta: number): Promise<void> {
+  const clients = await getClients();
+  const idx = clients.findIndex((c: any) => c.id === clientId);
+  if (idx === -1) return;
+  const current = clients[idx].unusedCredits ?? 10;
+  clients[idx].unusedCredits = Math.max(0, current + delta);
+  await saveClients(clients);
 }
 
 async function getBlockedFromRedis(): Promise<any[]> {
@@ -168,6 +239,11 @@ export async function POST(request: NextRequest) {
     appointments.push(newAppointment);
     await saveAppointmentsToRedis(appointments);
 
+    // Decrement client credit on booking (personal blocks don't use credits)
+    if (!isPersonalBlock) {
+      await adjustClientCredit(clientId, -1);
+    }
+
     return NextResponse.json(newAppointment);
   }
 
@@ -207,8 +283,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
 
+    const apt = appointments[index];
+    const wasBooked = apt.status === 'booked';
+    const isPersonalBlock = apt.isPersonalBlock;
+
     appointments[index].status = 'cancelled';
     await saveAppointmentsToRedis(appointments);
+
+    // Restore +1 unused session credit on cancel (personal blocks don't use credits)
+    if (apt.clientId && wasBooked && !isPersonalBlock) {
+      await adjustClientCredit(apt.clientId, 1);
+    }
+
     return NextResponse.json(appointments[index]);
   }
 

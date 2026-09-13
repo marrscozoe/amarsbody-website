@@ -10,6 +10,7 @@ interface Client {
   lastName: string;
   email: string;
   phone: string;
+  unusedCredits?: number;
 }
 
 interface Appointment {
@@ -315,6 +316,23 @@ export default function AdminPage() {
     } catch (err) {
       console.error('Failed to delete client:', err);
       alert('Failed to delete client');
+    }
+  };
+
+  const handleAdjustSessions = async (clientId: string, delta: number) => {
+    const action = delta > 0 ? 'addSessions' : 'removeSessions';
+    try {
+      const res = await fetch('/api/calendar/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, id: clientId })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setClients(clients.map(c => c.id === clientId ? { ...c, unusedCredits: data.unusedCredits } : c));
+      }
+    } catch (err) {
+      console.error('Failed to adjust sessions:', err);
     }
   };
 
@@ -902,6 +920,7 @@ export default function AdminPage() {
         const client = clients.find(c => c.id === viewClientId);
         const clientAppts = appointments.filter(a => a.clientId === viewClientId && a.status !== 'cancelled');
         if (!client) return null;
+        const unusedCredits = client.unusedCredits ?? 10;
         return (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-gray-900 rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col">
@@ -913,10 +932,35 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setViewClientId(null)}
-                  className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
+                  className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-lg leading-none"
+                  aria-label="Close"
                 >
-                  Close
+                  ✕
                 </button>
+              </div>
+              {/* Credits control */}
+              <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                <div className="bg-orange-500/15 border border-orange-500/30 rounded-lg px-3 py-2">
+                  <p className="text-sm text-gray-400">Unused / remaining</p>
+                  <p className="text-lg font-bold text-orange-400">{unusedCredits} session{unusedCredits !== 1 ? 's' : ''} left to schedule</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleAdjustSessions(client.id, -1)}
+                    disabled={unusedCredits <= 0}
+                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white rounded-lg text-sm"
+                  >
+                    −
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAdjustSessions(client.id, 1)}
+                    className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-sm font-medium"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div className="p-4 overflow-y-auto flex-1">
                 {clientAppts.length === 0 ? (
@@ -941,13 +985,22 @@ export default function AdminPage() {
                               </span>
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleCancelAppointment(apt.id)}
-                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
-                          >
-                            Cancel
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => { setRescheduleId(apt.id); setShowBookingModal(true); }}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                            >
+                              Reschedule
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCancelAppointment(apt.id)}
+                              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       ))}
                   </div>
@@ -962,10 +1015,18 @@ export default function AdminPage() {
       {showBookingModal && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full shadow-2xl shadow-black/50">
-            <div className="p-5 border-b border-gray-800/80">
+            <div className="p-5 border-b border-gray-800/80 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-white">
                 {rescheduleId ? "Reschedule Appointment" : "Book New Appointment"}
               </h3>
+              <button
+                type="button"
+                onClick={() => { setShowBookingModal(false); setRescheduleId(null); setBookingMode("client"); setPersonalLabel(""); }}
+                className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-lg leading-none"
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
             <form onSubmit={rescheduleId ? handleReschedule : handleCreateAppointment} className="p-5 space-y-4">
               {/* Client / Non-Client toggle */}
@@ -1076,8 +1137,19 @@ export default function AdminPage() {
       {showCreateClientModal && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full shadow-2xl shadow-black/50">
-            <div className="p-5 border-b border-gray-800/80">
+            <div className="p-5 border-b border-gray-800/80 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-white">Add New Client</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateClientModal(false);
+                  setCreateClientForm({ firstName: "", lastName: "", email: "", phone: "", password: "" });
+                }}
+                className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-lg leading-none"
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
             <form onSubmit={handleCreateClient} className="p-5 space-y-4">
               <div>

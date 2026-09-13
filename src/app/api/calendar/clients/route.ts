@@ -107,7 +107,8 @@ export async function POST(request: NextRequest) {
       firstName: client.firstName, 
       lastName: client.lastName,
       email: client.email,
-      phone: client.phone
+      phone: client.phone,
+      unusedCredits: client.unusedCredits ?? 10
     });
   }
 
@@ -144,7 +145,8 @@ export async function POST(request: NextRequest) {
       lastName,
       password: hashPassword(password),
       email: email || '',
-      phone: phone || ''
+      phone: phone || '',
+      unusedCredits: 10
     };
     
     clients.push(newClient);
@@ -155,8 +157,26 @@ export async function POST(request: NextRequest) {
       firstName: newClient.firstName, 
       lastName: newClient.lastName,
       email: newClient.email,
-      phone: newClient.phone
+      phone: newClient.phone,
+      unusedCredits: newClient.unusedCredits
     });
+  }
+
+  // ── Add/remove session credits (admin) ────────────────────────────────
+  if (action === 'addSessions' || action === 'removeSessions') {
+    const clients = await getClients();
+    const clientIndex = clients.findIndex((c: any) => c.id === id);
+
+    if (clientIndex === -1) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    const delta = action === 'addSessions' ? 1 : -1;
+    const current = clients[clientIndex].unusedCredits ?? 10;
+    clients[clientIndex].unusedCredits = Math.max(0, current + delta);
+    await saveClients(clients);
+
+    return NextResponse.json({ success: true, unusedCredits: clients[clientIndex].unusedCredits });
   }
 
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

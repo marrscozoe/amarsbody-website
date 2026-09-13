@@ -9,6 +9,7 @@ interface Client {
   lastName: string;
   email: string;
   phone: string;
+  unusedCredits?: number;
 }
 
 interface Appointment {
@@ -259,15 +260,16 @@ export default function BookPage() {
         const data = await res.json();
         setBookingRef(data.id || `APT-${Date.now()}`);
         setStep("done");
-        // Reload so client's appointments list is fresh
-        await loadData(client.id);
+        // Reload so client's appointments list is fresh — non-blocking
+        loadData(client.id);
       } else {
         const data = await res.json();
         setMessage(data.error || "Booking failed. Please try again.");
-        setSubmitting(false);
       }
     } catch {
       setMessage("Booking failed. Please try again.");
+    } finally {
+      // Always unlock the submit button, unless we're on the done step
       setSubmitting(false);
     }
   };
@@ -500,6 +502,14 @@ export default function BookPage() {
 
           {message && <div className={`p-3 rounded-lg mb-4 ${message.includes("success") || message.includes("changed") ? "bg-green-900" : "bg-red-900"}`}>{message}</div>}
 
+          {(client.unusedCredits ?? 0) > 0 && (
+            <div className="bg-orange-500/20 border border-orange-500/40 rounded-xl p-4 mb-6 text-center">
+              <p className="text-orange-400 font-semibold">
+                You have {client.unusedCredits} appointment{(client.unusedCredits ?? 0) !== 1 ? 's' : ''} left to schedule
+              </p>
+            </div>
+          )}
+
           <h2 className="text-gray-400 text-sm font-medium mb-3">UPCOMING</h2>
           {upcomingApts.length === 0 ? <p className="text-gray-500 mb-6">No upcoming appointments.</p> : (
             <div className="space-y-3 mb-8">
@@ -509,10 +519,7 @@ export default function BookPage() {
                     <p className="font-semibold">{formatDate(apt.date)}</p>
                     <p className="text-gray-400 text-sm">{formatTime(apt.startTime)} – {formatTime(apt.endTime)}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleReschedule(apt)} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">Reschedule</button>
-                    <button onClick={() => handleCancelAppointment(apt.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-lg text-sm">Cancel</button>
-                  </div>
+                  <button onClick={() => handleReschedule(apt)} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">Reschedule</button>
                 </div>
               ))}
             </div>
@@ -523,12 +530,9 @@ export default function BookPage() {
               <h2 className="text-gray-400 text-sm font-medium mb-3">PAST (STILL ACTIVE)</h2>
               <div className="space-y-3 mb-8 opacity-60">
                 {pastActiveApts.sort((a, b) => b.date.localeCompare(a.date)).map(apt => (
-                  <div key={apt.id} className="bg-gray-900 rounded-xl p-4 flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">{formatDate(apt.date)}</p>
-                      <p className="text-gray-400 text-sm">{formatTime(apt.startTime)} – {formatTime(apt.endTime)}</p>
-                    </div>
-                    <button onClick={() => handleCancelAppointment(apt.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-lg text-sm">Cancel</button>
+                  <div key={apt.id} className="bg-gray-900 rounded-xl p-4">
+                    <p className="font-semibold">{formatDate(apt.date)}</p>
+                    <p className="text-gray-400 text-sm">{formatTime(apt.startTime)} – {formatTime(apt.endTime)}</p>
                   </div>
                 ))}
               </div>
