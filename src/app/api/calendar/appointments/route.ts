@@ -85,7 +85,7 @@ async function adjustClientCredit(clientId: string, delta: number): Promise<void
   const clients = await getClients();
   const idx = clients.findIndex((c: any) => c.id === clientId);
   if (idx === -1) return;
-  const current = clients[idx].unusedCredits ?? 10;
+  const current = clients[idx].unusedCredits ?? 0;
   clients[idx].unusedCredits = Math.max(0, current + delta);
   await saveClients(clients);
 }
@@ -300,10 +300,14 @@ export async function POST(request: NextRequest) {
 
   // ── Schedule recurring ─────────────────────────────────────────────────
   if (action === 'schedule-recurring') {
-    const { clientId: recClientId, startTime: recStartTime, endTime: recEndTime, daysOfWeek, endDate } = body;
+    const { clientId: recClientId, startTime: recStartTime, endTime: recEndTime, daysOfWeek, endDate, startDate } = body;
 
     if (!recClientId || !recStartTime || !recEndTime || !daysOfWeek || daysOfWeek.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    if (!startDate) {
+      return NextResponse.json({ error: 'Missing startDate' }, { status: 400 });
     }
 
     const recurringId = crypto.randomUUID();
@@ -312,7 +316,7 @@ export async function POST(request: NextRequest) {
     const maxDate = endDate ? new Date(endDate) : new Date(today);
     maxDate.setFullYear(maxDate.getFullYear() + 1);
 
-    const currentDate = new Date(today);
+    const currentDate = new Date(startDate);
     currentDate.setHours(0, 0, 0, 0);
 
     while (currentDate <= maxDate) {

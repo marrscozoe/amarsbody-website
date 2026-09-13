@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       lastName: client.lastName,
       email: client.email,
       phone: client.phone,
-      unusedCredits: client.unusedCredits ?? 10
+      unusedCredits: client.unusedCredits ?? 0
     });
   }
 
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       password: hashPassword(password),
       email: email || '',
       phone: phone || '',
-      unusedCredits: 10
+      unusedCredits: 0
     };
     
     clients.push(newClient);
@@ -171,8 +171,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    const delta = action === 'addSessions' ? 1 : -1;
-    const current = clients[clientIndex].unusedCredits ?? 10;
+    const delta = (action === 'addSessions' ? 1 : -1) * (body.delta ? Math.abs(body.delta) : 1);
+    const current = clients[clientIndex].unusedCredits ?? 0;
     clients[clientIndex].unusedCredits = Math.max(0, current + delta);
     await saveClients(clients);
 

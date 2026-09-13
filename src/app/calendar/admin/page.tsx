@@ -64,6 +64,7 @@ export default function AdminPage() {
     startTime: "08:00",
     endTime: "09:00",
     daysOfWeek: [] as number[],
+    startDate: new Date().toISOString().split('T')[0],
     endDate: "",
     noEndDate: false
   });
@@ -175,7 +176,7 @@ export default function AdminPage() {
     const client = clients.find(c => c.id === scheduleClientForm.clientId);
     if (!client) return;
     
-    if (!confirm(`Schedule recurring appointments for ${client.firstName} ${client.lastName}?\n\nDays: ${scheduleClientForm.daysOfWeek.sort().map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(", ")}\nTime: ${formatTime(scheduleClientForm.startTime)} - ${formatTime(scheduleClientForm.endTime)}\n${scheduleClientForm.noEndDate ? "No end date" : `Until: ${scheduleClientForm.endDate}`}`)) {
+    if (!confirm(`Schedule recurring appointments for ${client.firstName} ${client.lastName}?\n\nStart Date: ${scheduleClientForm.startDate}\nDays: ${scheduleClientForm.daysOfWeek.sort().map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(", ")}\nTime: ${formatTime(scheduleClientForm.startTime)} - ${formatTime(scheduleClientForm.endTime)}\n${scheduleClientForm.noEndDate ? "No end date" : `Until: ${scheduleClientForm.endDate}`}`)) {
       return;
     }
     
@@ -189,6 +190,7 @@ export default function AdminPage() {
           startTime: scheduleClientForm.startTime,
           endTime: scheduleClientForm.endTime,
           daysOfWeek: scheduleClientForm.daysOfWeek,
+          startDate: scheduleClientForm.startDate,
           endDate: scheduleClientForm.noEndDate ? null : scheduleClientForm.endDate
         })
       });
@@ -199,6 +201,7 @@ export default function AdminPage() {
           startTime: "08:00",
           endTime: "09:00",
           daysOfWeek: [],
+          startDate: new Date().toISOString().split('T')[0],
           endDate: "",
           noEndDate: false
         });
@@ -325,7 +328,7 @@ export default function AdminPage() {
       const res = await fetch('/api/calendar/clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, id: clientId })
+        body: JSON.stringify({ action, id: clientId, delta })
       });
       if (res.ok) {
         const data = await res.json();
@@ -828,6 +831,16 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div className="col-span-1">
+                    <label className="block text-sm text-gray-400 mb-1.5">Start Date:</label>
+                    <input
+                      type="date"
+                      value={scheduleClientForm.startDate}
+                      onChange={(e) => setScheduleClientForm({ ...scheduleClientForm, startDate: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                      required
+                    />
+                  </div>
+                  <div className="col-span-1">
                     <label className="block text-sm text-gray-400 mb-1.5">End Date:</label>
                     <div className="flex items-center gap-2">
                       <input
@@ -920,7 +933,7 @@ export default function AdminPage() {
         const client = clients.find(c => c.id === viewClientId);
         const clientAppts = appointments.filter(a => a.clientId === viewClientId && a.status !== 'cancelled');
         if (!client) return null;
-        const unusedCredits = client.unusedCredits ?? 10;
+        const unusedCredits = client.unusedCredits ?? 0;
         return (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-gray-900 rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col">
@@ -944,7 +957,20 @@ export default function AdminPage() {
                   <p className="text-sm text-gray-400">Unused / remaining</p>
                   <p className="text-lg font-bold text-orange-400">{unusedCredits} session{unusedCredits !== 1 ? 's' : ''} left to schedule</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                  <select
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (val > 0) handleAdjustSessions(client.id, val);
+                      e.target.value = '';
+                    }}
+                    className="px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm"
+                    defaultValue=""
+                  >
+                    <option value="">Add pack...</option>
+                    <option value="12">12 sessions</option>
+                    <option value="18">18 sessions</option>
+                  </select>
                   <button
                     type="button"
                     onClick={() => handleAdjustSessions(client.id, -1)}
