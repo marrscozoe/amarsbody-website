@@ -911,7 +911,7 @@ export default function AdminPage() {
               <p className="text-gray-500 text-sm py-6 text-center">No clients registered yet.</p>
             ) : (
               <div className="space-y-2">
-                {clients.map(client => (
+                {[...clients].sort((a, b) => a.firstName.localeCompare(b.firstName, undefined, { sensitivity: 'base' }) || a.lastName.localeCompare(b.lastName, undefined, { sensitivity: 'base' })).map(client => (
                   <div key={client.id} className="flex justify-between items-center p-3.5 bg-gray-800/60 border border-gray-700/50 rounded-xl">
                     <button
                       type="button"
