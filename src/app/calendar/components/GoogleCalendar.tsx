@@ -468,7 +468,7 @@ export default function GoogleCalendar({
           {/* Week header — flex so time col stays fixed and days fill remaining space */}
           <div className="flex border-b border-gray-800 overflow-x-auto">
             {/* Time corner cell — fixed width matching time column below */}
-            <div className="w-[56px] shrink-0"></div>
+            <div className="w-[64px] shrink-0"></div>
             {/* Day header cells — fill remaining space equally */}
             <div className="flex-1 grid grid-cols-7">
               {weekDates.map((date, index) => {
@@ -504,14 +504,14 @@ export default function GoogleCalendar({
           <div className="max-h-[600px] overflow-y-auto">
             <div className="flex">
               {/* Time labels column */}
-              <div className="w-[56px] shrink-0">
+              <div className="w-[64px] shrink-0">
                 {timeSlots.map((time, timeIndex) => (
                   <div
                     key={time}
                     className="h-[40px] flex items-start justify-end pr-2 pt-1 border-b border-gray-800/50"
                   >
                     {timeIndex % 2 === 0 && (
-                      <span className="text-xs text-gray-500 whitespace-nowrap leading-tight">
+                      <span className="text-xs text-gray-300 whitespace-nowrap leading-tight">
                         {formatTime(time)}
                       </span>
                     )}
@@ -637,13 +637,13 @@ export default function GoogleCalendar({
 
           {/* Time grid — same column approach as week view */}
           <div className="max-h-[600px] overflow-y-auto">
-            <div className="grid grid-cols-[80px_1fr]">
+            <div className="grid grid-cols-[90px_1fr]">
               {/* Time labels column */}
               <div>
                 {timeSlots.map((time, timeIndex) => (
                   <div
                     key={time}
-                    className="h-[40px] flex items-start justify-end pr-3 pt-1 text-sm text-gray-500 border-b border-gray-800/50"
+                    className="h-[40px] flex items-start justify-end pr-3 pt-1 text-sm text-gray-300 border-b border-gray-800/50"
                   >
                     {timeIndex % 2 === 0 && formatTime(time)}
                   </div>

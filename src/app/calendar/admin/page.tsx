@@ -196,6 +196,11 @@ export default function AdminPage() {
       });
       
       if (res.ok) {
+        const data = await res.json();
+        // Update client credit badge immediately
+        if (data.unusedCredits !== undefined) {
+          setClients(clients.map(c => c.id === scheduleClientForm.clientId ? { ...c, unusedCredits: data.unusedCredits } : c));
+        }
         setScheduleClientForm({
           clientId: "",
           startTime: "08:00",
@@ -206,7 +211,7 @@ export default function AdminPage() {
           noEndDate: false
         });
         loadData();
-        alert("Client scheduled successfully!");
+        alert(`Client scheduled successfully! Created ${data.appointments?.length ?? 0} appointment(s).`);
       } else {
         const data = await res.json();
         alert(data.error || "Failed to schedule client");
@@ -244,6 +249,11 @@ export default function AdminPage() {
       });
       
       if (res.ok) {
+        const data = await res.json();
+        // Update client credit badge immediately (personal blocks don't affect credits)
+        if (data.unusedCredits !== undefined && appointmentForm.clientId) {
+          setClients(clients.map(c => c.id === appointmentForm.clientId ? { ...c, unusedCredits: data.unusedCredits } : c));
+        }
         setAppointmentForm({ clientId: "", date: "", startTime: "08:00", endTime: "09:00" });
         setPersonalLabel("");
         setBookingMode("client");
@@ -952,19 +962,19 @@ export default function AdminPage() {
                 </button>
               </div>
               {/* Credits control */}
-              <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+              <div className="px-4 pt-3 pb-1 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="bg-orange-500/15 border border-orange-500/30 rounded-lg px-3 py-2">
                   <p className="text-sm text-gray-400">Unused / remaining</p>
                   <p className="text-lg font-bold text-orange-400">{unusedCredits} session{unusedCredits !== 1 ? 's' : ''} left to schedule</p>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex items-center gap-2 flex-wrap">
                   <select
                     onChange={(e) => {
                       const val = parseInt(e.target.value);
                       if (val > 0) handleAdjustSessions(client.id, val);
                       e.target.value = '';
                     }}
-                    className="px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm"
+                    className="px-2 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm min-w-[100px]"
                     defaultValue=""
                   >
                     <option value="">Add pack...</option>
@@ -975,14 +985,14 @@ export default function AdminPage() {
                     type="button"
                     onClick={() => handleAdjustSessions(client.id, -1)}
                     disabled={unusedCredits <= 0}
-                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white rounded-lg text-sm"
+                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white rounded-lg text-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                   >
                     −
                   </button>
                   <button
                     type="button"
                     onClick={() => handleAdjustSessions(client.id, 1)}
-                    className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-sm font-medium"
+                    className="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-lg font-medium min-w-[44px] min-h-[44px] flex items-center justify-center"
                   >
                     +
                   </button>

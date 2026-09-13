@@ -240,11 +240,15 @@ export async function POST(request: NextRequest) {
     await saveAppointmentsToRedis(appointments);
 
     // Decrement client credit on booking (personal blocks don't use credits)
+    let unusedCredits = 0;
     if (!isPersonalBlock) {
       await adjustClientCredit(clientId, -1);
+      const clients = await getClients();
+      const client = clients.find((c: any) => c.id === clientId);
+      unusedCredits = client?.unusedCredits ?? 0;
     }
 
-    return NextResponse.json(newAppointment);
+    return NextResponse.json({ ...newAppointment, unusedCredits });
   }
 
   // ── Reschedule ──────────────────────────────────────────────────────────
@@ -310,6 +314,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing startDate' }, { status: 400 });
     }
 
+    // Check client's unused credits — credit-funded sessions cap the series
+    const allClients = await getClients();
+    const recClient = allClients.find((c: any) => c.id === recClientId);
+    let unusedCredits = recClient?.unusedCredits ?? 0;
+    const hasCredits = unusedCredits > 0;
+
     const recurringId = crypto.randomUUID();
     const createdAppointments = [];
     const today = new Date();
@@ -320,6 +330,9 @@ export async function POST(request: NextRequest) {
     currentDate.setHours(0, 0, 0, 0);
 
     while (currentDate <= maxDate) {
+      // Stop early if we've exhausted credits
+      if (hasCredits && unusedCredits <= 0) break;
+
       const dayOfWeek = currentDate.getDay();
 
       if (daysOfWeek.includes(dayOfWeek)) {
@@ -341,6 +354,12 @@ export async function POST(request: NextRequest) {
 
           appointments.push(newAppointment);
           createdAppointments.push(newAppointment);
+
+          // Spend 1 credit per created session
+          if (hasCredits) {
+            await adjustClientCredit(recClientId, -1);
+            unusedCredits = Math.max(0, unusedCredits - 1);
+          }
         }
       }
 
@@ -348,10 +367,17 @@ export async function POST(request: NextRequest) {
     }
 
     await saveAppointmentsToRedis(appointments);
+
+    // Return final unusedCredits for badge refresh
+    const finalClients = await getClients();
+    const finalClient = finalClients.find((c: any) => c.id === recClientId);
+    const finalUnusedCredits = finalClient?.unusedCredits ?? 0;
+
     return NextResponse.json({
       message: `Created ${createdAppointments.length} appointments`,
       recurringId,
-      appointments: createdAppointments
+      appointments: createdAppointments,
+      unusedCredits: finalUnusedCredits
     });
   }
 
