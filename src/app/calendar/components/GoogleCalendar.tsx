@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 interface Client {
@@ -71,7 +71,7 @@ const timeToMinutes = (time: string): number => {
 
 // Generate time slots filtered by duration rule
 // 60-min sessions: :00 only. 30-min sessions: :00 and :30
-const generateTimeSlots = (duration: number, startHour = 4, endHour = 18) => {
+const generateTimeSlots = (duration: number, startHour = 4, endHour = 20) => {
   const slots: string[] = [];
   for (let hour = startHour; hour <= endHour; hour++) {
     if (duration === 60) {
@@ -107,6 +107,36 @@ export default function GoogleCalendar({
   const [showDayModal, setShowDayModal] = useState(false);
   const [selectedDayAppointments, setSelectedDayAppointments] = useState<Appointment[]>([]);
   const [prefillHour, setPrefillHour] = useState<number | null>(null);
+
+  // Swipe navigation
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 50; // min swipe distance
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        // Swipe left -> next
+        goToNext();
+      } else {
+        // Swipe right -> prev
+        goToPrev();
+      }
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
 
   // Get week dates
   const weekDates = useMemo(() => {
@@ -320,7 +350,12 @@ export default function GoogleCalendar({
   const today = formatDateToString(new Date());
 
   return (
-    <div className="calendar-container">
+    <div
+      className="calendar-container"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">

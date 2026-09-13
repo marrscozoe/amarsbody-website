@@ -58,6 +58,7 @@ export default function AdminPage() {
     endDate: "",
     noEndDate: false
   });
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   // Schedule Client form state
   const [scheduleClientForm, setScheduleClientForm] = useState({
     clientId: "",
@@ -116,15 +117,26 @@ export default function AdminPage() {
   const handleBlockTime = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const payload = {
-      action: "block",
-      date: blockForm.date,
-      startTime: blockForm.startTime,
-      endTime: blockForm.endTime,
-      isRecurring: blockType === "recurring",
-      daysOfWeek: blockType === "recurring" ? blockForm.daysOfWeek : null,
-      endDate: blockType === "recurring" && blockForm.endDate ? blockForm.endDate : null
-    };
+    const payload = editingBlockId
+      ? {
+          action: "update",
+          id: editingBlockId,
+          date: blockForm.date,
+          startTime: blockForm.startTime,
+          endTime: blockForm.endTime,
+          isRecurring: blockType === "recurring",
+          daysOfWeek: blockType === "recurring" ? blockForm.daysOfWeek : null,
+          endDate: blockType === "recurring" && blockForm.endDate ? blockForm.endDate : null
+        }
+      : {
+          action: "block",
+          date: blockForm.date,
+          startTime: blockForm.startTime,
+          endTime: blockForm.endTime,
+          isRecurring: blockType === "recurring",
+          daysOfWeek: blockType === "recurring" ? blockForm.daysOfWeek : null,
+          endDate: blockType === "recurring" && blockForm.endDate ? blockForm.endDate : null
+        };
     
     try {
       const res = await fetch("/api/calendar/blocked", {
@@ -136,11 +148,33 @@ export default function AdminPage() {
       if (res.ok) {
         setBlockForm({ date: "", startTime: "08:00", endTime: "09:00", isRecurring: false, recurringPattern: "", daysOfWeek: [], endDate: "", noEndDate: false });
         setBlockType("single");
+        setEditingBlockId(null);
         loadData();
       }
     } catch (err) {
       console.error("Failed to block time:", err);
     }
+  };
+
+  const handleEditBlock = (blk: BlockedTime) => {
+    setEditingBlockId(blk.id);
+    setBlockForm({
+      date: blk.date || "",
+      startTime: blk.startTime,
+      endTime: blk.endTime,
+      isRecurring: blk.isRecurring || false,
+      recurringPattern: "",
+      daysOfWeek: blk.daysOfWeek || [],
+      endDate: blk.endDate || "",
+      noEndDate: !blk.endDate
+    });
+    setBlockType(blk.isRecurring ? "recurring" : "single");
+  };
+
+  const handleCancelEditBlock = () => {
+    setEditingBlockId(null);
+    setBlockForm({ date: "", startTime: "08:00", endTime: "09:00", isRecurring: false, recurringPattern: "", daysOfWeek: [], endDate: "", noEndDate: false });
+    setBlockType("single");
   };
 
   const handleUnblockTime = async (id: string) => {
@@ -533,8 +567,25 @@ export default function AdminPage() {
           <div className="space-y-5">
             {/* Block Form */}
             <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl">
-              <h3 className="text-base font-semibold text-white mb-1">Block Time</h3>
-              <p className="text-sm text-gray-500 mb-5">Reserve time slots that are unavailable for appointments.</p>
+              <div className="flex justify-between items-start mb-1">
+                <div>
+                  <h3 className="text-base font-semibold text-white">
+                    {editingBlockId ? "Edit Block" : "Block Time"}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {editingBlockId ? "Update the blocked time settings below." : "Reserve time slots that are unavailable for appointments."}
+                  </p>
+                </div>
+                {editingBlockId && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEditBlock}
+                    className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors font-medium text-gray-300"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
 
               {/* Block Type Toggle */}
               <div className="flex gap-3 mb-5">
@@ -593,7 +644,7 @@ export default function AdminPage() {
                       type="submit"
                       className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 rounded-xl font-medium transition-all duration-200"
                     >
-                      Block
+                      {editingBlockId ? "Update" : "Block"}
                     </button>
                   </div>
                 )}
@@ -695,7 +746,7 @@ export default function AdminPage() {
                           disabled={blockForm.daysOfWeek.length === 0}
                           className="w-full px-4 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl font-medium transition-all duration-200"
                         >
-                          Block
+                          {editingBlockId ? "Update" : "Block"}
                         </button>
                       </div>
                     </div>
@@ -712,7 +763,7 @@ export default function AdminPage() {
               ) : (
                 <div className="space-y-2">
                   {blockedTimes.map(blk => (
-                    <div key={blk.id} className="flex justify-between items-center p-3.5 bg-gray-800/60 border border-gray-700/50 rounded-xl">
+                    <div key={blk.id} className={`flex justify-between items-center p-3.5 bg-gray-800/60 border rounded-xl ${editingBlockId === blk.id ? "border-orange-500/60" : "border-gray-700/50"}`}>
                       <div>
                         {blk.isRecurring && blk.daysOfWeek ? (
                           <p className="font-medium text-white">
@@ -730,12 +781,20 @@ export default function AdminPage() {
                           )}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleUnblockTime(blk.id)}
-                        className="px-3 py-1.5 text-sm bg-red-600/80 hover:bg-red-600 rounded-lg transition-colors font-medium"
-                      >
-                        Unblock
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditBlock(blk)}
+                          className="px-3 py-1.5 text-sm bg-blue-600/80 hover:bg-blue-600 rounded-lg transition-colors font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleUnblockTime(blk.id)}
+                          className="px-3 py-1.5 text-sm bg-red-600/80 hover:bg-red-600 rounded-lg transition-colors font-medium"
+                        >
+                          Unblock
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -86,5 +86,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   }
 
+  if (action === 'update') {
+    const index = blocked.findIndex((b: any) => b.id === id);
+    if (index === -1) {
+      return NextResponse.json({ error: 'Blocked time not found' }, { status: 404 });
+    }
+    
+    blocked[index] = {
+      ...blocked[index],
+      date,
+      startTime,
+      endTime,
+      isRecurring: isRecurring || false,
+      recurringPattern: recurringPattern || null,
+      endDate: endDate || null,
+      daysOfWeek: daysOfWeek || null,
+    };
+    
+    await saveBlockedToRedis(blocked);
+    
+    return NextResponse.json(blocked[index]);
+  }
+
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
 }
