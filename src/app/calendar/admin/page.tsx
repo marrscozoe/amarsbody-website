@@ -457,11 +457,11 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Tabs — consult-style pill tabs (scrollable on mobile) */}
-        <div className="flex gap-1 sm:gap-1.5 mb-8 p-1.5 bg-gray-900/60 border border-gray-800 rounded-2xl overflow-x-auto scrollbar-hide w-full sm:w-fit">
+        {/* Tabs — scrollable on mobile with snap */}
+        <div className="flex gap-1 sm:gap-1.5 mb-8 p-1 bg-gray-900/60 border border-gray-800 rounded-2xl overflow-x-auto snap-x scrollbar-hide w-full sm:w-auto whitespace-nowrap flex-nowrap">
           <button
             onClick={() => setActiveTab("calendar")}
-            className={`px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shrink-0 min-w-0 ${
+            className={`px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shrink-0 snap-start ${
               activeTab === "calendar"
                 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
                 : "text-gray-400 hover:text-white hover:bg-gray-800/80"
@@ -471,27 +471,27 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("block")}
-            className={`px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shrink-0 min-w-0 ${
+            className={`px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shrink-0 snap-start ${
               activeTab === "block"
                 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
                 : "text-gray-400 hover:text-white hover:bg-gray-800/80"
             }`}
           >
-            Block Time
+            Block
           </button>
           <button
             onClick={() => setActiveTab("schedule")}
-            className={`px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shrink-0 min-w-0 ${
+            className={`px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shrink-0 snap-start ${
               activeTab === "schedule"
                 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
                 : "text-gray-400 hover:text-white hover:bg-gray-800/80"
             }`}
           >
-            Schedule Client
+            Schedule
           </button>
           <button
             onClick={() => setActiveTab("clients")}
-            className={`px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shrink-0 min-w-0 ${
+            className={`px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shrink-0 snap-start ${
               activeTab === "clients"
                 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
                 : "text-gray-400 hover:text-white hover:bg-gray-800/80"

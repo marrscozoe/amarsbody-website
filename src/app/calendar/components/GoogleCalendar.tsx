@@ -242,10 +242,12 @@ export default function GoogleCalendar({
   };
 
   // Handle clicking on a time slot in week/day view
+  // RULE 1: Admin may book ON TOP of blocked slots (blocked = background only)
+  // RULE 2: Admin may NOT book on top of existing client appointments
   const handleTimeSlotClick = (date: Date, time: string) => {
     const dateStr = formatDateToString(date);
-    if (isSlotBlocked(dateStr, time)) return;
-    
+
+    // Check if slot is booked by a client appointment (not blocked time)
     const booked = isSlotBooked(dateStr, time);
     if (booked) {
       // Show appointment details
@@ -253,8 +255,11 @@ export default function GoogleCalendar({
       setSelectedDate(dateStr);
       setSelectedDayAppointments(dayAppts);
       setShowDayModal(true);
-    } else if (mode === "admin" && onBook) {
-      // FIX 2: In admin mode, directly open booking form for empty slots
+      return;
+    }
+
+    // Admin mode: allow booking on blocked slots (RULE 1)
+    if (mode === "admin" && onBook) {
       const [hour] = time.split(":").map(Number);
       setPrefillHour(hour);
       const endMins = timeToMinutes(time) + 60;
@@ -262,8 +267,11 @@ export default function GoogleCalendar({
       const endMin = endMins % 60;
       const endTimeStr = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
       onBook(dateStr, time, endTimeStr);
-    } else if (mode === "client" && onBook) {
-      // In client mode, book the slot
+      return;
+    }
+
+    // Client mode: only allow booking on available (non-blocked, non-booked) slots
+    if (mode === "client" && onBook && !isSlotBlocked(dateStr, time)) {
       const endTime = timeToMinutes(time) + 60; // Default 60 min
       const endHour = Math.floor(endTime / 60);
       const endMin = endTime % 60;
@@ -492,77 +500,115 @@ export default function GoogleCalendar({
             </div>
           </div>
 
-          {/* Time grid — same flex pattern */}
+          {/* Time grid — day columns as flex columns with absolute appointments */}
           <div className="max-h-[600px] overflow-y-auto">
-            {timeSlots.map((time, timeIndex) => (
-              <div key={time} className="flex border-b border-gray-800/50">
-                {/* Time label — fixed 56px width, centered vertically */}
-                <div className="w-[56px] shrink-0 flex items-start justify-end pr-2 pt-2">
-                  {timeIndex % 2 === 0 && (
-                    <span className="text-xs text-gray-500 whitespace-nowrap leading-tight">
-                      {formatTime(time)}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Day columns — fill remaining space equally */}
-                <div className="flex-1 grid grid-cols-7">
-                  {weekDates.map((date, dayIndex) => {
-                    const dateStr = formatDateToString(date);
-                    const bookedApt = isSlotBooked(dateStr, time);
-                    const isBlocked = isSlotBlocked(dateStr, time);
-                    
-                    return (
-                      <div
-                        key={dayIndex}
-                        className={`
-                          relative min-h-[40px] border-l border-gray-800/50 cursor-pointer min-w-0
-                          ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}
-                        `}
-                        onClick={() => handleTimeSlotClick(date, time)}
-                      >
-                      {bookedApt && time === bookedApt.startTime && (
+            <div className="flex">
+              {/* Time labels column */}
+              <div className="w-[56px] shrink-0">
+                {timeSlots.map((time, timeIndex) => (
+                  <div
+                    key={time}
+                    className="h-[40px] flex items-start justify-end pr-2 pt-1 border-b border-gray-800/50"
+                  >
+                    {timeIndex % 2 === 0 && (
+                      <span className="text-xs text-gray-500 whitespace-nowrap leading-tight">
+                        {formatTime(time)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Day columns — each column grows to fill height, appointments positioned absolutely */}
+              {weekDates.map((date, dayIndex) => {
+                const dateStr = formatDateToString(date);
+                const dayAppts = getAppointmentsForDate(dateStr);
+                const blockedForDay = getBlockedForDate(dateStr);
+
+                return (
+                  <div
+                    key={dayIndex}
+                    className="flex-1 min-w-0 border-l border-gray-800/50 relative"
+                    onClick={(e) => {
+                      // Click on empty area opens booking for that hour
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top + (e.currentTarget.parentElement?.scrollTop || 0);
+                      const slotIndex = Math.floor(y / 40);
+                      const slotMins = 4 * 60 + slotIndex * 30;
+                      const hour = Math.floor(slotMins / 60);
+                      const min = slotMins % 60;
+                      const timeStr = `${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`;
+                      handleTimeSlotClick(date, timeStr);
+                    }}
+                  >
+                    {/* Background slot grid - clickable empty slots */}
+                    {timeSlots.map((time, timeIndex) => {
+                      const isBlocked = isSlotBlocked(dateStr, time);
+                      return (
                         <div
-                          className={`
-                            absolute left-0 right-0 p-1 rounded text-xs overflow-hidden
-                            ${bookedApt.status === "completed" ? "bg-green-600" : 
-                              bookedApt.status === "personal-block" ? "bg-gray-600" :
-                              bookedApt.status === "booked" ? "bg-orange-500" : "bg-gray-600"}
-                          `}
-                          style={getAppointmentStyle(bookedApt, dateStr)}
+                          key={timeIndex}
+                          className={`h-[40px] border-b border-gray-800/50 ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}`}
+                        />
+                      );
+                    })}
+
+                    {/* Blocked pills */}
+                    {blockedForDay.map((blk, blkIdx) => {
+                      const startMins = timeToMinutes(blk.startTime);
+                      const endMins = timeToMinutes(blk.endTime);
+                      const top = ((startMins - 4 * 60) / 30) * 40;
+                      const height = ((endMins - startMins) / 30) * 40;
+                      return (
+                        <div
+                          key={`blk-${blkIdx}`}
+                          className="absolute left-1 right-1 bg-gray-700/80 rounded flex items-center justify-center pointer-events-none z-10"
+                          style={{ top: `${top}px`, height: `${height}px` }}
+                        >
+                          <span className="text-xs text-gray-400 truncate px-1">⛔ Blocked</span>
+                        </div>
+                      );
+                    })}
+
+                    {/* Appointments - positioned absolutely within the day column */}
+                    {dayAppts.map((apt) => {
+                      const startMins = timeToMinutes(apt.startTime);
+                      const endMins = timeToMinutes(apt.endTime);
+                      const top = ((startMins - 4 * 60) / 30) * 40;
+                      const height = ((endMins - startMins) / 30) * 40;
+
+                      return (
+                        <div
+                          key={apt.id}
+                          className={`absolute left-0 right-0 p-1 rounded text-xs overflow-hidden cursor-pointer z-20 ${
+                            apt.status === "completed" ? "bg-green-600" :
+                            apt.status === "personal-block" ? "bg-gray-600" :
+                            apt.status === "booked" ? "bg-orange-500" : "bg-gray-600"
+                          }`}
+                          style={{ top: `${top}px`, height: `${Math.max(height, 20)}px` }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const dayAppts = getAppointmentsForDate(dateStr);
+                            setSelectedDate(dateStr);
+                            setSelectedDayAppointments(dayAppts);
+                            setShowDayModal(true);
+                          }}
                         >
                           <div className="font-medium truncate">
-                            {bookedApt.isPersonalBlock || bookedApt.status === "personal-block"
-                              ? (bookedApt.label || "Non-Client")
-                              : getClientName(bookedApt.clientId)}
+                            {apt.isPersonalBlock || apt.status === "personal-block"
+                              ? (apt.label || "Non-Client")
+                              : getClientName(apt.clientId)}
                           </div>
-                          <div className="opacity-80 truncate">{formatTime(bookedApt.startTime)} - {formatTime(bookedApt.endTime)}</div>
-                          {bookedApt.isPersonalBlock && (
+                          <div className="opacity-80 truncate">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
+                          {apt.isPersonalBlock && (
                             <div className="text-[10px] opacity-60 truncate">Non-Client</div>
                           )}
                         </div>
-                      )}
-                      {/* Show blocked pill in week view (FIX 5) */}
-                      {isBlocked && (() => {
-                        const blockedList = getBlockedForDate(dateStr);
-                        const firstMatchingBlock = blockedList.find(blk => {
-                          const startMins = timeToMinutes(blk.startTime);
-                          const endMins = timeToMinutes(blk.endTime);
-                          const slotMins = timeToMinutes(time);
-                          return slotMins >= startMins && slotMins < endMins && time === blk.startTime;
-                        });
-                        return firstMatchingBlock ? (
-                          <div className="absolute inset-x-1 top-1 bottom-1 bg-gray-700/80 rounded flex items-center justify-center">
-                            <span className="text-xs text-gray-400 truncate px-1">⛔ Blocked</span>
-                          </div>
-                        ) : null;
-                      })()}
-                    </div>
-                  );
-                })}
-              </div>
-              </div>
-            ))}
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -589,60 +635,96 @@ export default function GoogleCalendar({
             )}
           </div>
 
-          {/* Time grid */}
+          {/* Time grid — same column approach as week view */}
           <div className="max-h-[600px] overflow-y-auto">
-            {timeSlots.map((time, timeIndex) => {
-              const dateStr = formatDateToString(currentDate);
-              const bookedApt = isSlotBooked(dateStr, time);
-              const isBlocked = isSlotBlocked(dateStr, time);
-              
-              return (
-                <div
-                  key={time}
-                  className="grid grid-cols-[80px_1fr] border-b border-gray-800/50 min-h-[40px]"
-                >
-                  {/* Time label */}
-                  <div className="p-3 text-sm text-gray-500 text-right pr-4">
+            <div className="grid grid-cols-[80px_1fr]">
+              {/* Time labels column */}
+              <div>
+                {timeSlots.map((time, timeIndex) => (
+                  <div
+                    key={time}
+                    className="h-[40px] flex items-start justify-end pr-3 pt-1 text-sm text-gray-500 border-b border-gray-800/50"
+                  >
                     {timeIndex % 2 === 0 && formatTime(time)}
                   </div>
-                  
-                  {/* Slot content */}
-                  <div
-                    className={`
-                      relative min-h-[40px] cursor-pointer
-                      ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}
-                    `}
-                    onClick={() => handleTimeSlotClick(currentDate, time)}
-                  >
-                    {bookedApt && time === bookedApt.startTime && (
+                ))}
+              </div>
+
+              {/* Day content column */}
+              <div className="relative">
+                {/* Background slot grid */}
+                {timeSlots.map((time, timeIndex) => {
+                  const dateStr = formatDateToString(currentDate);
+                  const isBlocked = isSlotBlocked(dateStr, time);
+                  return (
+                    <div
+                      key={timeIndex}
+                      className={`h-[40px] border-b border-gray-800/50 ${isBlocked ? "bg-gray-800/50" : "hover:bg-gray-800/30"}`}
+                      onClick={() => handleTimeSlotClick(currentDate, time)}
+                    />
+                  );
+                })}
+
+                {/* Blocked pills */}
+                {(() => {
+                  const dateStr = formatDateToString(currentDate);
+                  const blockedForDay = getBlockedForDate(dateStr);
+                  return blockedForDay.map((blk, blkIdx) => {
+                    const startMins = timeToMinutes(blk.startTime);
+                    const endMins = timeToMinutes(blk.endTime);
+                    const top = ((startMins - 4 * 60) / 30) * 40;
+                    const height = ((endMins - startMins) / 30) * 40;
+                    return (
                       <div
-                        className={`
-                          absolute left-2 right-2 top-1 p-3 rounded-lg text-sm
-                          ${bookedApt.status === "completed" ? "bg-green-600" : 
-                            bookedApt.status === "personal-block" ? "bg-gray-600" :
-                            bookedApt.status === "booked" ? "bg-orange-500" : "bg-gray-600"}
-                        `}
-                        style={getAppointmentStyle(bookedApt, dateStr)}
+                        key={`blk-${blkIdx}`}
+                        className="absolute left-2 right-2 bg-gray-700/80 rounded-lg flex items-center justify-center pointer-events-none z-10"
+                        style={{ top: `${top}px`, height: `${height}px` }}
+                      >
+                        <span className="text-sm text-gray-400">⛔ Blocked</span>
+                      </div>
+                    );
+                  });
+                })()}
+
+                {/* Appointments */}
+                {(() => {
+                  const dateStr = formatDateToString(currentDate);
+                  const dayAppts = getAppointmentsForDate(dateStr);
+                  return dayAppts.map((apt) => {
+                    const startMins = timeToMinutes(apt.startTime);
+                    const endMins = timeToMinutes(apt.endTime);
+                    const top = ((startMins - 4 * 60) / 30) * 40;
+                    const height = ((endMins - startMins) / 30) * 40;
+
+                    return (
+                      <div
+                        key={apt.id}
+                        className={`absolute left-2 right-2 p-3 rounded-lg text-sm z-20 ${
+                          apt.status === "completed" ? "bg-green-600" :
+                          apt.status === "personal-block" ? "bg-gray-600" :
+                          apt.status === "booked" ? "bg-orange-500" : "bg-gray-600"
+                        }`}
+                        style={{ top: `${top}px`, height: `${Math.max(height, 20)}px` }}
                       >
                         <div className="font-semibold text-base">
-                          {bookedApt.isPersonalBlock || bookedApt.status === "personal-block"
-                            ? (bookedApt.label || "Non-Client Event")
-                            : getClientName(bookedApt.clientId)}
+                          {apt.isPersonalBlock || apt.status === "personal-block"
+                            ? (apt.label || "Non-Client Event")
+                            : getClientName(apt.clientId)}
                         </div>
-                        <div className="opacity-90">{formatTime(bookedApt.startTime)} - {formatTime(bookedApt.endTime)}</div>
-                        {bookedApt.isPersonalBlock && (
+                        <div className="opacity-90">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
+                        {apt.isPersonalBlock && (
                           <div className="text-xs opacity-70 mt-1">🏷️ Non-Client Event</div>
                         )}
                         {mode === "admin" && (
                           <div className="flex gap-2 mt-2">
                             <button
-                              onClick={(e) => { e.stopPropagation(); onReschedule?.(bookedApt); }}
+                              onClick={(e) => { e.stopPropagation(); onReschedule?.(apt); }}
                               className="text-xs bg-blue-700 px-2 py-1 rounded hover:bg-blue-600"
                             >
                               Reschedule
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); onCancel?.(bookedApt.id); }}
+                              onClick={(e) => { e.stopPropagation(); onCancel?.(apt.id); }}
                               className="text-xs bg-red-700 px-2 py-1 rounded hover:bg-red-600"
                             >
                               Cancel
@@ -650,26 +732,11 @@ export default function GoogleCalendar({
                           </div>
                         )}
                       </div>
-                    )}
-                    {/* Show blocked pill in day view (FIX 5) */}
-                    {isBlocked && (() => {
-                      const blockedList = getBlockedForDate(dateStr);
-                      const firstMatchingBlock = blockedList.find(blk => {
-                        const startMins = timeToMinutes(blk.startTime);
-                        const endMins = timeToMinutes(blk.endTime);
-                        const slotMins = timeToMinutes(time);
-                        return slotMins >= startMins && slotMins < endMins && time === blk.startTime;
-                      });
-                      return firstMatchingBlock ? (
-                        <div className="absolute inset-x-2 top-2 bottom-2 bg-gray-700/80 rounded-lg flex items-center justify-center">
-                          <span className="text-sm text-gray-400">⛔ Blocked</span>
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                </div>
-              );
-            })}
+                    );
+                  });
+                })()}
+              </div>
+            </div>
           </div>
         </div>
       )}
