@@ -217,6 +217,16 @@ export async function POST(request: NextRequest) {
 
   // ── Create regular appointment ─────────────────────────────────────────
   if (action === 'create') {
+    // Reject client booking if they have no credits (personal blocks don't need credits)
+    if (!isPersonalBlock) {
+      const creditCheckClients = await getClients();
+      const creditCheckClient = creditCheckClients.find((c: any) => c.id === clientId);
+      const currentCredits = creditCheckClient?.unusedCredits ?? 0;
+      if (currentCredits < 1) {
+        return NextResponse.json({ error: 'No sessions left to schedule' }, { status: 400 });
+      }
+    }
+
     const check = await checkSlotAvailable(date, startTime, endTime, undefined, clientId);
     if (!check.available) {
       return NextResponse.json({ error: check.reason }, { status: 400 });

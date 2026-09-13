@@ -260,6 +260,12 @@ export default function BookPage() {
         const data = await res.json();
         setBookingRef(data.id || `APT-${Date.now()}`);
         setStep("done");
+        // Update client credits from response and persist to localStorage
+        if (data.unusedCredits !== undefined) {
+          const updated = { ...client, unusedCredits: data.unusedCredits };
+          setClient(updated);
+          localStorage.setItem("calendarClient", JSON.stringify(updated));
+        }
         // Reload so client's appointments list is fresh — non-blocking
         loadData(client.id);
       } else {
@@ -356,7 +362,7 @@ export default function BookPage() {
             <div className="flex justify-between"><span className="text-gray-400">Ref</span><span className="font-mono text-sm text-orange-500">{bookingRef.slice(0, 8).toUpperCase()}</span></div>
           </div>
           <button onClick={() => { setStep("date"); setRescheduleApt(null); setSelectedDate(""); setSelectedTime(""); setNewDatePicked(false); }} className="w-full mt-4 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg">Book Another</button>
-          <button onClick={() => setViewMode("appointments")} className="w-full mt-2 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg">My Appointments</button>
+          <button onClick={() => { setStep("date"); setViewMode("appointments"); }} className="w-full mt-2 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg">My Appointments</button>
           <button onClick={logout} className="w-full mt-2 py-2 text-gray-500 hover:text-white text-sm">Logout</button>
         </div>
       </div>
@@ -497,7 +503,10 @@ export default function BookPage() {
         <div className="max-w-xl mx-auto">
           <div className="flex items-center justify-between mb-6 pt-4">
             <h1 className="text-2xl font-bold text-orange-500">My Appointments</h1>
-            <button onClick={() => setViewMode("pick")} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg font-medium">+ Book New</button>
+            {(client.unusedCredits ?? 0) > 0
+              ? <button onClick={() => setViewMode("pick")} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg font-medium">+ Book New</button>
+              : <span className="text-gray-500 text-sm italic">No sessions left</span>
+            }
           </div>
 
           {message && <div className={`p-3 rounded-lg mb-4 ${message.includes("success") || message.includes("changed") ? "bg-green-900" : "bg-red-900"}`}>{message}</div>}
@@ -506,6 +515,13 @@ export default function BookPage() {
             <div className="bg-orange-500/20 border border-orange-500/40 rounded-xl p-4 mb-6 text-center">
               <p className="text-orange-400 font-semibold">
                 You have {client.unusedCredits} appointment{(client.unusedCredits ?? 0) !== 1 ? 's' : ''} left to schedule
+              </p>
+            </div>
+          )}
+          {(client.unusedCredits ?? 0) < 1 && (
+            <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 mb-6 text-center">
+              <p className="text-gray-300 font-medium">
+                You have 0 appointments left to schedule. Ask your trainer to add sessions.
               </p>
             </div>
           )}
@@ -539,7 +555,9 @@ export default function BookPage() {
             </>
           )}
 
-          <button onClick={() => setViewMode("pick")} className="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-lg font-medium mb-3">+ Book New Appointment</button>
+          {(client.unusedCredits ?? 0) > 0 && (
+            <button onClick={() => setViewMode("pick")} className="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-lg font-medium mb-3">+ Book New Appointment</button>
+          )}
           <button onClick={() => setShowPasswordChange(s => !s)} className="w-full py-2 text-gray-400 hover:text-white text-sm mb-2">Change Password</button>
           {showPasswordChange && (
             <form onSubmit={handlePasswordChange} className="flex gap-2 mb-4">
@@ -564,12 +582,22 @@ export default function BookPage() {
             <h1 className="text-2xl font-bold text-orange-500">Book Appointment</h1>
             <p className="text-gray-400 text-sm">Welcome, {client.firstName}!</p>
           </div>
-          <button onClick={() => setViewMode("appointments")} className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm">My Appointments</button>
+          <button onClick={() => { setStep("date"); setViewMode("appointments"); }} className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm">My Appointments</button>
         </div>
 
         {message && <div className="bg-red-900 p-3 rounded-lg mb-4 text-sm">{message}</div>}
 
         {/* Step 1: Pick Date */}
+        {(step === "date" || step === "time" || step === "confirm") && (client.unusedCredits ?? 0) < 1 ? (
+          <>
+            <div className="text-center py-16">
+              <div className="text-4xl mb-4">📅</div>
+              <h2 className="text-xl font-bold text-white mb-2">No Sessions Available</h2>
+              <p className="text-gray-400">You have 0 appointments left to schedule.<br />Ask your trainer to add sessions.</p>
+            </div>
+          </>
+        ) : (
+          <>
         {step === "date" && (
           <>
             <div className="mb-4">
@@ -677,9 +705,11 @@ export default function BookPage() {
 
         {/* Bottom nav */}
         <div className="mt-8 pt-4 border-t border-gray-800 flex justify-between text-sm text-gray-500">
-          <button onClick={() => setViewMode("appointments")}>My Appointments</button>
+          <button onClick={() => { setStep("date"); setViewMode("appointments"); }}>My Appointments</button>
           <button onClick={logout}>Logout</button>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
