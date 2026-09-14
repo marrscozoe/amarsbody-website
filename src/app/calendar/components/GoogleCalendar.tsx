@@ -434,6 +434,7 @@ export default function GoogleCalendar({
 
               const dateStr = formatDateToString(day);
               const dayAppts = getAppointmentsForDate(dateStr);
+              const monthAppts = dayAppts.filter(apt => apt.status !== "personal-block" && !apt.isPersonalBlock);
               const isToday = dateStr === today;
               const isSelected = dateStr === selectedDate;
               const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
@@ -457,10 +458,10 @@ export default function GoogleCalendar({
                     <span className={`text-sm ${isToday ? "font-bold" : ""}`}>{day.getDate()}</span>
                   </div>
                   
-                  {/* Appointment indicators (FIX 5: also show blocked indicator) */}
-                  {dayAppts.length > 0 && (
+                  {/* Appointment indicators */}
+                  {monthAppts.length > 0 && (
                     <div className="space-y-1">
-                      {dayAppts.slice(0, 3).map(apt => (
+                      {monthAppts.slice(0, 3).map(apt => (
                         <div
                           key={apt.id}
                           className={`
@@ -470,26 +471,15 @@ export default function GoogleCalendar({
                               apt.status === "booked" ? "bg-orange-900 text-orange-300" : "bg-gray-700"}
                           `}
                         >
-                          {apt.isPersonalBlock || apt.status === "personal-block"
-                            ? `⛔ ${apt.label || "Blocked"}`
-                            : `${formatTime(apt.startTime)} ${getClientName(apt.clientId).split(" ")[0]}`}
+                          {`${formatTime(apt.startTime)} ${getClientName(apt.clientId).split(" ")[0]}`}
                         </div>
                       ))}
-                      {dayAppts.length > 3 && (
-                        <div className="text-xs text-gray-500">+{Math.max(0, dayAppts.length - 3)} more</div>
+                      {monthAppts.length > 3 && (
+                        <div className="text-xs text-gray-500">+{Math.max(0, monthAppts.length - 3)} more</div>
                       )}
                     </div>
                   )}
-                  {/* Show blocked time indicator in month view (FIX 5) */}
-                  {(() => {
-                    const blockedForDay = getBlockedForDate(dateStr);
-                    if (blockedForDay.length === 0) return null;
-                    return (
-                      <div className="mt-1 text-xs text-gray-500 truncate">
-                        ⛔ {blockedForDay.length} blocked
-                      </div>
-                    );
-                  })()}
+
                 </div>
               );
             })}
