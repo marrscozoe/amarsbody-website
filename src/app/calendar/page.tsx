@@ -98,14 +98,6 @@ export default function CalendarPage() {
         {/* Main Menu */}
         {!showClientLogin && !showAdminLogin && (
           <div className="space-y-4">
-            {/* New Clients — Free Consultation */}
-            <a
-              href="/calendar/consult"
-              className="block w-full py-5 px-6 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors text-center text-lg"
-            >
-              {ctaText}
-            </a>
-            
             {/* Existing Clients */}
             <button
               onClick={() => setShowClientLogin(true)}
@@ -167,12 +159,7 @@ export default function CalendarPage() {
               </button>
             </form>
             
-            <p className="text-gray-400 text-center text-sm">
-              New here?{" "}
-              <a href="/calendar/consult" className="text-orange-500 hover:text-orange-400">
-                Book a free consultation
-              </a>
-            </p>
+
             
             <button
               onClick={() => { setShowClientLogin(false); setError(""); setClientForm({ firstName: "", lastName: "", password: "" }); }}

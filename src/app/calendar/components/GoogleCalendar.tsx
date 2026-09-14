@@ -30,6 +30,7 @@ interface BlockedTime {
   isRecurring?: boolean;
   daysOfWeek?: number[] | null;
   endDate?: string | null;
+  type?: string; // 'block' | 'consult-window'
 }
 
 interface CalendarProps {
@@ -468,10 +469,11 @@ export default function GoogleCalendar({
                             text-xs px-1 py-0.5 rounded truncate
                             ${apt.status === "completed" ? "bg-green-900 text-green-300" : 
                               apt.status === "personal-block" ? "bg-gray-700 text-gray-300" :
+                              apt.status === "consultation" ? "bg-teal-900 text-teal-300" :
                               apt.status === "booked" ? "bg-orange-900 text-orange-300" : "bg-gray-700"}
                           `}
                         >
-                          {`${formatTime(apt.startTime)} ${getClientName(apt.clientId).split(" ")[0]}`}
+                          {apt.status === "consultation" ? "🎓 " : ""}{`${formatTime(apt.startTime)} ${getClientName(apt.clientId).split(" ")[0]}`}
                         </div>
                       ))}
                       {monthAppts.length > 3 && (
@@ -607,6 +609,7 @@ export default function GoogleCalendar({
                           className={`absolute left-0 right-0 p-1 rounded text-xs overflow-hidden cursor-pointer z-20 ${
                             apt.status === "completed" ? "bg-green-600" :
                             apt.status === "personal-block" ? "bg-gray-600" :
+                            apt.status === "consultation" ? "bg-teal-600" :
                             apt.status === "booked" ? "bg-orange-500" : "bg-gray-600"
                           }`}
                           style={{ top: `${top}px`, height: `${Math.max(height, 20)}px` }}
@@ -619,6 +622,7 @@ export default function GoogleCalendar({
                           }}
                         >
                           <div className="font-medium truncate">
+                            {apt.status === "consultation" ? "🎓 " : ""}
                             {apt.isPersonalBlock || apt.status === "personal-block"
                               ? (apt.label || "Non-Client")
                               : getClientName(apt.clientId)}
@@ -626,6 +630,9 @@ export default function GoogleCalendar({
                           <div className="opacity-80 truncate">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
                           {apt.isPersonalBlock && (
                             <div className="text-[10px] opacity-60 truncate">Non-Client</div>
+                          )}
+                          {apt.status === "consultation" && (
+                            <div className="text-[10px] opacity-70 truncate">Consultation</div>
                           )}
                         </div>
                       );
@@ -727,11 +734,13 @@ export default function GoogleCalendar({
                         className={`absolute left-2 right-2 p-3 rounded-lg text-sm z-20 ${
                           apt.status === "completed" ? "bg-green-600" :
                           apt.status === "personal-block" ? "bg-gray-600" :
+                          apt.status === "consultation" ? "bg-teal-600" :
                           apt.status === "booked" ? "bg-orange-500" : "bg-gray-600"
                         }`}
                         style={{ top: `${top}px`, height: `${Math.max(height, 20)}px` }}
                       >
                         <div className="font-semibold text-base">
+                          {apt.status === "consultation" ? "🎓 " : ""}
                           {apt.isPersonalBlock || apt.status === "personal-block"
                             ? (apt.label || "Non-Client Event")
                             : getClientName(apt.clientId)}
@@ -739,6 +748,9 @@ export default function GoogleCalendar({
                         <div className="opacity-90">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
                         {apt.isPersonalBlock && (
                           <div className="text-xs opacity-70 mt-1">🏷️ Non-Client Event</div>
+                        )}
+                        {apt.status === "consultation" && (
+                          <div className="text-xs opacity-70 mt-1">Consultation</div>
                         )}
                         {mode === "admin" && (
                           <div className="flex gap-2 mt-2">
@@ -824,6 +836,7 @@ export default function GoogleCalendar({
                         p-4 rounded-lg
                         ${apt.status === "completed" ? "bg-green-900/50 border border-green-700" : 
                           apt.status === "personal-block" ? "bg-gray-800/80 border border-gray-600" :
+                          apt.status === "consultation" ? "bg-teal-900/50 border border-teal-700" :
                           apt.status === "booked" ? "bg-orange-900/50 border border-orange-700" : 
                           "bg-gray-800"}
                       `}
@@ -831,6 +844,7 @@ export default function GoogleCalendar({
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-semibold text-lg">
+                            {apt.status === "consultation" ? "🎓 " : ""}
                             {apt.isPersonalBlock || apt.status === "personal-block"
                               ? (apt.label || "Non-Client Event")
                               : mode === "client" ? "Your Session" : getClientName(apt.clientId)}
@@ -842,9 +856,10 @@ export default function GoogleCalendar({
                             text-sm mt-1
                             ${apt.status === "completed" ? "text-green-400" : 
                               apt.status === "personal-block" ? "text-gray-400" :
+                              apt.status === "consultation" ? "text-teal-400" :
                               apt.status === "booked" ? "text-orange-400" : "text-gray-400"}
                           `}>
-                            {apt.status === "personal-block" ? "Non-Client Event" : apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
+                            {apt.status === "personal-block" ? "Non-Client Event" : apt.status === "consultation" ? "Consultation" : apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                           </div>
                         </div>
                         {mode === "admin" && (

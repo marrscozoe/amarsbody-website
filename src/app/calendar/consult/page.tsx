@@ -20,6 +20,7 @@ interface BlockedTime {
   isRecurring?: boolean;
   daysOfWeek?: number[] | null;
   endDate?: string | null;
+  type?: string; // 'block' | 'consult-window'
 }
 
 interface CalendarConsultSettings {
@@ -95,6 +96,9 @@ export default function ConsultPage() {
   // Contact info
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
 
+  // Waiver checkbox
+  const [waiverChecked, setWaiverChecked] = useState(false);
+
   // Calendar data
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -154,6 +158,22 @@ export default function ConsultPage() {
     });
   };
 
+  // Get only consult-window blocks for a date
+  const getConsultWindowsForDate = (dateStr: string): BlockedTime[] => {
+    const date = new Date(dateStr + "T00:00:00");
+    const dayOfWeek = date.getDay();
+    return blockedTimes.filter(blk => {
+      if (blk.type !== 'consult-window') return false;
+      if (blk.date === dateStr) return true;
+      if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.length > 0) {
+        if (!blk.daysOfWeek.includes(dayOfWeek)) return false;
+        if (blk.endDate && dateStr > blk.endDate) return false;
+        return true;
+      }
+      return false;
+    });
+  };
+
   const isSlotBlocked = (dateStr: string, time: string): boolean => {
     const blocked = getBlockedForDate(dateStr);
     const mins = timeToMinutes(time);
@@ -163,6 +183,21 @@ export default function ConsultPage() {
       return mins >= startMins && mins < endMins;
     });
   };
+
+  // Check if a slot is within a consult-window block
+  const isSlotInConsultWindow = (dateStr: string, time: string): boolean => {
+    const windows = getConsultWindowsForDate(dateStr);
+    if (windows.length === 0) return false; // no windows defined
+    const mins = timeToMinutes(time);
+    return windows.some(win => {
+      const startMins = timeToMinutes(win.startTime);
+      const endMins = timeToMinutes(win.endTime);
+      return mins >= startMins && mins < endMins;
+    });
+  };
+
+  // Are any consult-window blocks defined at all?
+  const hasConsultWindows = blockedTimes.some(blk => blk.type === 'consult-window');
 
   const isSlotBooked = (dateStr: string, time: string): boolean => {
     const dayAppts = appointments.filter(apt => apt.date === dateStr && apt.status !== "cancelled");
@@ -174,10 +209,27 @@ export default function ConsultPage() {
     });
   };
 
-  // Get available time slots for a given date (using admin settings)
+  // Get available time slots for a given date.
+  // If consult-window blocks exist, slots must be inside those windows.
+  // Falls back to settings-based openDays/openHours if no windows defined.
   const getAvailableSlots = (dateStr: string): string[] => {
     const allSlots = generateTimeSlots(settings.duration, settings.openHours);
-    return allSlots.filter(time => !isSlotBlocked(dateStr, time) && !isSlotBooked(dateStr, time));
+    const mins24hFromNow = (() => {
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+      return new Date(now.getTime() + 24 * 60 * 60 * 1000).getTime();
+    })();
+    return allSlots.filter(time => {
+      if (isSlotBlocked(dateStr, time)) return false;
+      if (isSlotBooked(dateStr, time)) return false;
+      // 24h lead time
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hour, minute] = time.split(':').map(Number);
+      const requestedMs = new Date(`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00-05:00`).getTime();
+      if (requestedMs < mins24hFromNow) return false;
+      // consult-window filter
+      if (hasConsultWindows && !isSlotInConsultWindow(dateStr, time)) return false;
+      return true;
+    });
   };
 
   // Get dates that have at least one available slot (next 8 weeks, filtered by openDays)
@@ -278,7 +330,8 @@ export default function ConsultPage() {
           date: selectedDate,
           startTime: selectedTime,
           endTime,
-          duration: settings.duration
+          duration: settings.duration,
+          waiverAck: waiverChecked
         })
       });
 
@@ -625,12 +678,25 @@ export default function ConsultPage() {
               </div>
             </div>
 
+            {/* Waiver checkbox */}
+            <label className="flex items-start gap-3 p-3 bg-gray-800/60 border border-gray-700 rounded-xl cursor-pointer hover:border-gray-600 transition-colors">
+              <input
+                type="checkbox"
+                checked={waiverChecked}
+                onChange={(e) => setWaiverChecked(e.target.checked)}
+                className="w-5 h-5 mt-0.5 accent-orange-500 shrink-0"
+              />
+              <span className="text-sm text-gray-300 leading-relaxed">
+                I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.
+              </span>
+            </label>
+
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
             <button
               onClick={handleConfirm}
-              disabled={submitting}
-              className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
+              disabled={submitting || !waiverChecked}
+              className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
             >
               {submitting ? "Booking..." : "Confirm Booking"}
             </button>

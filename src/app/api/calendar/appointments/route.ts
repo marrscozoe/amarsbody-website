@@ -126,7 +126,9 @@ async function checkSlotAvailable(
     }
   }
 
-  // ── Slot conflict check ──────────────────────────────────────────────────
+  // ── Slot conflict check — ALL active appointment types hide the slot ─────
+  // booked, consultation, personal-block all occupy the same slot pool.
+  // Only cancelled appointments are skipped.
   const hasConflict = appointments.some((apt: any) => {
     if (apt.status === 'cancelled') return false;
     if (excludeId && apt.id === excludeId) return false;
@@ -158,6 +160,26 @@ async function checkSlotAvailable(
   return { available: true };
 }
 
+// ── 24-hour lead-time check ──────────────────────────────────────────────────
+// Rejects self-serve bookings (create, create-consult) within 24h of now (America/Chicago).
+// Admin bypass: schedule-recurring is admin-only and is exempt.
+function isWithin24Hours(dateStr: string, startTime: string): boolean {
+  // Get current time in America/Chicago
+  const nowStr = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
+  const nowChicago = new Date(nowStr);
+  const cutoff = new Date(nowChicago.getTime() + 24 * 60 * 60 * 1000);
+
+  // Build the requested datetime in Chicago by parsing date+time and treating as local to Chicago
+  // We reconstruct it as a string and parse it as Chicago time
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = startTime.split(':').map(Number);
+  // Build ISO string that represents the Chicago time
+  const requestedStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00-05:00`;
+  const requestedMs = new Date(requestedStr).getTime();
+
+  return requestedMs < cutoff.getTime();
+}
+
 // GET - List appointments
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -186,6 +208,34 @@ export async function POST(request: NextRequest) {
 
   // ── Create consultation ─────────────────────────────────────────────────
   if (action === 'create-consult') {
+    // 24h lead time — consult self-serve rejected within 24h
+    if (isWithin24Hours(date, startTime)) {
+      return NextResponse.json(
+        { error: 'Consultations must be booked at least 24 hours in advance. Please choose a later date or time.' },
+        { status: 400 }
+      );
+    }
+
+    // One consult per email guard
+    const existingConsult = appointments.find(
+      (apt: any) => apt.status === 'consultation' && apt.clientEmail === clientEmail
+    );
+    if (existingConsult) {
+      return NextResponse.json(
+        { error: 'You already have a consultation scheduled.' },
+        { status: 400 }
+      );
+    }
+
+    // Waiver acknowledgment required
+    const { waiverAck } = body;
+    if (!waiverAck) {
+      return NextResponse.json(
+        { error: 'Waiver acknowledgment is required to book a consultation.' },
+        { status: 400 }
+      );
+    }
+
     const [hours, minutes] = startTime.split(":").map(Number);
     const endMinutes = hours * 60 + minutes + (duration || 30);
     const computedEndTime = endTime || `${Math.floor(endMinutes / 60).toString().padStart(2, "0")}:${(endMinutes % 60).toString().padStart(2, "0")}`;
@@ -217,6 +267,14 @@ export async function POST(request: NextRequest) {
 
   // ── Create regular appointment ─────────────────────────────────────────
   if (action === 'create') {
+    // 24h lead time — client self-serve rejected within 24h
+    if (!isPersonalBlock && isWithin24Hours(date, startTime)) {
+      return NextResponse.json(
+        { error: 'Appointments must be booked at least 24 hours in advance. Please choose a later date or time.' },
+        { status: 400 }
+      );
+    }
+
     // Reject client booking if they have no credits (personal blocks don't need credits)
     if (!isPersonalBlock) {
       const creditCheckClients = await getClients();
