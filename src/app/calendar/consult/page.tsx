@@ -22,10 +22,25 @@ interface BlockedTime {
   endDate?: string | null;
 }
 
-// Generate time slots filtered by duration rule
-const generateTimeSlots = (duration: number, startHour = 5, endHour = 20) => {
+interface CalendarConsultSettings {
+  duration: 30 | 60;
+  openDays: number[];
+  openHours: { start: number; end: number };
+  ctaText: string;
+}
+
+const DEFAULT_SETTINGS: CalendarConsultSettings = {
+  duration: 30,
+  openDays: [1, 2, 3, 4, 5],
+  openHours: { start: 9, end: 20 },
+  ctaText: "Book a Free Consultation",
+};
+
+// Generate time slots filtered by duration + admin open hours
+const generateTimeSlots = (duration: number, openHours: { start: number; end: number }) => {
   const slots: string[] = [];
-  for (let hour = startHour; hour <= endHour; hour++) {
+  const { start, end } = openHours;
+  for (let hour = start; hour <= end; hour++) {
     if (duration === 60) {
       // 60-min: :00 only
       slots.push(`${hour.toString().padStart(2, "0")}:00`);
@@ -70,45 +85,55 @@ type Step = "info" | "form" | "date" | "time" | "confirm" | "done";
 
 export default function ConsultPage() {
   const router = useRouter();
-  
+
   // Step flow: info → form → date → time → confirm → done
   const [step, setStep] = useState<Step>("info");
-  
+
+  // Consult settings (from admin)
+  const [settings, setSettings] = useState<CalendarConsultSettings>(DEFAULT_SETTINGS);
+
   // Contact info
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
-  const [duration, setDuration] = useState<number>(30);
-  
+
   // Calendar data
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Selected
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  
+
   // Error/success
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Confirmation data
   const [bookingRef, setBookingRef] = useState("");
 
   useEffect(() => {
-    loadCalendarData();
+    loadData();
   }, []);
 
-  const loadCalendarData = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const [aptRes, blockedRes] = await Promise.all([
+      const [aptRes, blockedRes, settingsRes] = await Promise.all([
         fetch("/api/calendar/appointments"),
-        fetch("/api/calendar/blocked")
+        fetch("/api/calendar/blocked"),
+        fetch("/api/calendar/consult-settings")
       ]);
       setAppointments(await aptRes.json());
       setBlockedTimes(await blockedRes.json());
+      const settingsData = await settingsRes.json();
+      setSettings({
+        duration: settingsData.duration || DEFAULT_SETTINGS.duration,
+        openDays: settingsData.openDays || DEFAULT_SETTINGS.openDays,
+        openHours: settingsData.openHours || DEFAULT_SETTINGS.openHours,
+        ctaText: settingsData.ctaText || DEFAULT_SETTINGS.ctaText,
+      });
     } catch (err) {
-      console.error("Failed to load calendar data:", err);
+      console.error("Failed to load data:", err);
     } finally {
       setLoading(false);
     }
@@ -117,7 +142,7 @@ export default function ConsultPage() {
   const getBlockedForDate = (dateStr: string): BlockedTime[] => {
     const date = new Date(dateStr + "T00:00:00");
     const dayOfWeek = date.getDay();
-    
+
     return blockedTimes.filter(blk => {
       if (blk.date === dateStr) return true;
       if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.length > 0) {
@@ -149,28 +174,34 @@ export default function ConsultPage() {
     });
   };
 
-  // Get available time slots for a given date
+  // Get available time slots for a given date (using admin settings)
   const getAvailableSlots = (dateStr: string): string[] => {
-    const allSlots = generateTimeSlots(duration);
+    const allSlots = generateTimeSlots(settings.duration, settings.openHours);
     return allSlots.filter(time => !isSlotBlocked(dateStr, time) && !isSlotBooked(dateStr, time));
   };
 
-  // Get dates that have at least one available slot (next 8 weeks)
+  // Get dates that have at least one available slot (next 8 weeks, filtered by openDays)
   const getAvailableDates = (): Date[] => {
     const dates: Date[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Start from tomorrow
     const start = new Date(today);
     start.setDate(start.getDate() + 1);
-    
+
     // Go up to 8 weeks out
     const end = new Date(today);
     end.setDate(end.getDate() + 56);
-    
+
     const current = new Date(start);
     while (current <= end) {
+      const dayOfWeek = current.getDay();
+      // Only show dates that are admin-open days
+      if (!settings.openDays.includes(dayOfWeek)) {
+        current.setDate(current.getDate() + 1);
+        continue;
+      }
       const dateStr = formatDateKey(current);
       const slots = getAvailableSlots(dateStr);
       if (slots.length > 0) {
@@ -178,7 +209,7 @@ export default function ConsultPage() {
       }
       current.setDate(current.getDate() + 1);
     }
-    
+
     return dates;
   };
 
@@ -186,13 +217,13 @@ export default function ConsultPage() {
   const getMonthGroups = (): { month: string; dates: Date[] }[] => {
     const dates = getAvailableDates();
     const groups: { [key: string]: Date[] } = {};
-    
+
     dates.forEach(date => {
       const key = date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
       if (!groups[key]) groups[key] = [];
       groups[key].push(date);
     });
-    
+
     return Object.entries(groups).map(([month, dates]) => ({ month, dates }));
   };
 
@@ -223,19 +254,18 @@ export default function ConsultPage() {
   const handleConfirm = async () => {
     setSubmitting(true);
     setError("");
-    
+
     try {
       // Calculate end time
       const [hours, minutes] = selectedTime.split(":").map(Number);
-      const endMinutes = hours * 60 + minutes + duration;
+      const endMinutes = hours * 60 + minutes + settings.duration;
       const endHours = Math.floor(endMinutes / 60);
       const endMins = endMinutes % 60;
       const endTime = `${endHours.toString().padStart(2, "0")}:${endMins.toString().padStart(2, "0")}`;
-      
+
       // Create a temporary "client" record for the consult
-      // We'll store the consult under a generated clientId
       const consultClientId = `consult_${Date.now()}`;
-      
+
       const res = await fetch("/api/calendar/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -248,17 +278,17 @@ export default function ConsultPage() {
           date: selectedDate,
           startTime: selectedTime,
           endTime,
-          duration
+          duration: settings.duration
         })
       });
-      
+
       if (!res.ok) {
         const data = await res.json();
         setError(data.error || "Failed to book. Please try again.");
         setSubmitting(false);
         return;
       }
-      
+
       const data = await res.json();
       setBookingRef(data.id || `CONSULT-${Date.now()}`);
       setStep("done");
@@ -270,8 +300,9 @@ export default function ConsultPage() {
 
   const monthGroups = getMonthGroups();
   const availableSlots = selectedDate ? getAvailableSlots(selectedDate) : [];
-  const timeSlots30 = generateTimeSlots(30);
-  const timeSlots60 = generateTimeSlots(60);
+  const timeSlots30 = generateTimeSlots(30, settings.openHours);
+  const timeSlots60 = generateTimeSlots(60, settings.openHours);
+  const slotsForDuration = settings.duration === 60 ? timeSlots60 : timeSlots30;
 
   // Info screen
   if (step === "info") {
@@ -282,22 +313,25 @@ export default function ConsultPage() {
             <h1 className="text-3xl font-bold text-orange-500 mb-2">AMarsBody</h1>
             <p className="text-gray-400">Free Consultation</p>
           </div>
-          
+
           <div className="bg-gray-900 rounded-xl p-6 space-y-4">
             <h2 className="text-xl font-semibold text-center mb-4">What to Expect</h2>
-            
+
             <div className="space-y-3">
               <div className="flex gap-3">
                 <span className="text-orange-500 text-xl">📅</span>
                 <div>
                   <p className="font-medium">Pick a time that works for you</p>
-                  <p className="text-sm text-gray-400">Choose from available 30 or 60 minute slots</p>
+                  <p className="text-sm text-gray-400">
+                    {settings.duration}-minute consultation available on{" "}
+                    {settings.openDays.map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(", ")}
+                  </p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <span className="text-orange-500 text-xl">💬</span>
                 <div>
-                  <p className="font-medium">Free 15-minute call</p>
+                  <p className="font-medium">Free {settings.duration}-minute call</p>
                   <p className="text-sm text-gray-400">Discuss your goals and see if we're a good fit</p>
                 </div>
               </div>
@@ -309,14 +343,14 @@ export default function ConsultPage() {
                 </div>
               </div>
             </div>
-            
+
             <button
               onClick={() => setStep("form")}
               className="w-full mt-4 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors text-lg"
             >
               Get Started →
             </button>
-            
+
             <button
               onClick={() => router.push("/calendar")}
               className="w-full py-2 text-gray-400 hover:text-white transition-colors text-sm"
@@ -329,16 +363,16 @@ export default function ConsultPage() {
     );
   }
 
-  // Contact form
+  // Contact form — NO duration toggle (admin controls duration)
   if (step === "form") {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6 pt-4">
-            <h1 className="text-2xl font-bold text-orange-500 mb-1">Book a Free Consultation</h1>
+            <h1 className="text-2xl font-bold text-orange-500 mb-1">{settings.ctaText}</h1>
             <p className="text-gray-400 text-sm">Step 1 of 3 — Your info</p>
           </div>
-          
+
           <div className="bg-gray-900 rounded-xl p-6 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -364,7 +398,7 @@ export default function ConsultPage() {
                 />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm text-gray-400 mb-1">Email *</label>
               <input
@@ -376,7 +410,7 @@ export default function ConsultPage() {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm text-gray-400 mb-1">Phone</label>
               <input
@@ -387,44 +421,22 @@ export default function ConsultPage() {
                 placeholder="(555) 123-4567"
               />
             </div>
-            
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Consultation Length</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setDuration(30)}
-                  className={`py-3 rounded-lg font-medium transition-colors ${
-                    duration === 30
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                  }`}
-                >
-                  30 minutes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDuration(60)}
-                  className={`py-3 rounded-lg font-medium transition-colors ${
-                    duration === 60
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                  }`}
-                >
-                  60 minutes
-                </button>
-              </div>
+
+            {/* Duration shown as info only — customer cannot change */}
+            <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-3">
+              <p className="text-sm text-gray-400">Consultation Length</p>
+              <p className="text-white font-medium">{settings.duration} minutes</p>
             </div>
-            
+
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            
+
             <button
               onClick={handleSubmitForm}
               className="w-full mt-2 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors"
             >
               Continue →
             </button>
-            
+
             <button
               onClick={() => setStep("info")}
               className="w-full py-2 text-gray-400 hover:text-white transition-colors text-sm"
@@ -437,7 +449,7 @@ export default function ConsultPage() {
     );
   }
 
-  // Date picker
+  // Date picker — only shows admin-open days
   if (step === "date") {
     if (loading) {
       return (
@@ -446,29 +458,25 @@ export default function ConsultPage() {
         </div>
       );
     }
-    
+
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
         <div className="max-w-lg mx-auto">
           <div className="text-center mb-6 pt-4">
-            <h1 className="text-2xl font-bold text-orange-500 mb-1">Book a Free Consultation</h1>
+            <h1 className="text-2xl font-bold text-orange-500 mb-1">{settings.ctaText}</h1>
             <p className="text-gray-400 text-sm">Step 2 of 3 — Pick a date</p>
           </div>
-          
+
           <div className="mb-4">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-gray-400 text-sm">
-                {duration}-minute consultation for <span className="text-white">{form.firstName}</span>
-              </span>
-              <button
-                onClick={() => setDuration(d => d === 30 ? 60 : 30)}
-                className="text-sm text-orange-500 hover:text-orange-400"
-              >
-                {duration} min ↔
-              </button>
-            </div>
+            <span className="text-gray-400 text-sm">
+              {settings.duration}-minute consultation for{" "}
+              <span className="text-white">{form.firstName}</span>
+              {" — "}
+              Available{" "}
+              {settings.openDays.map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(", ")}
+            </span>
           </div>
-          
+
           <div className="bg-gray-900 rounded-xl p-4 space-y-6">
             {monthGroups.length === 0 ? (
               <div className="text-center py-8">
@@ -501,7 +509,7 @@ export default function ConsultPage() {
               ))
             )}
           </div>
-          
+
           <button
             onClick={() => setStep("form")}
             className="w-full mt-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
@@ -513,16 +521,15 @@ export default function ConsultPage() {
     );
   }
 
-  // Time picker
+  // Time picker — uses admin-configured duration for slot generation
   if (step === "time") {
     const dateObj = new Date(selectedDate + "T12:00:00");
     const dateLabel = dateObj.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-    
-    // Show filtered slots based on duration
-    const slots = duration === 60 ? timeSlots60 : timeSlots30;
+
+    // Show filtered slots based on admin-configured duration
     const available = getAvailableSlots(selectedDate);
     const availableSet = new Set(available);
-    
+
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
         <div className="max-w-md mx-auto">
@@ -530,15 +537,15 @@ export default function ConsultPage() {
             <h1 className="text-2xl font-bold text-orange-500 mb-1">{dateLabel}</h1>
             <p className="text-gray-400 text-sm">Step 3 of 3 — Pick a time</p>
           </div>
-          
-          {duration === 60 && (
+
+          {settings.duration === 60 && (
             <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 mb-4 text-sm text-center">
               60-minute sessions are available at :00 only (e.g., 9:00, 10:00)
             </div>
           )}
-          
+
           <div className="grid grid-cols-3 gap-2">
-            {slots.map(time => {
+            {slotsForDuration.map(time => {
               const isAvail = availableSet.has(time);
               return (
                 <button
@@ -557,7 +564,7 @@ export default function ConsultPage() {
               );
             })}
           </div>
-          
+
           {available.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-400">No available times on this date.</p>
@@ -569,7 +576,7 @@ export default function ConsultPage() {
               </button>
             </div>
           )}
-          
+
           <button
             onClick={() => setStep("date")}
             className="w-full mt-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
@@ -584,7 +591,7 @@ export default function ConsultPage() {
   // Confirmation
   if (step === "confirm") {
     const dateObj = new Date(selectedDate + "T12:00:00");
-    
+
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
         <div className="max-w-md mx-auto">
@@ -592,7 +599,7 @@ export default function ConsultPage() {
             <div className="text-5xl mb-3">📅</div>
             <h1 className="text-2xl font-bold text-white mb-1">Confirm Your Consultation</h1>
           </div>
-          
+
           <div className="bg-gray-900 rounded-xl p-6 space-y-4">
             <div className="space-y-3 text-center">
               <div>
@@ -609,7 +616,7 @@ export default function ConsultPage() {
               </div>
               <div>
                 <p className="text-gray-400 text-sm">Duration</p>
-                <p className="text-lg font-semibold">{duration} minutes</p>
+                <p className="text-lg font-semibold">{settings.duration} minutes</p>
               </div>
               <div>
                 <p className="text-gray-400 text-sm">Contact</p>
@@ -617,9 +624,9 @@ export default function ConsultPage() {
                 {form.phone && <p className="text-sm text-gray-500">{form.phone}</p>}
               </div>
             </div>
-            
+
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-            
+
             <button
               onClick={handleConfirm}
               disabled={submitting}
@@ -627,7 +634,7 @@ export default function ConsultPage() {
             >
               {submitting ? "Booking..." : "Confirm Booking"}
             </button>
-            
+
             <button
               onClick={() => setStep("time")}
               disabled={submitting}
@@ -651,7 +658,7 @@ export default function ConsultPage() {
             <h1 className="text-3xl font-bold text-white mb-2">You're Booked!</h1>
             <p className="text-gray-400">We'll send a confirmation to {form.email}</p>
           </div>
-          
+
           <div className="bg-gray-900 rounded-xl p-6 text-left space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-400">Date</span>
@@ -663,14 +670,14 @@ export default function ConsultPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Duration</span>
-              <span className="font-medium">{duration} minutes</span>
+              <span className="font-medium">{settings.duration} minutes</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Reference</span>
               <span className="font-mono text-sm text-orange-500">{bookingRef.slice(0, 8).toUpperCase()}</span>
             </div>
           </div>
-          
+
           <div className="mt-6 space-y-3">
             <button
               onClick={() => router.push("/calendar")}

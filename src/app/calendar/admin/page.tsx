@@ -40,7 +40,7 @@ export default function AdminPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
-  const [activeTab, setActiveTab] = useState<"calendar" | "block" | "schedule" | "clients">("calendar");
+  const [activeTab, setActiveTab] = useState<"calendar" | "block" | "schedule" | "clients" | "consult">("calendar");
   const [loading, setLoading] = useState(true);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingDate, setBookingDate] = useState("");
@@ -85,6 +85,16 @@ export default function AdminPage() {
     password: ""
   });
 
+  // Consult settings state
+  const [consultSettings, setConsultSettings] = useState({
+    duration: 30 as 30 | 60,
+    openDays: [1, 2, 3, 4, 5] as number[],
+    openHours: { start: 9, end: 20 },
+    ctaText: "Book a Free Consultation"
+  });
+  const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
+  const [consultSaving, setConsultSaving] = useState(false);
+
   useEffect(() => {
     // Check admin auth
     const isAdmin = localStorage.getItem("calendarAdmin");
@@ -98,15 +108,23 @@ export default function AdminPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [clientsRes, appointmentsRes, blockedRes] = await Promise.all([
+      const [clientsRes, appointmentsRes, blockedRes, settingsRes] = await Promise.all([
         fetch("/api/calendar/clients"),
         fetch("/api/calendar/appointments"),
-        fetch("/api/calendar/blocked")
+        fetch("/api/calendar/blocked"),
+        fetch("/api/calendar/consult-settings")
       ]);
       
       setClients(await clientsRes.json());
       setAppointments(await appointmentsRes.json());
       setBlockedTimes(await blockedRes.json());
+      const settingsData = await settingsRes.json();
+      setConsultSettings({
+        duration: settingsData.duration || 30,
+        openDays: settingsData.openDays || [1, 2, 3, 4, 5],
+        openHours: settingsData.openHours || { start: 9, end: 20 },
+        ctaText: settingsData.ctaText || "Book a Free Consultation"
+      });
     } catch (err) {
       console.error("Failed to load data:", err);
     } finally {
@@ -545,6 +563,16 @@ export default function AdminPage() {
             }`}
           >
             Clients ({clients.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("consult")}
+            className={`px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shrink-0 snap-start ${
+              activeTab === "consult"
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/80"
+            }`}
+          >
+            Consult
           </button>
         </div>
 
@@ -1003,6 +1031,205 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Consult Settings Tab */}
+        {activeTab === "consult" && (
+          <div className="space-y-5">
+            <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl">
+              <div className="flex justify-between items-start mb-1">
+                <div>
+                  <h3 className="text-base font-semibold text-white">Free Consultation Settings</h3>
+                  <p className="text-sm text-gray-500">Configure how customers book free consults.</p>
+                </div>
+              </div>
+
+              <div className="space-y-5 mt-4">
+                {/* Duration */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Consultation Duration</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setConsultSettings(s => ({ ...s, duration: 30 }))}
+                      className={`py-3 rounded-xl font-medium transition-all border ${
+                        consultSettings.duration === 30
+                          ? "bg-orange-500/15 border-orange-500/60 text-orange-400"
+                          : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500"
+                      }`}
+                    >
+                      30 minutes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConsultSettings(s => ({ ...s, duration: 60 }))}
+                      className={`py-3 rounded-xl font-medium transition-all border ${
+                        consultSettings.duration === 60
+                          ? "bg-orange-500/15 border-orange-500/60 text-orange-400"
+                          : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500"
+                      }`}
+                    >
+                      60 minutes
+                    </button>
+                  </div>
+                  {consultSettings.duration === 60 && (
+                    <p className="text-xs text-gray-500 mt-1">60-min sessions available at :00 only (9:00, 10:00, etc.)</p>
+                  )}
+                  {consultSettings.duration === 30 && (
+                    <p className="text-xs text-gray-500 mt-1">30-min sessions available at :00 and :30</p>
+                  )}
+                </div>
+
+                {/* Open Days */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Open Days</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { num: 0, label: "Sun" },
+                      { num: 1, label: "Mon" },
+                      { num: 2, label: "Tue" },
+                      { num: 3, label: "Wed" },
+                      { num: 4, label: "Thu" },
+                      { num: 5, label: "Fri" },
+                      { num: 6, label: "Sat" }
+                    ].map(day => (
+                      <label
+                        key={day.num}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 border ${
+                          consultSettings.openDays.includes(day.num)
+                            ? "bg-orange-500/15 border-orange-500/60 text-orange-400"
+                            : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={consultSettings.openDays.includes(day.num)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setConsultSettings(s => ({
+                                ...s,
+                                openDays: [...s.openDays, day.num].sort()
+                              }));
+                            } else {
+                              setConsultSettings(s => ({
+                                ...s,
+                                openDays: s.openDays.filter(d => d !== day.num)
+                              }));
+                            }
+                          }}
+                          className="w-4 h-4 accent-orange-500"
+                        />
+                        {day.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Open Hours */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Open Hours</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Start (hour, 0–23)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={23}
+                        value={consultSettings.openHours.start}
+                        onChange={(e) => setConsultSettings(s => ({
+                          ...s,
+                          openHours: { ...s.openHours, start: parseInt(e.target.value) || 0 }
+                        }))}
+                        className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">End (hour, 0–23, through 20 = 8pm)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={23}
+                        value={consultSettings.openHours.end}
+                        onChange={(e) => setConsultSettings(s => ({
+                          ...s,
+                          openHours: { ...s.openHours, end: parseInt(e.target.value) || 20 }
+                        }))}
+                        className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA Text */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Landing Button Text</label>
+                  <input
+                    type="text"
+                    value={consultSettings.ctaText}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, ctaText: e.target.value }))}
+                    className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    placeholder="Book a Free Consultation"
+                    maxLength={80}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{consultSettings.ctaText.length}/80 characters</p>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={consultSaving}
+                    onClick={async () => {
+                      setConsultSaving(true);
+                      try {
+                        const res = await fetch("/api/calendar/consult-settings", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(consultSettings)
+                        });
+                        if (res.ok) {
+                          const saved = await res.json();
+                          setConsultSettings(saved);
+                          alert("Settings saved!");
+                        } else {
+                          alert("Failed to save settings.");
+                        }
+                      } catch {
+                        alert("Failed to save settings.");
+                      } finally {
+                        setConsultSaving(false);
+                      }
+                    }}
+                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl font-medium transition-all duration-200"
+                  >
+                    {consultSaving ? "Saving..." : "Save Settings"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Preview */}
+            <div className="bg-gray-900/50 border border-gray-800 p-5 rounded-2xl">
+              <h4 className="text-sm font-medium text-gray-400 mb-3">Preview (what customers see)</h4>
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+                <p className="text-gray-400 text-xs mb-1">Landing button on /calendar</p>
+                <div className="py-3 px-6 bg-orange-500 text-white font-semibold rounded-lg inline-block text-sm">
+                  {consultSettings.ctaText}
+                </div>
+                <div className="mt-4 text-left">
+                  <p className="text-gray-400 text-xs mb-1">Slots shown for open days ({consultSettings.openDays.map(d => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")})</p>
+                  <p className="text-gray-400 text-xs">
+                    Hours: {consultSettings.openHours.start}:00 – {consultSettings.openHours.end}:00
+                    {consultSettings.openHours.end === 20 && " (through 8pm)"}
+                  </p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Duration: {consultSettings.duration} min
+                    {consultSettings.duration === 60 ? " → :00 slots only" : " → :00/:30 slots"}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

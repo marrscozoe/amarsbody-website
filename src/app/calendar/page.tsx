@@ -1,17 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function CalendarPage() {
   const router = useRouter();
   const [showClientLogin, setShowClientLogin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [ctaText, setCtaText] = useState("Book a Free Consultation");
   const [clientForm, setClientForm] = useState({ firstName: "", lastName: "", password: "" });
   const [adminPassword, setAdminPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    fetch("/api/calendar/consult-settings")
+      .then(r => r.json())
+      .then(data => {
+        if (data.ctaText) setCtaText(data.ctaText);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleClientLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +103,7 @@ export default function CalendarPage() {
               href="/calendar/consult"
               className="block w-full py-5 px-6 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors text-center text-lg"
             >
-              Book a Free Consultation
+              {ctaText}
             </a>
             
             {/* Existing Clients */}
