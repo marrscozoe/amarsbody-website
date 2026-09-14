@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
   // ── Create regular appointment ─────────────────────────────────────────
   if (action === 'create') {
     // 24h lead time — client self-serve rejected within 24h
-    if (!isPersonalBlock && isWithin24Hours(date, startTime)) {
+    if (!isPersonalBlock && !body.isAdmin && isWithin24Hours(date, startTime)) {
       return NextResponse.json(
         { error: 'Appointments must be booked at least 24 hours in advance. Please choose a later date or time.' },
         { status: 400 }

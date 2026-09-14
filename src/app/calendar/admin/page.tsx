@@ -294,6 +294,7 @@ export default function AdminPage() {
       date: appointmentForm.date,
       startTime: appointmentForm.startTime,
       endTime: appointmentForm.endTime,
+      isAdmin: true,
     };
     
     if (isPersonal) {
