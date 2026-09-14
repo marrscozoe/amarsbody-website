@@ -462,7 +462,7 @@ export default function AdminPage() {
   };
 
   const timeSlots = [];
-  for (let hour = 4; hour <= 18; hour++) {
+  for (let hour = 4; hour <= 20; hour++) {
     timeSlots.push(`${hour.toString().padStart(2, "0")}:00`);
     timeSlots.push(`${hour.toString().padStart(2, "0")}:30`);
   }
@@ -577,13 +577,23 @@ export default function AdminPage() {
                   </p>
                 </div>
                 {editingBlockId && (
-                  <button
-                    type="button"
-                    onClick={handleCancelEditBlock}
-                    className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors font-medium text-gray-300"
-                  >
-                    Cancel
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCancelEditBlock}
+                      className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-gray-300 leading-none"
+                      aria-label="Close edit"
+                    >
+                      ✕
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEditBlock}
+                      className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors font-medium text-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 )}
               </div>
 

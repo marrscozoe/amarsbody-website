@@ -476,7 +476,7 @@ export default function GoogleCalendar({
                         </div>
                       ))}
                       {dayAppts.length > 3 && (
-                        <div className="text-xs text-gray-500">+{dayAppts.length - 3} more</div>
+                        <div className="text-xs text-gray-500">+{Math.max(0, dayAppts.length - 3)} more</div>
                       )}
                     </div>
                   )}
