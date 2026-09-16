@@ -1067,58 +1067,59 @@ export default function AdminPage() {
         {/* Consult Settings Tab */}
         {activeTab === "consult" && (
           <div className="space-y-5">
-            {/* Consult Hours — consult-window block editor */}
-            <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl">
-              <div className="flex justify-between items-start mb-1">
-                <div>
-                  <h3 className="text-base font-semibold text-white">Consult Hours</h3>
-                  <p className="text-sm text-gray-500">Time windows when consultations can be booked. Falls back to open days/hours when no windows are set.</p>
-                </div>
+            {/* ============================================================
+                ONE SETTINGS CARD — consult windows + fallback settings
+            ============================================================ */}
+            <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl space-y-6">
+              {/* Card header */}
+              <div>
+                <h3 className="text-base font-semibold text-white">Consult Settings</h3>
+                <p className="text-sm text-gray-500">Shared slot pool — windows take priority; fallback uses open days/hours below.</p>
               </div>
 
-              {/* Existing consult-window blocks */}
-              {(() => {
-                const windows = blockedTimes.filter(blk => blk.type === 'consult-window');
-                return (
-                  <div className="mt-4 space-y-3">
-                    {windows.length === 0 ? (
-                      <p className="text-gray-500 text-sm text-center py-3">No consult hours set — using open days/hours from settings below.</p>
-                    ) : (
-                      windows.map(win => (
-                        <div key={win.id} className="flex justify-between items-center p-3 bg-gray-800/60 border border-gray-700/50 rounded-xl">
-                          <div>
-                            {win.isRecurring && win.daysOfWeek ? (
-                              <p className="font-medium text-white">
-                                {win.daysOfWeek.sort().map(d => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}
-                              </p>
-                            ) : (
-                              <p className="font-medium text-white">{win.date}</p>
-                            )}
-                            <p className="text-sm text-gray-400">
+              {/* ---- Section 1: Consult Windows ---- */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-medium text-gray-300">Consult Windows</h4>
+                  <span className="text-xs text-gray-500">Optional — slots outside windows use fallback below</span>
+                </div>
+
+                {(() => {
+                  const windows = blockedTimes.filter(blk => blk.type === 'consult-window');
+                  return windows.length === 0 ? (
+                    <p className="text-gray-600 text-sm text-center py-2">No windows — slots use fallback settings below.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {windows.map(win => (
+                        <div key={win.id} className="flex justify-between items-center p-2.5 pl-3 bg-gray-800/50 border border-gray-700/40 rounded-xl text-sm">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-gray-200 font-medium truncate">
+                              {win.isRecurring && win.daysOfWeek
+                                ? win.daysOfWeek.sort().map(d => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")
+                                : win.date}
+                            </span>
+                            <span className="text-gray-500 ml-2">
                               {formatTime(win.startTime)} – {formatTime(win.endTime)}
                               {win.isRecurring && (
-                                <span className="ml-2 text-teal-400/70">
-                                  {win.endDate ? `Until ${win.endDate}` : "Open-ended"}
+                                <span className="ml-1.5 text-teal-400/70">
+                                  {win.endDate ? `Until ${win.endDate}` : "Ongoing"}
                                 </span>
                               )}
-                            </p>
+                            </span>
                           </div>
                           <button
                             onClick={() => handleUnblockTime(win.id)}
-                            className="px-3 py-1.5 text-sm bg-red-600/80 hover:bg-red-600 rounded-lg transition-colors font-medium"
+                            className="ml-2 shrink-0 px-2.5 py-1 text-xs bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors font-medium"
                           >
                             Remove
                           </button>
                         </div>
-                      ))
-                    )}
-                  </div>
-                );
-              })()}
+                      ))}
+                    </div>
+                  );
+                })()}
 
-              {/* Add consult-window block form */}
-              <div className="mt-4 pt-4 border-t border-gray-800">
-                <p className="text-sm text-gray-400 mb-3">Add consult hours</p>
+                {/* Add window form — compact inline */}
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
@@ -1139,329 +1140,197 @@ export default function AdminPage() {
                         })
                       });
                       if (res.ok) {
-                        setConsultWindowForm({
-                          type: "single",
-                          date: "",
-                          startTime: "09:00",
-                          endTime: "17:00",
-                          daysOfWeek: [],
-                          endDate: "",
-                          noEndDate: false
-                        });
+                        setConsultWindowForm({ type: "single", date: "", startTime: "09:00", endTime: "17:00", daysOfWeek: [], endDate: "", noEndDate: false });
                         loadData();
                       }
                     } catch (err) {
                       console.error("Failed to add consult window:", err);
                     }
                   }}
-                  className="space-y-3"
+                  className="space-y-2"
                 >
-                  {/* Single vs Recurring */}
-                  <div className="flex gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  {/* Single vs Recurring toggle */}
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
                       <input
-                        type="radio"
-                        name="consultWindowType"
+                        type="radio" name="cwType"
                         checked={consultWindowForm.type === "single"}
                         onChange={() => setConsultWindowForm(f => ({ ...f, type: "single" }))}
-                        className="w-4 h-4 accent-teal-500"
+                        className="w-3.5 h-3.5 accent-teal-500"
                       />
-                      <span className="text-sm text-gray-300">Single Day</span>
+                      <span className="text-xs text-gray-400">Single day</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
                       <input
-                        type="radio"
-                        name="consultWindowType"
+                        type="radio" name="cwType"
                         checked={consultWindowForm.type === "recurring"}
                         onChange={() => setConsultWindowForm(f => ({ ...f, type: "recurring" }))}
-                        className="w-4 h-4 accent-teal-500"
+                        className="w-3.5 h-3.5 accent-teal-500"
                       />
-                      <span className="text-sm text-gray-300">Recurring (Days of Week)</span>
+                      <span className="text-xs text-gray-400">Recurring (days of week)</span>
                     </label>
                   </div>
 
                   {consultWindowForm.type === "single" ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="flex gap-2 items-end flex-wrap">
                       <input
                         type="date"
                         value={consultWindowForm.date}
                         onChange={(e) => setConsultWindowForm(f => ({ ...f, date: e.target.value }))}
-                        className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
+                        className="flex-1 min-w-[120px] px-2.5 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-teal-500 transition-all"
                         required
                       />
-                      <select
-                        value={consultWindowForm.startTime}
-                        onChange={(e) => setConsultWindowForm(f => ({ ...f, startTime: e.target.value }))}
-                        className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-all"
-                      >
-                        {timeSlots.map(time => (
-                          <option key={time} value={time}>{formatTime(time)}</option>
-                        ))}
+                      <select value={consultWindowForm.startTime} onChange={(e) => setConsultWindowForm(f => ({ ...f, startTime: e.target.value }))} className="px-2.5 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-teal-500">
+                        {timeSlots.map(t => <option key={t} value={t}>{formatTime(t)}</option>)}
                       </select>
-                      <select
-                        value={consultWindowForm.endTime}
-                        onChange={(e) => setConsultWindowForm(f => ({ ...f, endTime: e.target.value }))}
-                        className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-all"
-                      >
-                        {timeSlots.map(time => (
-                          <option key={time} value={time}>{formatTime(time)}</option>
-                        ))}
+                      <span className="text-gray-600 text-sm">–</span>
+                      <select value={consultWindowForm.endTime} onChange={(e) => setConsultWindowForm(f => ({ ...f, endTime: e.target.value }))} className="px-2.5 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-teal-500">
+                        {timeSlots.map(t => <option key={t} value={t}>{formatTime(t)}</option>)}
                       </select>
-                      <button
-                        type="submit"
-                        className="px-4 py-2.5 bg-teal-600 hover:bg-teal-500 hover:shadow-lg hover:shadow-teal-500/20 rounded-xl font-medium transition-all duration-200"
-                      >
-                        Add
+                      <button type="submit" className="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm rounded-lg font-medium transition-colors shrink-0">
+                        + Add Window
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { num: 1, label: "Mon" },
-                          { num: 2, label: "Tue" },
-                          { num: 3, label: "Wed" },
-                          { num: 4, label: "Thu" },
-                          { num: 5, label: "Fri" },
-                          { num: 6, label: "Sat" },
-                          { num: 0, label: "Sun" }
-                        ].map(day => (
-                          <label
-                            key={day.num}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 border ${
-                              consultWindowForm.daysOfWeek.includes(day.num)
-                                ? "bg-teal-500/15 border-teal-500/60 text-teal-400"
-                                : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500 hover:text-gray-200"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={consultWindowForm.daysOfWeek.includes(day.num)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setConsultWindowForm(f => ({ ...f, daysOfWeek: [...f.daysOfWeek, day.num] }));
-                                } else {
-                                  setConsultWindowForm(f => ({ ...f, daysOfWeek: f.daysOfWeek.filter(d => d !== day.num) }));
-                                }
-                              }}
-                              className="w-4 h-4 accent-teal-500"
-                            />
-                            {day.label}
-                          </label>
+                    <div className="space-y-2">
+                      {/* Days as removable chips */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {[ {num:1,label:"Mon"},{num:2,label:"Tue"},{num:3,label:"Wed"},{num:4,label:"Thu"},{num:5,label:"Fri"},{num:6,label:"Sat"},{num:0,label:"Sun"} ].map(day => (
+                          consultWindowForm.daysOfWeek.includes(day.num) ? (
+                            <button
+                              key={day.num}
+                              type="button"
+                              onClick={() => setConsultWindowForm(f => ({ ...f, daysOfWeek: f.daysOfWeek.filter(d => d !== day.num) }))}
+                              className="flex items-center gap-1 px-2 py-1 bg-teal-500/20 border border-teal-500/50 text-teal-400 text-xs rounded-lg hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-colors"
+                            >
+                              {day.label} <span className="opacity-60">✕</span>
+                            </button>
+                          ) : (
+                            <button
+                              key={day.num}
+                              type="button"
+                              onClick={() => setConsultWindowForm(f => ({ ...f, daysOfWeek: [...f.daysOfWeek, day.num] }))}
+                              className="px-2 py-1 bg-gray-800/60 border border-gray-700/60 text-gray-500 text-xs rounded-lg hover:border-gray-500 hover:text-gray-300 transition-colors"
+                            >
+                              + {day.label}
+                            </button>
+                          )
                         ))}
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <select
-                          value={consultWindowForm.startTime}
-                          onChange={(e) => setConsultWindowForm(f => ({ ...f, startTime: e.target.value }))}
-                          className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-all"
-                        >
-                          {timeSlots.map(time => (
-                            <option key={time} value={time}>{formatTime(time)}</option>
-                          ))}
-                        </select>
-                        <select
-                          value={consultWindowForm.endTime}
-                          onChange={(e) => setConsultWindowForm(f => ({ ...f, endTime: e.target.value }))}
-                          className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-all"
-                        >
-                          {timeSlots.map(time => (
-                            <option key={time} value={time}>{formatTime(time)}</option>
-                          ))}
-                        </select>
-                        <div className="flex items-center gap-2">
+                      {consultWindowForm.daysOfWeek.length > 0 && (
+                        <div className="flex gap-2 items-end flex-wrap">
+                          <select value={consultWindowForm.startTime} onChange={(e) => setConsultWindowForm(f => ({ ...f, startTime: e.target.value }))} className="px-2.5 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-teal-500">
+                            {timeSlots.map(t => <option key={t} value={t}>{formatTime(t)}</option>)}
+                          </select>
+                          <span className="text-gray-600 text-sm">–</span>
+                          <select value={consultWindowForm.endTime} onChange={(e) => setConsultWindowForm(f => ({ ...f, endTime: e.target.value }))} className="px-2.5 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-teal-500">
+                            {timeSlots.map(t => <option key={t} value={t}>{formatTime(t)}</option>)}
+                          </select>
                           <input
                             type="date"
                             value={consultWindowForm.endDate}
                             onChange={(e) => setConsultWindowForm(f => ({ ...f, endDate: e.target.value }))}
-                            className="flex-1 px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-all"
+                            className="flex-1 min-w-[120px] px-2.5 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-teal-500"
                             disabled={consultWindowForm.noEndDate}
                           />
-                          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={consultWindowForm.noEndDate}
-                              onChange={(e) => setConsultWindowForm(f => ({ ...f, noEndDate: e.target.checked, endDate: e.target.checked ? "" : f.endDate }))}
-                              className="w-4 h-4 accent-teal-500 rounded"
-                            />
-                            <span className="text-sm text-gray-400">No end</span>
+                          <label className="flex items-center gap-1.5 shrink-0">
+                            <input type="checkbox" checked={consultWindowForm.noEndDate} onChange={(e) => setConsultWindowForm(f => ({ ...f, noEndDate: e.target.checked, endDate: e.target.checked ? "" : f.endDate }))} className="w-3.5 h-3.5 accent-teal-500 rounded" />
+                            <span className="text-xs text-gray-500">Ongoing</span>
                           </label>
+                          <button type="submit" disabled={consultWindowForm.daysOfWeek.length === 0} className="px-3 py-2 bg-teal-600 hover:bg-teal-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm rounded-lg font-medium transition-colors shrink-0">
+                            + Add Window
+                          </button>
                         </div>
-                        <button
-                          type="submit"
-                          disabled={consultWindowForm.daysOfWeek.length === 0}
-                          className="px-4 py-2.5 bg-teal-600 hover:bg-teal-500 hover:shadow-lg hover:shadow-teal-500/20 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl font-medium transition-all duration-200"
-                        >
-                          Add
-                        </button>
-                      </div>
+                      )}
                     </div>
                   )}
                 </form>
               </div>
-            </div>
 
-            {/* Free Consultation Settings */}
-            <div className="bg-gray-900/70 border border-gray-800 p-5 rounded-2xl">
-              <div className="flex justify-between items-start mb-1">
-                <div>
-                  <h3 className="text-base font-semibold text-white">Free Consultation Settings</h3>
-                  <p className="text-sm text-gray-500">Configure how customers book free consults. Used as fallback when no consult hours windows are set.</p>
-                </div>
-              </div>
+              {/* ---- Section 2: Fallback Settings ---- */}
+              <div className="space-y-4 pt-4 border-t border-gray-800">
+                <h4 className="text-sm font-medium text-gray-300">Fallback Settings <span className="text-gray-600 font-normal text-xs">(used when no windows set)</span></h4>
 
-              <div className="space-y-5 mt-4">
                 {/* Duration */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Consultation Duration</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setConsultSettings(s => ({ ...s, duration: 30 }))}
-                      className={`py-3 rounded-xl font-medium transition-all border ${
-                        consultSettings.duration === 30
-                          ? "bg-orange-500/15 border-orange-500/60 text-orange-400"
-                          : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500"
-                      }`}
-                    >
-                      30 minutes
+                  <label className="block text-xs text-gray-500 mb-1.5">Duration</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setConsultSettings(s => ({ ...s, duration: 30 }))} className={`py-2 rounded-lg font-medium transition-all border text-sm ${consultSettings.duration === 30 ? "bg-orange-500/15 border-orange-500/60 text-orange-400" : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500"}`}>
+                      30 min <span className="text-xs opacity-60 ml-1">(:00 &amp; :30)</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setConsultSettings(s => ({ ...s, duration: 60 }))}
-                      className={`py-3 rounded-xl font-medium transition-all border ${
-                        consultSettings.duration === 60
-                          ? "bg-orange-500/15 border-orange-500/60 text-orange-400"
-                          : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500"
-                      }`}
-                    >
-                      60 minutes
+                    <button type="button" onClick={() => setConsultSettings(s => ({ ...s, duration: 60 }))} className={`py-2 rounded-lg font-medium transition-all border text-sm ${consultSettings.duration === 60 ? "bg-orange-500/15 border-orange-500/60 text-orange-400" : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500"}`}>
+                      60 min <span className="text-xs opacity-60 ml-1">(:00 only)</span>
                     </button>
-                  </div>
-                  {consultSettings.duration === 60 && (
-                    <p className="text-xs text-gray-500 mt-1">60-min sessions available at :00 only (9:00, 10:00, etc.)</p>
-                  )}
-                  {consultSettings.duration === 30 && (
-                    <p className="text-xs text-gray-500 mt-1">30-min sessions available at :00 and :30</p>
-                  )}
-                </div>
-
-                {/* Open Days */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Open Days</label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { num: 0, label: "Sun" },
-                      { num: 1, label: "Mon" },
-                      { num: 2, label: "Tue" },
-                      { num: 3, label: "Wed" },
-                      { num: 4, label: "Thu" },
-                      { num: 5, label: "Fri" },
-                      { num: 6, label: "Sat" }
-                    ].map(day => (
-                      <label
-                        key={day.num}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 border ${
-                          consultSettings.openDays.includes(day.num)
-                            ? "bg-orange-500/15 border-orange-500/60 text-orange-400"
-                            : "bg-gray-800/60 border-gray-700/60 text-gray-400 hover:border-gray-500"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={consultSettings.openDays.includes(day.num)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setConsultSettings(s => ({
-                                ...s,
-                                openDays: [...s.openDays, day.num].sort()
-                              }));
-                            } else {
-                              setConsultSettings(s => ({
-                                ...s,
-                                openDays: s.openDays.filter(d => d !== day.num)
-                              }));
-                            }
-                          }}
-                          className="w-4 h-4 accent-orange-500"
-                        />
-                        {day.label}
-                      </label>
-                    ))}
                   </div>
                 </div>
 
-                {/* Open Hours */}
+                {/* Open Days — removable chip rows */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Open Hours</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Start</label>
-                      <select
-                        value={consultSettings.openHours.start}
-                        onChange={(e) => setConsultSettings(s => ({
-                          ...s,
-                          openHours: { ...s.openHours, start: parseInt(e.target.value) }
-                        }))}
-                        className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer"
-                      >
-                        {[
-                          [6,"6:00 AM"],[7,"7:00 AM"],[8,"8:00 AM"],
-                          [9,"9:00 AM"],[10,"10:00 AM"],[11,"11:00 AM"],
-                          [12,"12:00 PM"],[13,"1:00 PM"],[14,"2:00 PM"],
-                          [15,"3:00 PM"],[16,"4:00 PM"],[17,"5:00 PM"],
-                          [18,"6:00 PM"],[19,"7:00 PM"]
-                        ].map(([val, label]) => (
-                          <option key={val} value={val}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">End (through)</label>
-                      <select
-                        value={consultSettings.openHours.end}
-                        onChange={(e) => setConsultSettings(s => ({
-                          ...s,
-                          openHours: { ...s.openHours, end: parseInt(e.target.value) }
-                        }))}
-                        className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer"
-                      >
-                        {[
-                          [7,"7:00 AM"],[8,"8:00 AM"],
-                          [9,"9:00 AM"],[10,"10:00 AM"],[11,"11:00 AM"],
-                          [12,"12:00 PM"],[13,"1:00 PM"],[14,"2:00 PM"],
-                          [15,"3:00 PM"],[16,"4:00 PM"],[17,"5:00 PM"],
-                          [18,"6:00 PM"],[19,"7:00 PM"],[20,"8:00 PM"]
-                        ].map(([val, label]) => (
-                          <option key={val} value={val}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Open Days</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[ {num:0,label:"Sun"},{num:1,label:"Mon"},{num:2,label:"Tue"},{num:3,label:"Wed"},{num:4,label:"Thu"},{num:5,label:"Fri"},{num:6,label:"Sat"} ].map(day => {
+                      const active = consultSettings.openDays.includes(day.num);
+                      return active ? (
+                        <button
+                          key={day.num}
+                          type="button"
+                          onClick={() => setConsultSettings(s => ({ ...s, openDays: s.openDays.filter(d => d !== day.num) }))}
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-500/15 border border-orange-500/50 text-orange-400 text-xs rounded-lg hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-colors"
+                        >
+                          {day.label} <span className="opacity-60 font-light">✕</span>
+                        </button>
+                      ) : (
+                        <button
+                          key={day.num}
+                          type="button"
+                          onClick={() => setConsultSettings(s => ({ ...s, openDays: [...s.openDays, day.num].sort() }))}
+                          className="px-2.5 py-1.5 bg-gray-800/60 border border-gray-700/60 text-gray-500 text-xs rounded-lg hover:border-gray-500 hover:text-gray-300 transition-colors"
+                        >
+                          + {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Open Hours — 12h selects */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Open Hours</label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <select
+                      value={String(consultSettings.openHours.start).padStart(2,"0") + ":00"}
+                      onChange={(e) => setConsultSettings(s => ({ ...s, openHours: { ...s.openHours, start: parseInt(e.target.value.split(":")[0]) } }))}
+                      className="px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
+                    >
+                      {["04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20"].map(h => (
+                        <option key={h} value={`${h}:00`}>{formatHour(parseInt(h))}</option>
+                      ))}
+                    </select>
+                    <span className="text-gray-600 text-sm">to</span>
+                    <select
+                      value={String(consultSettings.openHours.end).padStart(2,"0") + ":00"}
+                      onChange={(e) => setConsultSettings(s => ({ ...s, openHours: { ...s.openHours, end: parseInt(e.target.value.split(":")[0]) } }))}
+                      className="px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
+                    >
+                      {["05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21"].map(h => (
+                        <option key={h} value={`${h}:00`}>{formatHour(parseInt(h))}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
                 {/* CTA Text */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Landing Button Text</label>
-                  <input
-                    type="text"
-                    value={consultSettings.ctaText}
-                    onChange={(e) => setConsultSettings(s => ({ ...s, ctaText: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                    placeholder="Book a Free Consultation"
-                    maxLength={80}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{consultSettings.ctaText.length}/80 characters</p>
-                </div>
-
-                {/* Save Button */}
-                <div>
-                  {consultSaveSuccess && (
-                    <p className="text-xs text-green-400 mb-2 font-medium">
-                      {formatDaysRange(consultSettings.openDays)} · {formatHour(consultSettings.openHours.start)} – {formatHour(consultSettings.openHours.end)} · {consultSettings.duration} min
-                    </p>
-                  )}
-                  <div className="flex justify-end">
+                  <label className="block text-xs text-gray-500 mb-1.5">Landing Button Text</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={consultSettings.ctaText}
+                      onChange={(e) => setConsultSettings(s => ({ ...s, ctaText: e.target.value }))}
+                      className="flex-1 px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                      placeholder="Book a Free Consultation"
+                      maxLength={80}
+                    />
                     <button
                       type="button"
                       disabled={consultSaving}
@@ -1488,32 +1357,43 @@ export default function AdminPage() {
                           setConsultSaving(false);
                         }
                       }}
-                      className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl font-medium transition-all duration-200"
+                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm rounded-lg font-medium transition-colors shrink-0"
                     >
-                      {consultSaving ? "Saving..." : "Save Settings"}
+                      {consultSaving ? "Saving..." : "Save"}
                     </button>
                   </div>
+                  {consultSaveSuccess && (
+                    <p className="text-xs text-green-400 mt-1.5 font-medium">
+                      ✓ {formatDaysRange(consultSettings.openDays)} · {formatHour(consultSettings.openHours.start)}–{formatHour(consultSettings.openHours.end)} · {consultSettings.duration} min
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-600 mt-1">{consultSettings.ctaText.length}/80</p>
                 </div>
               </div>
             </div>
 
             {/* Live Preview */}
             <div className="bg-gray-900/50 border border-gray-800 p-5 rounded-2xl">
-              <h4 className="text-sm font-medium text-gray-400 mb-3">Preview (what customers see)</h4>
+              <h4 className="text-sm font-medium text-gray-400 mb-3">Preview <span className="text-gray-600 font-normal">(what customers see on /calendar/consult)</span></h4>
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-                <p className="text-gray-400 text-xs mb-1">Landing button on /calendar</p>
+                <p className="text-gray-500 text-xs mb-1">Landing CTA</p>
                 <div className="py-3 px-6 bg-orange-500 text-white font-semibold rounded-lg inline-block text-sm">
                   {consultSettings.ctaText}
                 </div>
-                <div className="mt-4 text-left">
-                  <p className="text-gray-400 text-xs mb-1">Slots shown for open days ({formatDaysRange(consultSettings.openDays)})</p>
-                  <p className="text-gray-400 text-xs">
-                    Hours: {formatHour(consultSettings.openHours.start)} – {formatHour(consultSettings.openHours.end)}
+                <div className="mt-4 text-left space-y-1">
+                  <p className="text-gray-500 text-xs">
+                    Open days: <span className="text-gray-300">{formatDaysRange(consultSettings.openDays)}</span>
                   </p>
-                  <p className="text-gray-400 text-xs mt-1">
-                    Duration: {consultSettings.duration} min
-                    {consultSettings.duration === 60 ? " → :00 slots only" : " → :00/:30 slots"}
+                  <p className="text-gray-500 text-xs">
+                    Hours: <span className="text-gray-300">{formatHour(consultSettings.openHours.start)} – {formatHour(consultSettings.openHours.end)}</span>
                   </p>
+                  <p className="text-gray-500 text-xs">
+                    Duration: <span className="text-gray-300">{consultSettings.duration} min</span>
+                    <span className="text-gray-600 ml-1">{consultSettings.duration === 60 ? "(slots at :00 only)" : "(slots at :00 &amp; :30)"}</span>
+                  </p>
+                  {(() => { const wins = blockedTimes.filter(b => b.type === 'consult-window'); return wins.length > 0 ? (
+                    <p className="text-teal-400/70 text-xs mt-1">Consult windows active ({wins.length} window{wins.length !== 1 ? "s" : ""}) — shared slot pool in use</p>
+                  ) : null; })()}
                 </div>
               </div>
             </div>
