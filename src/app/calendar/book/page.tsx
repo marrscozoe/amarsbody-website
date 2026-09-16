@@ -143,6 +143,9 @@ export default function BookPage() {
     return blocked.some(blk => {
       const s = timeToMinutes(blk.startTime);
       const e = timeToMinutes(blk.endTime);
+      // Guard against malformed blocked time ranges
+      if (isNaN(s) || isNaN(e)) return false;
+      // Back-to-back: slot at blk.endTime is free
       return mins >= s && mins < e;
     });
   };
@@ -150,11 +153,14 @@ export default function BookPage() {
   const isSlotTaken = (dateStr: string, time: string, excludeId?: string): boolean => {
     const mins = timeToMinutes(time);
     return allAppointments.some(apt => {
-      if (apt.status === "cancelled") return false;
+      if (apt.status === 'cancelled') return false;
       if (excludeId && apt.id === excludeId) return false;
       if (apt.date !== dateStr) return false;
       const s = timeToMinutes(apt.startTime);
       const e = timeToMinutes(apt.endTime);
+      // Guard against malformed endTime (NaN) in stored data
+      if (isNaN(s) || isNaN(e)) return false;
+      // Slot at the exact end of an apt is free (back-to-back apts don't conflict)
       return mins >= s && mins < e;
     });
   };

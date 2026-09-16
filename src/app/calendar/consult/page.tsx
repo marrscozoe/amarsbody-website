@@ -164,6 +164,9 @@ export default function ConsultPage() {
     return blocked.some(blk => {
       const startMins = timeToMinutes(blk.startTime);
       const endMins = timeToMinutes(blk.endTime);
+      // Guard against malformed blocked time ranges
+      if (isNaN(startMins) || isNaN(endMins)) return false;
+      // Back-to-back: slot at blk.endTime is free
       return mins >= startMins && mins < endMins;
     });
   };
@@ -174,6 +177,9 @@ export default function ConsultPage() {
     return dayAppts.some(apt => {
       const startMins = timeToMinutes(apt.startTime);
       const endMins = timeToMinutes(apt.endTime);
+      // Guard against malformed endTime (NaN) in stored data
+      if (isNaN(startMins) || isNaN(endMins)) return false;
+      // Back-to-back: slot at apt.endTime is free (interval is [start, end))
       return mins >= startMins && mins < endMins;
     });
   };
@@ -563,24 +569,15 @@ export default function ConsultPage() {
           )}
 
           <div className="grid grid-cols-3 gap-2">
-            {slotsForDuration.map(time => {
-              const isAvail = availableSet.has(time);
-              return (
-                <button
-                  key={time}
-                  onClick={() => isAvail && handleSelectTime(time)}
-                  disabled={!isAvail}
-                  className={`py-3 rounded-lg font-medium transition-colors ${
-                    isAvail
-                      ? "bg-gray-800 hover:bg-orange-500 text-white"
-                      : "bg-gray-900 text-gray-600 cursor-not-allowed"
-                  }`}
-                >
-                  {formatTime(time)}
-                  {!isAvail && <span className="block text-xs opacity-50">taken</span>}
-                </button>
-              );
-            })}
+            {available.map(time => (
+              <button
+                key={time}
+                onClick={() => handleSelectTime(time)}
+                className="py-3 rounded-lg font-medium bg-gray-800 hover:bg-orange-500 text-white transition-colors"
+              >
+                {formatTime(time)}
+              </button>
+            ))}
           </div>
 
           {available.length === 0 && (

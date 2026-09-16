@@ -129,13 +129,14 @@ async function checkSlotAvailable(
   // ── Slot conflict check — ALL active appointment types hide the slot ─────
   // booked, consultation, personal-block all occupy the same slot pool.
   // Only cancelled appointments are skipped.
+  // Uses [start, end) half-open intervals — back-to-back apts do NOT conflict.
   const hasConflict = appointments.some((apt: any) => {
     if (apt.status === 'cancelled') return false;
     if (excludeId && apt.id === excludeId) return false;
     if (apt.date !== date) return false;
     const existingStart = apt.startTime;
     const existingEnd = apt.endTime;
-    return !(endTime <= existingStart || startTime >= existingEnd);
+    return !(endTime <= existingStart || startTime > existingEnd);
   });
 
   if (hasConflict) return { available: false, reason: 'Time slot not available' };
@@ -146,11 +147,13 @@ async function checkSlotAvailable(
 
   const isBlocked = blocked.some((blk: any) => {
     if (blk.date === date) {
-      return !(endTime <= blk.startTime || startTime >= blk.endTime);
+      // [blk.startTime, blk.endTime) — back-to-back blocks don't overlap
+      return !(endTime <= blk.startTime || startTime > blk.endTime);
     }
     if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.includes(dayOfWeek)) {
       if (blk.endDate && date > blk.endDate) return false;
-      return !(endTime <= blk.startTime || startTime >= blk.endTime);
+      // [blk.startTime, blk.endTime) — back-to-back blocks don't overlap
+      return !(endTime <= blk.startTime || startTime > blk.endTime);
     }
     return false;
   });
@@ -236,9 +239,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate required fields
+    if (!date || !startTime) {
+      return NextResponse.json({ error: 'date and startTime are required' }, { status: 400 });
+    }
+    if (!duration && !endTime) {
+      return NextResponse.json({ error: 'duration or endTime is required' }, { status: 400 });
+    }
+
+    // Always compute endTime server-side; do not trust the client value.
     const [hours, minutes] = startTime.split(":").map(Number);
-    const endMinutes = hours * 60 + minutes + (duration || 30);
-    const computedEndTime = endTime || `${Math.floor(endMinutes / 60).toString().padStart(2, "0")}:${(endMinutes % 60).toString().padStart(2, "0")}`;
+    const dur = duration || 30;
+    const endMinutes = hours * 60 + minutes + dur;
+    const computedEndTime = `${Math.floor(endMinutes / 60).toString().padStart(2, "0")}:${(endMinutes % 60).toString().padStart(2, "0")}`;
 
     const check = await checkSlotAvailable(date, startTime, computedEndTime);
     if (!check.available) {
