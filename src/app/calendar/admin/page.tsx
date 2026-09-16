@@ -36,6 +36,23 @@ interface BlockedTime {
   type?: string; // 'block' | 'consult-window'
 }
 
+// Format a 24h integer hour (e.g. 9 or 20) to a 12-hour display string (e.g. "9:00 AM", "8:00 PM")
+const formatHour = (h: number) => `${h > 12 ? h - 12 : h}:00 ${h >= 12 ? "PM" : "AM"}`;
+
+// Format open days array [0..6] to a compact range string like "Mon–Fri"
+const formatDaysRange = (openDays: number[]) => {
+  if (openDays.length === 0) return "No days";
+  const labels = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  if (openDays.length === 7) return "Every day";
+  const sorted = [...openDays].sort((a, b) => a - b);
+  // Try to find Mon-Fri range
+  const monFri = [1, 2, 3, 4, 5];
+  const isMonFri = monFri.every(d => openDays.includes(d)) && !openDays.includes(0) && !openDays.includes(6);
+  if (isMonFri) return "Mon–Fri";
+  // Fall back to comma-joined
+  return sorted.map(d => labels[d]).join(", ");
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
@@ -105,6 +122,7 @@ export default function AdminPage() {
   });
   const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
   const [consultSaving, setConsultSaving] = useState(false);
+  const [consultSaveSuccess, setConsultSaveSuccess] = useState(false);
 
   useEffect(() => {
     // Check admin auth
@@ -1378,32 +1396,46 @@ export default function AdminPage() {
                   <label className="block text-sm text-gray-400 mb-2">Open Hours</label>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Start (hour, 0–23)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={23}
+                      <label className="block text-xs text-gray-500 mb-1">Start</label>
+                      <select
                         value={consultSettings.openHours.start}
                         onChange={(e) => setConsultSettings(s => ({
                           ...s,
-                          openHours: { ...s.openHours, start: parseInt(e.target.value) || 0 }
+                          openHours: { ...s.openHours, start: parseInt(e.target.value) }
                         }))}
-                        className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                      />
+                        className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer"
+                      >
+                        {[
+                          [6,"6:00 AM"],[7,"7:00 AM"],[8,"8:00 AM"],
+                          [9,"9:00 AM"],[10,"10:00 AM"],[11,"11:00 AM"],
+                          [12,"12:00 PM"],[13,"1:00 PM"],[14,"2:00 PM"],
+                          [15,"3:00 PM"],[16,"4:00 PM"],[17,"5:00 PM"],
+                          [18,"6:00 PM"],[19,"7:00 PM"]
+                        ].map(([val, label]) => (
+                          <option key={val} value={val}>{label}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">End (hour, 0–23, through 20 = 8pm)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={23}
+                      <label className="block text-xs text-gray-500 mb-1">End (through)</label>
+                      <select
                         value={consultSettings.openHours.end}
                         onChange={(e) => setConsultSettings(s => ({
                           ...s,
-                          openHours: { ...s.openHours, end: parseInt(e.target.value) || 20 }
+                          openHours: { ...s.openHours, end: parseInt(e.target.value) }
                         }))}
-                        className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                      />
+                        className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer"
+                      >
+                        {[
+                          [7,"7:00 AM"],[8,"8:00 AM"],
+                          [9,"9:00 AM"],[10,"10:00 AM"],[11,"11:00 AM"],
+                          [12,"12:00 PM"],[13,"1:00 PM"],[14,"2:00 PM"],
+                          [15,"3:00 PM"],[16,"4:00 PM"],[17,"5:00 PM"],
+                          [18,"6:00 PM"],[19,"7:00 PM"],[20,"8:00 PM"]
+                        ].map(([val, label]) => (
+                          <option key={val} value={val}>{label}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -1423,35 +1455,44 @@ export default function AdminPage() {
                 </div>
 
                 {/* Save Button */}
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    disabled={consultSaving}
-                    onClick={async () => {
-                      setConsultSaving(true);
-                      try {
-                        const res = await fetch("/api/calendar/consult-settings", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(consultSettings)
-                        });
-                        if (res.ok) {
-                          const saved = await res.json();
-                          setConsultSettings(saved);
-                          alert("Settings saved!");
-                        } else {
+                <div>
+                  {consultSaveSuccess && (
+                    <p className="text-xs text-green-400 mb-2 font-medium">
+                      {formatDaysRange(consultSettings.openDays)} · {formatHour(consultSettings.openHours.start)} – {formatHour(consultSettings.openHours.end)} · {consultSettings.duration} min
+                    </p>
+                  )}
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      disabled={consultSaving}
+                      onClick={async () => {
+                        setConsultSaving(true);
+                        setConsultSaveSuccess(false);
+                        try {
+                          const res = await fetch("/api/calendar/consult-settings", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(consultSettings)
+                          });
+                          if (res.ok) {
+                            const saved = await res.json();
+                            setConsultSettings(saved);
+                            setConsultSaveSuccess(true);
+                            setTimeout(() => setConsultSaveSuccess(false), 4000);
+                          } else {
+                            alert("Failed to save settings.");
+                          }
+                        } catch {
                           alert("Failed to save settings.");
+                        } finally {
+                          setConsultSaving(false);
                         }
-                      } catch {
-                        alert("Failed to save settings.");
-                      } finally {
-                        setConsultSaving(false);
-                      }
-                    }}
-                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl font-medium transition-all duration-200"
-                  >
-                    {consultSaving ? "Saving..." : "Save Settings"}
-                  </button>
+                      }}
+                      className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl font-medium transition-all duration-200"
+                    >
+                      {consultSaving ? "Saving..." : "Save Settings"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1465,10 +1506,9 @@ export default function AdminPage() {
                   {consultSettings.ctaText}
                 </div>
                 <div className="mt-4 text-left">
-                  <p className="text-gray-400 text-xs mb-1">Slots shown for open days ({consultSettings.openDays.map(d => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")})</p>
+                  <p className="text-gray-400 text-xs mb-1">Slots shown for open days ({formatDaysRange(consultSettings.openDays)})</p>
                   <p className="text-gray-400 text-xs">
-                    Hours: {consultSettings.openHours.start}:00 – {consultSettings.openHours.end}:00
-                    {consultSettings.openHours.end === 20 && " (through 8pm)"}
+                    Hours: {formatHour(consultSettings.openHours.start)} – {formatHour(consultSettings.openHours.end)}
                   </p>
                   <p className="text-gray-400 text-xs mt-1">
                     Duration: {consultSettings.duration} min
