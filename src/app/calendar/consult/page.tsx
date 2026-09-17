@@ -213,6 +213,9 @@ export default function ConsultPage() {
 
   // Get dates that have at least one available slot (next 8 weeks, filtered by openDays)
   const getAvailableDates = (): Date[] => {
+    // No slots when admin marked consult as closed
+    if (settings.noTimeAvailable) return [];
+
     const dates: Date[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);

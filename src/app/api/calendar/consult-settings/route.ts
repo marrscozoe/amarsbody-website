@@ -204,6 +204,10 @@ export async function POST(request: NextRequest) {
 
     // validateOnly=true skips the save and only returns conflict info
     if (body.validateOnly) {
+      // When noTimeAvailable is true, skip free-slot validation entirely — closed state is always valid
+      if (body.noTimeAvailable) {
+        return NextResponse.json({ valid: true, hasAnyFreeSlot: false });
+      }
       const settings: CalendarConsultSettings = {
         duration: body.duration === 60 ? 60 : 30,
         openDays: Array.isArray(body.openDays) ? body.openDays.filter((d: any) => d >= 0 && d <= 6) : DEFAULTS.openDays,
