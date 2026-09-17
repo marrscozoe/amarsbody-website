@@ -279,10 +279,10 @@ export default function Home() {
           <div className="flex items-center gap-6 flex-shrink-0">
             <img src="/qr/amarsbody-consult.png" alt="Scan to book a consult" className="w-28 h-28 rounded-xl shadow-lg bg-white p-1" />
             <a
-              href="/calendar"
+              href="/calendar/consult"
               className="bg-white text-orange-600 font-bold px-6 py-4 rounded-full text-lg hover:bg-orange-50 transition-all shadow-lg"
             >
-              Book Now →
+              Book a Free Consult →
             </a>
           </div>
         </div>
