@@ -33,16 +33,33 @@ function minutesToTime(mins: number): string {
   return `${Math.floor(mins / 60).toString().padStart(2, "0")}:${(mins % 60).toString().padStart(2, "0")}`;
 }
 
+// Format a Date as YYYY-MM-DD in Chicago local time
+function chicagoDateStr(date: Date): string {
+  // Use en-CA locale which is YYYY-MM-DD and respects local timezone
+  return date.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+}
+
 // Validate proposed consult settings don't overlap with existing appointments or blocked times.
-// Returns { valid: true } or { valid: false, conflicts: [{ date, time, label }] }
+// Returns { valid: true } (has ≥1 free slot) or { valid: false, hasAnyFreeSlot: false, conflicts: [...] }
+// Only returns hasAnyFreeSlot=false (409-eligible) when ZERO free slots exist across ALL open days.
 async function validateConsultSettings(
   settings: CalendarConsultSettings
-): Promise<{ valid: boolean; conflicts?: Array<{ dayLabel: string; time: string; label: string }> }> {
+): Promise<{
+  valid: boolean;
+  hasAnyFreeSlot: boolean;
+  conflicts?: Array<{ dayLabel: string; time: string; label: string; fullyBlocked?: boolean }>;
+}> {
   const appointments = await getAppointmentsFromRedis();
   const blocked = await getBlockedFromRedis();
 
   const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const conflicts: Array<{ dayLabel: string; time: string; label: string }> = [];
+  const conflicts: Array<{ dayLabel: string; time: string; label: string; fullyBlocked?: boolean }> = [];
+
+  // Track free slots per day
+  const freeSlotsPerDay: Record<number, number> = {};
+  for (const dayOfWeek of settings.openDays) {
+    freeSlotsPerDay[dayOfWeek] = 0;
+  }
 
   // Sample a representative future date for each open day of the week
   // (we only need one date per day-of-week to check recurring patterns)
@@ -50,19 +67,23 @@ async function validateConsultSettings(
   today.setHours(0, 0, 0, 0);
 
   for (const dayOfWeek of settings.openDays) {
-    // Find the next date with this dayOfWeek
+    // Find the next date with this dayOfWeek in Chicago local time
     const sampleDate = new Date(today);
     const daysUntil = (dayOfWeek - today.getDay() + 7) % 7;
     sampleDate.setDate(today.getDate() + (daysUntil === 0 ? 7 : daysUntil));
-    const dateStr = sampleDate.toISOString().split("T")[0];
+    const dateStr = chicagoDateStr(sampleDate);
 
-    // Generate all possible start times for this day
+    // Generate all possible start times for this day (end exclusive)
     const { start, end } = settings.openHours;
     const slots: string[] = [];
-    for (let hour = start; hour <= end; hour++) {
-      if (settings.duration === 60) {
+    if (settings.duration === 60) {
+      // 60-min: one slot per hour
+      for (let hour = start; hour < end; hour++) {
         slots.push(`${hour.toString().padStart(2, "0")}:00`);
-      } else {
+      }
+    } else {
+      // 30-min: two slots per hour
+      for (let hour = start; hour < end; hour++) {
         slots.push(`${hour.toString().padStart(2, "0")}:00`);
         slots.push(`${hour.toString().padStart(2, "0")}:30`);
       }
@@ -71,7 +92,6 @@ async function validateConsultSettings(
     for (const startTime of slots) {
       const startMins = timeToMinutes(startTime);
       const endMins = startMins + settings.duration;
-      const endTime = minutesToTime(endMins);
 
       // Check for conflicting appointment (any non-cancelled)
       const conflictingApt = appointments.find((apt: any) => {
@@ -116,11 +136,33 @@ async function validateConsultSettings(
           time: startTime,
           label: "Blocked time",
         });
+        continue;
       }
+
+      // Slot is free
+      freeSlotsPerDay[dayOfWeek]++;
     }
   }
 
-  return conflicts.length > 0 ? { valid: false, conflicts } : { valid: true };
+  const hasAnyFreeSlot = Object.values(freeSlotsPerDay).some(count => count > 0);
+
+  // Mark days with zero free slots in conflicts for UX feedback
+  const fullyBlockedDays = settings.openDays.filter(d => freeSlotsPerDay[d] === 0);
+  for (const dayOfWeek of fullyBlockedDays) {
+    // Add a summary conflict for this fully-blocked day
+    conflicts.push({
+      dayLabel: dayLabels[dayOfWeek],
+      time: "all",
+      label: "No free slots on this day",
+      fullyBlocked: true,
+    });
+  }
+
+  return {
+    valid: hasAnyFreeSlot,
+    hasAnyFreeSlot,
+    conflicts: conflicts.length > 0 ? conflicts : undefined,
+  };
 }
 
 const SETTINGS_KEY = "calendar_consult_settings";
@@ -178,13 +220,14 @@ export async function POST(request: NextRequest) {
       ctaText: typeof body.ctaText === "string" && body.ctaText.trim() ? body.ctaText.trim() : DEFAULTS.ctaText,
     };
 
-    // Validate before saving — reject if any slot in the window conflicts
+    // Validate before saving — reject ONLY if ZERO free slots exist across all open days
     const validation = await validateConsultSettings(settings);
-    if (!validation.valid) {
+    if (!validation.hasAnyFreeSlot) {
       return NextResponse.json(
         {
-          error: "Consult window conflicts with existing appointments or blocked times",
+          error: "No free consult slots available in the selected window. Choose different days or hours.",
           conflicts: validation.conflicts,
+          hasAnyFreeSlot: false,
         },
         { status: 409 }
       );
