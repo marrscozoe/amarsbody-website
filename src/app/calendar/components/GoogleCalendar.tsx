@@ -20,6 +20,10 @@ interface Appointment {
   status: string;
   label?: string;
   isPersonalBlock?: boolean;
+  /** Set on consult bookings — use before clients lookup. */
+  clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
 }
 
 interface BlockedTime {
@@ -231,13 +235,16 @@ export default function GoogleCalendar({
     return null;
   };
 
-  // Get client name by ID
-  const getClientName = (clientId: string): string => {
+  // Get client name by ID — prefer apt.clientName (consults), then clients list, then label, then Non-Client
+  const getClientName = (apt: Appointment): string => {
     if (mode === "client" && client) {
       return `${client.firstName} ${client.lastName}`;
     }
-    const c = clients.find(cl => cl.id === clientId);
-    return c ? `${c.firstName} ${c.lastName}` : "Unknown";
+    if (apt.clientName) return apt.clientName;
+    const c = clients.find(cl => cl.id === apt.clientId);
+    if (c) return `${c.firstName} ${c.lastName}`;
+    if (apt.isPersonalBlock || apt.status === "personal-block") return apt.label || "Non-Client";
+    return "Unknown";
   };
 
   // Navigate functions
@@ -473,7 +480,7 @@ export default function GoogleCalendar({
                               apt.status === "booked" ? "bg-orange-900 text-orange-300" : "bg-gray-700"}
                           `}
                         >
-                          {apt.status === "consultation" ? "🎓 " : ""}{`${formatTime(apt.startTime)} ${getClientName(apt.clientId).split(" ")[0]}`}
+                          {apt.status === "consultation" ? "🎓 " : ""}{`${formatTime(apt.startTime)} ${getClientName(apt).split(" ")[0]}`}
                         </div>
                       ))}
                       {monthAppts.length > 3 && (
@@ -625,13 +632,19 @@ export default function GoogleCalendar({
                             {apt.status === "consultation" ? "🎓 " : ""}
                             {apt.isPersonalBlock || apt.status === "personal-block"
                               ? (apt.label || "Non-Client")
-                              : getClientName(apt.clientId)}
+                              : getClientName(apt)}
                           </div>
                           <div className="opacity-80 truncate">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
+                          {apt.clientEmail && (
+                            <div className="text-[10px] opacity-70 truncate">{apt.clientEmail}</div>
+                          )}
+                          {apt.clientPhone && (
+                            <div className="text-[10px] opacity-70 truncate">{apt.clientPhone}</div>
+                          )}
                           {apt.isPersonalBlock && (
                             <div className="text-[10px] opacity-60 truncate">Non-Client</div>
                           )}
-                          {apt.status === "consultation" && (
+                          {apt.status === "consultation" && !apt.clientEmail && (
                             <div className="text-[10px] opacity-70 truncate">Consultation</div>
                           )}
                         </div>
@@ -743,11 +756,17 @@ export default function GoogleCalendar({
                           {apt.status === "consultation" ? "🎓 " : ""}
                           {apt.isPersonalBlock || apt.status === "personal-block"
                             ? (apt.label || "Non-Client Event")
-                            : getClientName(apt.clientId)}
+                            : getClientName(apt)}
                         </div>
                         <div className="opacity-90">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
+                        {apt.clientEmail && (
+                          <div className="text-xs opacity-70 mt-0.5 truncate">{apt.clientEmail}</div>
+                        )}
+                        {apt.clientPhone && (
+                          <div className="text-xs opacity-70 truncate">{apt.clientPhone}</div>
+                        )}
                         {apt.isPersonalBlock && (
-                          <div className="text-xs opacity-70 mt-1">🏷️ Non-Client Event</div>
+                          <div className="text-xs opacity-70 mt-0.5">🏷️ Non-Client Event</div>
                         )}
                         {apt.status === "consultation" && (
                           <div className="text-xs opacity-70 mt-1">Consultation</div>
@@ -847,11 +866,17 @@ export default function GoogleCalendar({
                             {apt.status === "consultation" ? "🎓 " : ""}
                             {apt.isPersonalBlock || apt.status === "personal-block"
                               ? (apt.label || "Non-Client Event")
-                              : mode === "client" ? "Your Session" : getClientName(apt.clientId)}
+                              : mode === "client" ? "Your Session" : getClientName(apt)}
                           </div>
                           <div className="text-gray-400">
                             {formatTime(apt.startTime)} - {formatTime(apt.endTime)}
                           </div>
+                          {(apt.clientEmail || apt.clientPhone) && (
+                            <div className="text-xs text-gray-400 mt-1 space-y-0.5">
+                              {apt.clientEmail && <div>{apt.clientEmail}</div>}
+                              {apt.clientPhone && <div>{apt.clientPhone}</div>}
+                            </div>
+                          )}
                           <div className={`
                             text-sm mt-1
                             ${apt.status === "completed" ? "text-green-400" : 
