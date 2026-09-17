@@ -21,6 +21,7 @@ interface Appointment {
   endTime: string;
   status: string;
   label?: string;
+  clientName?: string;
   isPersonalBlock?: boolean;
 }
 
