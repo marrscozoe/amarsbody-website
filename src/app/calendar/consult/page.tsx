@@ -41,7 +41,7 @@ const DEFAULT_SETTINGS: CalendarConsultSettings = {
 const generateTimeSlots = (duration: number, openHours: { start: number; end: number }) => {
   const slots: string[] = [];
   const { start, end } = openHours;
-  for (let hour = start; hour <= end; hour++) {
+  for (let hour = start; hour < end; hour++) {
     if (duration === 60) {
       // 60-min: :00 only
       slots.push(`${hour.toString().padStart(2, "0")}:00`);

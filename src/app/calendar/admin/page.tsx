@@ -582,6 +582,128 @@ export default function AdminPage() {
     });
   };
 
+  // ── Consult Settings hour availability helpers ────────────────────────────────
+
+  // For a given sample date, check if slot [timeStr, timeStr+duration) conflicts
+  const slotConflictsOnDate = (dateStr: string, timeStr: string, duration: number): { conflict: boolean; label?: string } => {
+    const mins = timeToMinutes(timeStr);
+    const endMins = mins + duration;
+
+    // Check appointments
+    const apt = appointments.find(a => {
+      if (a.status === "cancelled") return false;
+      if (a.date !== dateStr) return false;
+      const aStart = timeToMinutes(a.startTime);
+      const aEnd = timeToMinutes(a.endTime || a.startTime);
+      return mins < aEnd && endMins > aStart;
+    });
+    if (apt) {
+      let label = "Existing appointment";
+      if (apt.label) label = apt.label;
+      else if (apt.clientId?.startsWith("consult_")) label = "Consult booking";
+      else if (apt.status === "consultation") label = "Consult booking";
+      else if (apt.status === "personal-block") label = "Personal block";
+      return { conflict: true, label };
+    }
+
+    // Check blocked times
+    const blk = blockedTimes.find(b => {
+      if (b.date === dateStr) {
+        const bStart = timeToMinutes(b.startTime);
+        const bEnd = timeToMinutes(b.endTime);
+        return mins < bEnd && endMins > bStart;
+      }
+      const dow = new Date(dateStr + "T12:00:00").getDay();
+      if (b.isRecurring && b.daysOfWeek?.includes(dow)) {
+        if (b.endDate && dateStr > b.endDate) return false;
+        const bStart = timeToMinutes(b.startTime);
+        const bEnd = timeToMinutes(b.endTime);
+        return mins < bEnd && endMins > bStart;
+      }
+      return false;
+    });
+    if (blk) return { conflict: true, label: "Blocked time" };
+
+    return { conflict: false };
+  };
+
+  // Returns a Map of hour (24h int) → conflict label for hours that are fully blocked
+  // on ALL selected open days (no slot starting at that hour is available on any day).
+  const getUnavailableHoursForDays = useCallback((openDays: number[], duration: 30 | 60): Map<number, { dayLabel: string; label: string }> => {
+    const dayLabels = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const result = new Map<number, { dayLabel: string; label: string }>();
+    if (openDays.length === 0) return result;
+
+    for (let h = 4; h <= 20; h++) {
+      const timeStr = `${h.toString().padStart(2, "0")}:00`;
+      // Check if at least one selected day has this slot free
+      const hasFreeDay = openDays.some(dow => {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const daysUntil = (dow - today.getDay() + 7) % 7 || 7;
+        const sampleDate = new Date(today); sampleDate.setDate(today.getDate() + daysUntil);
+        const dateStr = sampleDate.toISOString().split("T")[0];
+        return !slotConflictsOnDate(dateStr, timeStr, duration).conflict;
+      });
+      if (hasFreeDay) continue; // hour is usable on at least one day
+
+      // Find the first conflict detail for this hour
+      for (const dow of openDays) {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const daysUntil = (dow - today.getDay() + 7) % 7 || 7;
+        const sampleDate = new Date(today); sampleDate.setDate(today.getDate() + daysUntil);
+        const dateStr = sampleDate.toISOString().split("T")[0];
+        const { conflict, label } = slotConflictsOnDate(dateStr, timeStr, duration);
+        if (conflict && label) {
+          result.set(h, { dayLabel: dayLabels[dow], label });
+          break;
+        }
+      }
+    }
+    return result;
+  }, [appointments, blockedTimes]);
+
+  // Returns a Set of end hours (24h int) that would result in zero available slots
+  // given the current start hour and selected days.
+  const getUnavailableEndHoursForWindow = useCallback((openDays: number[], startHour: number, duration: 30 | 60): Set<number> => {
+    const unavailable = new Set<number>();
+    if (openDays.length === 0) return unavailable;
+
+    for (let e = 5; e <= 21; e++) {
+      // Is there at least one free slot in [startHour, e) on at least one selected day?
+      const hasFreeDay = openDays.some(dow => {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const daysUntil = (dow - today.getDay() + 7) % 7 || 7;
+        const sampleDate = new Date(today); sampleDate.setDate(today.getDate() + daysUntil);
+        const dateStr = sampleDate.toISOString().split("T")[0];
+
+        // Generate candidate slots in [startHour, e) that fit within the window
+        const slots: string[] = [];
+        for (let h = startHour; h < e; h++) {
+          slots.push(`${h.toString().padStart(2, "0")}:00`);
+          if (duration === 30 && h < e - 1) {
+            slots.push(`${h.toString().padStart(2, "0")}:30`);
+          }
+        }
+
+        return slots.some(t => {
+          const endMins = timeToMinutes(t) + duration;
+          if (Math.floor(endMins / 60) > e) return false; // slot extends past end boundary
+          return !slotConflictsOnDate(dateStr, t, duration).conflict;
+        });
+      });
+      if (!hasFreeDay) unavailable.add(e);
+    }
+    return unavailable;
+  }, [appointments, blockedTimes]);
+
+  // Computed unavailable hours — recomputes when consult settings or data changes
+  const unavailableStartHours = getUnavailableHoursForDays(consultSettings.openDays, consultSettings.duration);
+  const unavailableEndHours = getUnavailableEndHoursForWindow(
+    consultSettings.openDays,
+    consultSettings.openHours.start,
+    consultSettings.duration
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
@@ -1194,9 +1316,15 @@ export default function AdminPage() {
                       onChange={(e) => setConsultSettings(s => ({ ...s, openHours: { ...s.openHours, start: parseInt(e.target.value.split(":")[0]) } }))}
                       className="px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
                     >
-                      {["04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20"].map(h => (
-                        <option key={h} value={`${h}:00`}>{formatHour(parseInt(h))}</option>
-                      ))}
+                      {["04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20"].map(h => {
+                        const hourNum = parseInt(h);
+                        const conflict = unavailableStartHours.get(hourNum);
+                        return (
+                          <option key={h} value={`${h}:00`} disabled={!!conflict}>
+                            {formatHour(hourNum)}{conflict ? ` — ${conflict.dayLabel} conflict` : ""}
+                          </option>
+                        );
+                      })}
                     </select>
                     <span className="text-gray-600 text-sm">to</span>
                     <select
@@ -1204,11 +1332,29 @@ export default function AdminPage() {
                       onChange={(e) => setConsultSettings(s => ({ ...s, openHours: { ...s.openHours, end: parseInt(e.target.value.split(":")[0]) } }))}
                       className="px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
                     >
-                      {["05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21"].map(h => (
-                        <option key={h} value={`${h}:00`}>{formatHour(parseInt(h))}</option>
-                      ))}
+                      {["05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21"].map(h => {
+                        const hourNum = parseInt(h);
+                        const isDisabled = unavailableEndHours.has(hourNum);
+                        return (
+                          <option key={h} value={`${h}:00`} disabled={isDisabled}>
+                            {formatHour(hourNum)}{isDisabled ? " — no available slots" : ""}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
+                  {/* Inline conflict banner when selected start hour is fully blocked */}
+                  {unavailableStartHours.has(consultSettings.openHours.start) && (
+                    <div className="mt-2 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <p className="text-xs text-red-400 font-medium">
+                        ⚠ {formatHour(consultSettings.openHours.start)} is fully booked —{" "}
+                        {(() => {
+                          const detail = unavailableStartHours.get(consultSettings.openHours.start);
+                          return detail ? `${detail.dayLabel} taken — "${detail.label}"` : "no slots available on selected days";
+                        })()}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* CTA Text */}
@@ -1337,7 +1483,7 @@ export default function AdminPage() {
                     const dayLabels = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
                     const { start, end } = consultSettings.openHours;
                     const allSlots: string[] = [];
-                    for (let h = start; h <= end; h++) {
+                    for (let h = start; h < end; h++) {
                       if (consultSettings.duration === 60) {
                         allSlots.push(`${h.toString().padStart(2,"0")}:00`);
                       } else {
