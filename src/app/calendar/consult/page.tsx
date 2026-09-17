@@ -36,6 +36,9 @@ interface CalendarConsultSettings {
   successTitle?: string;
   successBody?: string;
   closedEmptyMessage?: string;
+  expectLine1?: string;
+  expectLine2?: string;
+  expectLine3?: string;
 }
 
 const DEFAULT_SETTINGS: CalendarConsultSettings = {
@@ -51,6 +54,9 @@ const DEFAULT_SETTINGS: CalendarConsultSettings = {
   successTitle: "You're Booked!",
   successBody: "We'll send a confirmation to {{email}}",
   closedEmptyMessage: "No consultations available right now.",
+  expectLine1: "Pick a time that works for you",
+  expectLine2: "Free Consultation",
+  expectLine3: "No commitment",
 };
 
 // Generate time slots filtered by duration + admin open hours
@@ -159,6 +165,9 @@ export default function ConsultPage() {
         successTitle: settingsData.successTitle || DEFAULT_SETTINGS.successTitle!,
         successBody: settingsData.successBody || DEFAULT_SETTINGS.successBody!,
         closedEmptyMessage: settingsData.closedEmptyMessage || DEFAULT_SETTINGS.closedEmptyMessage!,
+        expectLine1: settingsData.expectLine1 || DEFAULT_SETTINGS.expectLine1!,
+        expectLine2: settingsData.expectLine2 || DEFAULT_SETTINGS.expectLine2!,
+        expectLine3: settingsData.expectLine3 || DEFAULT_SETTINGS.expectLine3!,
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -371,30 +380,24 @@ export default function ConsultPage() {
             <h2 className="text-xl font-semibold text-center mb-4">What to Expect</h2>
 
             <div className="space-y-3">
-              <div className="flex gap-3">
-                <span className="text-orange-500 text-xl">📅</span>
-                <div>
-                  <p className="font-medium">Pick a time that works for you</p>
-                  <p className="text-sm text-gray-400">
-                    {settings.duration}-minute consultation available on{" "}
-                    {settings.openDays.map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(", ")}
-                  </p>
+              {settings.expectLine1 && (
+                <div className="flex gap-3">
+                  <span className="text-orange-500 text-xl">📅</span>
+                  <p className="font-medium">{settings.expectLine1}</p>
                 </div>
-              </div>
-              <div className="flex gap-3">
-                <span className="text-orange-500 text-xl">💬</span>
-                <div>
-                  <p className="font-medium">{settings.offerLine || DEFAULT_SETTINGS.offerLine}</p>
-                  <p className="text-sm text-gray-400">Discuss your goals and see if we're a good fit</p>
+              )}
+              {settings.expectLine2 && (
+                <div className="flex gap-3">
+                  <span className="text-orange-500 text-xl">💬</span>
+                  <p className="font-medium">{settings.expectLine2}</p>
                 </div>
-              </div>
-              <div className="flex gap-3">
-                <span className="text-orange-500 text-xl">🔒</span>
-                <div>
-                  <p className="font-medium">No commitment</p>
-                  <p className="text-sm text-gray-400">No credit card, no pressure — just a conversation</p>
+              )}
+              {settings.expectLine3 && (
+                <div className="flex gap-3">
+                  <span className="text-orange-500 text-xl">🔒</span>
+                  <p className="font-medium">{settings.expectLine3}</p>
                 </div>
-              </div>
+              )}
             </div>
 
             <button

@@ -128,6 +128,9 @@ export default function AdminPage() {
     successTitle: "You're Booked!",
     successBody: "We'll send a confirmation to {{email}}",
     closedEmptyMessage: "No consultations available right now.",
+    expectLine1: "Pick a time that works for you",
+    expectLine2: "Free Consultation",
+    expectLine3: "No commitment",
   });
   const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
   const [consultSaving, setConsultSaving] = useState(false);
@@ -173,6 +176,9 @@ export default function AdminPage() {
         successTitle: settingsData.successTitle || "You're Booked!",
         successBody: settingsData.successBody || "We'll send a confirmation to {{email}}",
         closedEmptyMessage: settingsData.closedEmptyMessage || "No consultations available right now.",
+        expectLine1: settingsData.expectLine1 || "Pick a time that works for you",
+        expectLine2: settingsData.expectLine2 || "Free Consultation",
+        expectLine3: settingsData.expectLine3 || "No commitment",
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -1571,6 +1577,44 @@ export default function AdminPage() {
                     maxLength={80}
                   />
                   <p className="text-xs text-gray-600 mt-1">{consultSettings.offerLine.length}/80</p>
+                </div>
+
+                {/* What to Expect Lines */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">What to Expect Line 1</label>
+                  <input
+                    type="text"
+                    value={consultSettings.expectLine1}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, expectLine1: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="Pick a time that works for you"
+                    maxLength={80}
+                  />
+                  <p className="text-xs text-gray-600 mt-1">{consultSettings.expectLine1.length}/80</p>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">What to Expect Line 2</label>
+                  <input
+                    type="text"
+                    value={consultSettings.expectLine2}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, expectLine2: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="Free Consultation"
+                    maxLength={80}
+                  />
+                  <p className="text-xs text-gray-600 mt-1">{consultSettings.expectLine2.length}/80</p>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">What to Expect Line 3</label>
+                  <input
+                    type="text"
+                    value={consultSettings.expectLine3}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, expectLine3: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="No commitment"
+                    maxLength={80}
+                  />
+                  <p className="text-xs text-gray-600 mt-1">{consultSettings.expectLine3.length}/80</p>
                 </div>
 
                 {/* Confirm Title */}

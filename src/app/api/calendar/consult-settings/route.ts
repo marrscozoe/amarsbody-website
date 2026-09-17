@@ -182,6 +182,9 @@ export interface CalendarConsultSettings {
   successTitle?: string;
   successBody?: string;
   closedEmptyMessage?: string;
+  expectLine1?: string;
+  expectLine2?: string;
+  expectLine3?: string;
 }
 
 const DEFAULTS: CalendarConsultSettings = {
@@ -198,6 +201,9 @@ const DEFAULTS: CalendarConsultSettings = {
   successTitle: "You're Booked!",
   successBody: "We'll send a confirmation to {{email}}",
   closedEmptyMessage: "No consultations available right now.",
+  expectLine1: "Pick a time that works for you",
+  expectLine2: "Free Consultation",
+  expectLine3: "No commitment",
 };
 
 export async function GET() {
@@ -256,6 +262,9 @@ export async function POST(request: NextRequest) {
       successTitle: typeof body.successTitle === "string" ? body.successTitle.trim() : DEFAULTS.successTitle!,
       successBody: typeof body.successBody === "string" ? body.successBody.trim() : DEFAULTS.successBody!,
       closedEmptyMessage: typeof body.closedEmptyMessage === "string" ? body.closedEmptyMessage.trim() : DEFAULTS.closedEmptyMessage!,
+      expectLine1: typeof body.expectLine1 === "string" ? body.expectLine1.trim() : DEFAULTS.expectLine1!,
+      expectLine2: typeof body.expectLine2 === "string" ? body.expectLine2.trim() : DEFAULTS.expectLine2!,
+      expectLine3: typeof body.expectLine3 === "string" ? body.expectLine3.trim() : DEFAULTS.expectLine3!,
     };
 
     // Validate before saving — skip free-slot check when noTimeAvailable is true (allows zero slots)
