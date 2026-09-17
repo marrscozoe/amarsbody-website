@@ -174,6 +174,7 @@ export interface CalendarConsultSettings {
   ctaText: string;
   noTimeAvailable?: boolean; // closed — customers see no slots
   bookAheadEndDate?: string | null; // YYYY-MM-DD in Chicago, null = no limit
+  noEndDate?: boolean; // true = no end date cap
 }
 
 const DEFAULTS: CalendarConsultSettings = {
@@ -183,6 +184,7 @@ const DEFAULTS: CalendarConsultSettings = {
   ctaText: "Book a Free Consultation",
   noTimeAvailable: false,
   bookAheadEndDate: null,
+  noEndDate: false,
 };
 
 export async function GET() {
@@ -218,6 +220,7 @@ export async function POST(request: NextRequest) {
         ctaText: typeof body.ctaText === "string" && body.ctaText.trim() ? body.ctaText.trim() : DEFAULTS.ctaText,
         noTimeAvailable: !!body.noTimeAvailable,
         bookAheadEndDate: body.bookAheadEndDate === null ? null : (typeof body.bookAheadEndDate === "string" ? body.bookAheadEndDate : DEFAULTS.bookAheadEndDate),
+        noEndDate: !!body.noEndDate,
       };
       const result = await validateConsultSettings(settings);
       return NextResponse.json(result);
@@ -233,6 +236,7 @@ export async function POST(request: NextRequest) {
       ctaText: typeof body.ctaText === "string" && body.ctaText.trim() ? body.ctaText.trim() : DEFAULTS.ctaText,
       noTimeAvailable: !!body.noTimeAvailable,
       bookAheadEndDate: body.bookAheadEndDate === null ? null : (typeof body.bookAheadEndDate === "string" ? body.bookAheadEndDate : DEFAULTS.bookAheadEndDate),
+      noEndDate: !!body.noEndDate,
     };
 
     // Validate before saving — skip free-slot check when noTimeAvailable is true (allows zero slots)

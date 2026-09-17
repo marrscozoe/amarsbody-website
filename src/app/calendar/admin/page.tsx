@@ -121,6 +121,7 @@ export default function AdminPage() {
     ctaText: "Book a Free Consultation",
     noTimeAvailable: false as boolean,
     bookAheadEndDate: null as string | null,
+    noEndDate: false as boolean,
   });
   const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
   const [consultSaving, setConsultSaving] = useState(false);
@@ -159,6 +160,7 @@ export default function AdminPage() {
         ctaText: settingsData.ctaText || "Book a Free Consultation",
         noTimeAvailable: settingsData.noTimeAvailable ?? false,
         bookAheadEndDate: settingsData.bookAheadEndDate ?? null,
+        noEndDate: settingsData.noEndDate ?? false,
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -1335,11 +1337,13 @@ export default function AdminPage() {
                     <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
                       <input
                         type="checkbox"
-                        checked={consultSettings.bookAheadEndDate === null && !consultSettings.noTimeAvailable}
+                        checked={consultSettings.noEndDate}
                         onChange={(e) => {
-                          if (e.target.checked) {
-                            setConsultSettings(s => ({ ...s, bookAheadEndDate: null }));
-                          }
+                          setConsultSettings(s => ({
+                            ...s,
+                            noEndDate: e.target.checked,
+                            bookAheadEndDate: e.target.checked ? null : (s.bookAheadEndDate ?? null),
+                          }));
                         }}
                         disabled={consultSettings.noTimeAvailable}
                         className="w-4 h-4 accent-orange-500 rounded"

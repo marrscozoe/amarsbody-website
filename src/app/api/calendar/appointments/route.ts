@@ -244,6 +244,16 @@ export async function POST(request: NextRequest) {
     // Book-ahead end date check — reject if booking date is beyond the horizon
     const consultSettingsRaw = await kv.get<{ bookAheadEndDate?: string | null; noTimeAvailable?: boolean }>("calendar_consult_settings");
     const bookAheadEndDate = consultSettingsRaw?.bookAheadEndDate ?? null;
+    const noTimeAvailable = consultSettingsRaw?.noTimeAvailable ?? false;
+
+    // Reject if consult is closed (noTimeAvailable = true)
+    if (noTimeAvailable) {
+      return NextResponse.json(
+        { error: 'Consultations are currently not available. Please check back later.' },
+        { status: 400 }
+      );
+    }
+
     if (bookAheadEndDate && date > bookAheadEndDate) {
       return NextResponse.json(
         { error: 'Consultations cannot be booked that far in advance. Please choose an earlier date.' },
