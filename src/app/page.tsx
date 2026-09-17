@@ -292,7 +292,7 @@ export default function Home() {
               href="/calendar/consult"
               className="bg-white text-orange-600 font-bold px-6 py-4 rounded-full text-lg hover:bg-orange-50 transition-all shadow-lg"
             >
-              Book a Free Consult →
+              {ctaText} →
             </a>
           </div>
         </div>
