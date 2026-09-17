@@ -401,7 +401,7 @@ export default function ConsultPage() {
               onClick={() => setStep("form")}
               className="w-full mt-4 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors text-lg"
             >
-              Get Started →
+              {settings.ctaText}
             </button>
 
             <button
