@@ -509,7 +509,7 @@ export default function AdminPage() {
     return `${h > 12 ? h - 12 : h}:${minutes} ${h >= 12 ? "PM" : "AM"}`;
   };
 
-  const timeSlots = [];
+  const timeSlots: string[] = [];
   for (let hour = 4; hour <= 20; hour++) {
     timeSlots.push(`${hour.toString().padStart(2, "0")}:00`);
     timeSlots.push(`${hour.toString().padStart(2, "0")}:30`);
