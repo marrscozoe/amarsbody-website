@@ -116,7 +116,7 @@ export default function Home() {
       {showStickyBar && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-orange-500 text-white py-3 px-4 flex items-center justify-center shadow-lg lg:hidden">
           <a
-            href="#contact"
+            href="/calendar/consult"
             className="font-bold text-sm flex items-center gap-1 w-full justify-center"
           >
             Get Your Free Consultation →
@@ -487,7 +487,7 @@ export default function Home() {
               href="#contact"
               className="inline-block bg-orange-500 text-white font-bold py-3 px-10 rounded-full text-lg hover:bg-orange-600 transition-all transform hover:scale-[1.02]"
             >
-              Get Your Free Consultation →
+              Book a Free Consultation →
             </a>
           </div>
         </div>
@@ -628,7 +628,14 @@ export default function Home() {
             <span className="text-gray-100">READY TO </span>
             <span className="text-orange-400">START?</span>
           </h2>
-          <p className="text-xl text-gray-400 mb-10">Fill out the form and Allen will get back to you within 1 business day.</p>
+          <p className="text-xl text-gray-400 mb-6">Fill out the form and Allen will get back to you within 1 business day.</p>
+
+          <a
+            href="/calendar/consult"
+            className="inline-block w-full mb-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-4 px-8 rounded-full text-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg"
+          >
+            Book a Free Consultation →
+          </a>
 
           {contactFormStatus === "success" ? (
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-orange-500/30">
