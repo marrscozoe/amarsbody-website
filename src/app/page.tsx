@@ -269,6 +269,25 @@ export default function Home() {
         </div>
       </section>
 
+      {/* CONSULT CTA — QR BAND */}
+      <section className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 py-10 px-6">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="text-center md:text-left">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2">Book Your Free Consult</h2>
+            <p className="text-orange-100 text-lg">Scan the QR code or tap the button to schedule your free call with Allen.</p>
+          </div>
+          <div className="flex items-center gap-6 flex-shrink-0">
+            <img src="/qr/amarsbody-consult.png" alt="Scan to book a consult" className="w-28 h-28 rounded-xl shadow-lg bg-white p-1" />
+            <a
+              href="/calendar"
+              className="bg-white text-orange-600 font-bold px-6 py-4 rounded-full text-lg hover:bg-orange-50 transition-all shadow-lg"
+            >
+              Book Now →
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* SOCIAL PROOF — TESTIMONIALS RIGHT AFTER HERO */}
       <section className="py-16 px-6 bg-gray-50 border-t border-gray-200">
         <div className="max-w-6xl mx-auto">
