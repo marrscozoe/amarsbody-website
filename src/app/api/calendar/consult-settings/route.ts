@@ -175,6 +175,13 @@ export interface CalendarConsultSettings {
   noTimeAvailable?: boolean; // closed — customers see no slots
   bookAheadEndDate?: string | null; // YYYY-MM-DD in Chicago, null = no limit
   noEndDate?: boolean; // true = no end date cap
+  // Customer wording fields
+  offerLine?: string;
+  confirmTitle?: string;
+  waiverText?: string;
+  successTitle?: string;
+  successBody?: string;
+  closedEmptyMessage?: string;
 }
 
 const DEFAULTS: CalendarConsultSettings = {
@@ -185,6 +192,12 @@ const DEFAULTS: CalendarConsultSettings = {
   noTimeAvailable: false,
   bookAheadEndDate: null,
   noEndDate: false,
+  offerLine: "Free Consultation",
+  confirmTitle: "Confirm Your Consultation",
+  waiverText: "I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.",
+  successTitle: "You're Booked!",
+  successBody: "We'll send a confirmation to {{email}}",
+  closedEmptyMessage: "No consultations available right now.",
 };
 
 export async function GET() {
@@ -237,6 +250,12 @@ export async function POST(request: NextRequest) {
       noTimeAvailable: !!body.noTimeAvailable,
       bookAheadEndDate: body.bookAheadEndDate === null ? null : (typeof body.bookAheadEndDate === "string" ? body.bookAheadEndDate : DEFAULTS.bookAheadEndDate),
       noEndDate: !!body.noEndDate,
+      offerLine: typeof body.offerLine === "string" ? body.offerLine.trim() : DEFAULTS.offerLine!,
+      confirmTitle: typeof body.confirmTitle === "string" ? body.confirmTitle.trim() : DEFAULTS.confirmTitle!,
+      waiverText: typeof body.waiverText === "string" ? body.waiverText.trim() : DEFAULTS.waiverText!,
+      successTitle: typeof body.successTitle === "string" ? body.successTitle.trim() : DEFAULTS.successTitle!,
+      successBody: typeof body.successBody === "string" ? body.successBody.trim() : DEFAULTS.successBody!,
+      closedEmptyMessage: typeof body.closedEmptyMessage === "string" ? body.closedEmptyMessage.trim() : DEFAULTS.closedEmptyMessage!,
     };
 
     // Validate before saving — skip free-slot check when noTimeAvailable is true (allows zero slots)

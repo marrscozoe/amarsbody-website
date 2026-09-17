@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [ctaText, setCtaText] = useState("Book a Free Consultation");
   const [heroFormData, setHeroFormData] = useState({ firstName: "", email: "", phone: "", goal: "" });
   const [heroFormStatus, setHeroFormStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [contactFormData, setContactFormData] = useState({ name: "", email: "", phone: "", message: "" });
@@ -35,6 +36,15 @@ export default function Home() {
       scrollContainer.scrollLeft = scrollPos;
     }, 30);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/calendar/consult-settings")
+      .then(r => r.json())
+      .then(data => {
+        if (data.ctaText) setCtaText(data.ctaText);
+      })
+      .catch(() => {});
   }, []);
 
   const handleHeroSubmit = async (e: React.FormEvent) => {
@@ -119,7 +129,7 @@ export default function Home() {
             href="/calendar/consult"
             className="font-bold text-sm flex items-center gap-1 w-full justify-center"
           >
-            Get Your Free Consultation →
+            {ctaText} →
           </a>
         </div>
       )}
@@ -487,7 +497,7 @@ export default function Home() {
               href="#contact"
               className="inline-block bg-orange-500 text-white font-bold py-3 px-10 rounded-full text-lg hover:bg-orange-600 transition-all transform hover:scale-[1.02]"
             >
-              Book a Free Consultation →
+              {ctaText} →
             </a>
           </div>
         </div>
@@ -634,7 +644,7 @@ export default function Home() {
             href="/calendar/consult"
             className="inline-block w-full mb-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-4 px-8 rounded-full text-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg"
           >
-            Book a Free Consultation →
+            {ctaText} →
           </a>
 
           {contactFormStatus === "success" ? (

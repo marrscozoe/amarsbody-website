@@ -122,6 +122,12 @@ export default function AdminPage() {
     noTimeAvailable: false as boolean,
     bookAheadEndDate: null as string | null,
     noEndDate: false as boolean,
+    offerLine: "Free Consultation",
+    confirmTitle: "Confirm Your Consultation",
+    waiverText: "I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.",
+    successTitle: "You're Booked!",
+    successBody: "We'll send a confirmation to {{email}}",
+    closedEmptyMessage: "No consultations available right now.",
   });
   const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
   const [consultSaving, setConsultSaving] = useState(false);
@@ -161,6 +167,12 @@ export default function AdminPage() {
         noTimeAvailable: settingsData.noTimeAvailable ?? false,
         bookAheadEndDate: settingsData.bookAheadEndDate ?? null,
         noEndDate: settingsData.noEndDate ?? false,
+        offerLine: settingsData.offerLine || "Free Consultation",
+        confirmTitle: settingsData.confirmTitle || "Confirm Your Consultation",
+        waiverText: settingsData.waiverText || "I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.",
+        successTitle: settingsData.successTitle || "You're Booked!",
+        successBody: settingsData.successBody || "We'll send a confirmation to {{email}}",
+        closedEmptyMessage: settingsData.closedEmptyMessage || "No consultations available right now.",
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -1546,6 +1558,86 @@ export default function AdminPage() {
                   )}
                   <p className="text-xs text-gray-600 mt-1">{consultSettings.ctaText.length}/80</p>
                 </div>
+
+                {/* Offer Line */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Offer Line <span className="text-gray-600">(shown under button on landing)</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.offerLine}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, offerLine: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="Free Consultation"
+                    maxLength={80}
+                  />
+                  <p className="text-xs text-gray-600 mt-1">{consultSettings.offerLine.length}/80</p>
+                </div>
+
+                {/* Confirm Title */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Confirm Screen Title</label>
+                  <input
+                    type="text"
+                    value={consultSettings.confirmTitle}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, confirmTitle: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="Confirm Your Consultation"
+                    maxLength={80}
+                  />
+                </div>
+
+                {/* Waiver Text */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Waiver / Acknowledgment Text</label>
+                  <textarea
+                    value={consultSettings.waiverText}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, waiverText: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all resize-y"
+                    placeholder="I acknowledge this is a free consultation..."
+                    rows={3}
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-600 mt-1">{consultSettings.waiverText.length}/500</p>
+                </div>
+
+                {/* Success Title */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Success Screen Title</label>
+                  <input
+                    type="text"
+                    value={consultSettings.successTitle}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, successTitle: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="You're Booked!"
+                    maxLength={80}
+                  />
+                </div>
+
+                {/* Success Body */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Success Screen Body <span className="text-gray-600">(use {'{{email}}'} for customer email)</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.successBody}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, successBody: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="We'll send a confirmation to {{email}}"
+                    maxLength={160}
+                  />
+                </div>
+
+                {/* Closed Empty Message */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Closed / No-Time Message <span className="text-gray-600">(shown when no slots available)</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.closedEmptyMessage}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, closedEmptyMessage: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="No consultations available right now."
+                    maxLength={120}
+                  />
+                </div>
             </div>
 
             {/* Live Preview */}
@@ -1554,7 +1646,7 @@ export default function AdminPage() {
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
                 {consultSettings.noTimeAvailable ? (
                   <div className="py-8 text-center">
-                    <p className="text-gray-400 text-lg">No consultations available right now.</p>
+                    <p className="text-gray-400 text-lg">{consultSettings.closedEmptyMessage}</p>
                     <p className="text-gray-500 text-sm mt-2">Check back soon.</p>
                   </div>
                 ) : (

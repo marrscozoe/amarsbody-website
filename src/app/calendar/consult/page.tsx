@@ -30,6 +30,12 @@ interface CalendarConsultSettings {
   ctaText: string;
   noTimeAvailable?: boolean;
   bookAheadEndDate?: string | null;
+  offerLine?: string;
+  confirmTitle?: string;
+  waiverText?: string;
+  successTitle?: string;
+  successBody?: string;
+  closedEmptyMessage?: string;
 }
 
 const DEFAULT_SETTINGS: CalendarConsultSettings = {
@@ -39,6 +45,12 @@ const DEFAULT_SETTINGS: CalendarConsultSettings = {
   ctaText: "Book a Free Consultation",
   noTimeAvailable: false,
   bookAheadEndDate: null,
+  offerLine: "Free Consultation",
+  confirmTitle: "Confirm Your Consultation",
+  waiverText: "I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.",
+  successTitle: "You're Booked!",
+  successBody: "We'll send a confirmation to {{email}}",
+  closedEmptyMessage: "No consultations available right now.",
 };
 
 // Generate time slots filtered by duration + admin open hours
@@ -141,6 +153,12 @@ export default function ConsultPage() {
         ctaText: settingsData.ctaText || DEFAULT_SETTINGS.ctaText,
         noTimeAvailable: settingsData.noTimeAvailable ?? false,
         bookAheadEndDate: settingsData.bookAheadEndDate ?? null,
+        offerLine: settingsData.offerLine || DEFAULT_SETTINGS.offerLine!,
+        confirmTitle: settingsData.confirmTitle || DEFAULT_SETTINGS.confirmTitle!,
+        waiverText: settingsData.waiverText || DEFAULT_SETTINGS.waiverText!,
+        successTitle: settingsData.successTitle || DEFAULT_SETTINGS.successTitle!,
+        successBody: settingsData.successBody || DEFAULT_SETTINGS.successBody!,
+        closedEmptyMessage: settingsData.closedEmptyMessage || DEFAULT_SETTINGS.closedEmptyMessage!,
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -346,7 +364,7 @@ export default function ConsultPage() {
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8 pt-8">
             <h1 className="text-3xl font-bold text-orange-500 mb-2">AMarsBody</h1>
-            <p className="text-gray-400">Free Consultation</p>
+            <p className="text-gray-400">{settings.offerLine || DEFAULT_SETTINGS.offerLine}</p>
           </div>
 
           <div className="bg-gray-900 rounded-xl p-6 space-y-4">
@@ -515,7 +533,7 @@ export default function ConsultPage() {
           <div className="bg-gray-900 rounded-xl p-4 space-y-6">
             {settings.noTimeAvailable ? (
               <div className="text-center py-12">
-                <p className="text-gray-400 text-lg">No consultations available right now.</p>
+                <p className="text-gray-400 text-lg">{settings.closedEmptyMessage || DEFAULT_SETTINGS.closedEmptyMessage}</p>
                 <p className="text-gray-500 text-sm mt-2">Check back soon.</p>
               </div>
             ) : monthGroups.length === 0 ? (
@@ -628,7 +646,7 @@ export default function ConsultPage() {
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6 pt-4">
             <div className="text-5xl mb-3">📅</div>
-            <h1 className="text-2xl font-bold text-white mb-1">Confirm Your Consultation</h1>
+            <h1 className="text-2xl font-bold text-white mb-1">{settings.confirmTitle || DEFAULT_SETTINGS.confirmTitle}</h1>
           </div>
 
           <div className="bg-gray-900 rounded-xl p-6 space-y-4">
@@ -665,7 +683,7 @@ export default function ConsultPage() {
                 className="w-5 h-5 mt-0.5 accent-orange-500 shrink-0"
               />
               <span className="text-sm text-gray-300 leading-relaxed">
-                I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.
+                {settings.waiverText || DEFAULT_SETTINGS.waiverText}
               </span>
             </label>
 
@@ -699,8 +717,8 @@ export default function ConsultPage() {
         <div className="max-w-md mx-auto text-center">
           <div className="pt-16 mb-6">
             <div className="text-6xl mb-4">✅</div>
-            <h1 className="text-3xl font-bold text-white mb-2">You're Booked!</h1>
-            <p className="text-gray-400">We'll send a confirmation to {form.email}</p>
+            <h1 className="text-3xl font-bold text-white mb-2">{settings.successTitle || DEFAULT_SETTINGS.successTitle}</h1>
+            <p className="text-gray-400">{(settings.successBody || DEFAULT_SETTINGS.successBody || "We'll send a confirmation").replace("{{email}}", form.email)}</p>
           </div>
 
           <div className="bg-gray-900 rounded-xl p-6 text-left space-y-3">
