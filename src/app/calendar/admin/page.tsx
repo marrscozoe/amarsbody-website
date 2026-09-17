@@ -123,6 +123,8 @@ export default function AdminPage() {
   const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
   const [consultSaving, setConsultSaving] = useState(false);
   const [consultSaveSuccess, setConsultSaveSuccess] = useState(false);
+  const [consultSaveError, setConsultSaveError] = useState<string | null>(null);
+  const [consultConflicts, setConsultConflicts] = useState<Array<{ dayLabel: string; time: string; label: string }>>([]);
 
   useEffect(() => {
     // Check admin auth
@@ -1227,7 +1229,29 @@ export default function AdminPage() {
                       onClick={async () => {
                         setConsultSaving(true);
                         setConsultSaveSuccess(false);
+                        setConsultSaveError(null);
+                        setConsultConflicts([]);
                         try {
+                          // First: validate the window against existing appointments/blocks
+                          const validateRes = await fetch("/api/calendar/consult-settings", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ ...consultSettings, validateOnly: true })
+                          });
+                          const validateData = await validateRes.json();
+                          if (!validateRes.ok || !validateData.valid) {
+                            if (validateData.conflicts && validateData.conflicts.length > 0) {
+                              setConsultConflicts(validateData.conflicts);
+                              const first = validateData.conflicts[0];
+                              setConsultSaveError(`${formatHour(parseInt(first.time.split(":")[0]))} ${first.dayLabel} conflicts — "${first.label}" occupies that slot`);
+                            } else {
+                              setConsultSaveError("Consult window conflicts with existing appointments or blocked times.");
+                            }
+                            setConsultSaving(false);
+                            return;
+                          }
+
+                          // Then: save if validation passes
                           const res = await fetch("/api/calendar/consult-settings", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -1237,12 +1261,20 @@ export default function AdminPage() {
                             const saved = await res.json();
                             setConsultSettings(saved);
                             setConsultSaveSuccess(true);
+                            setConsultConflicts([]);
                             setTimeout(() => setConsultSaveSuccess(false), 4000);
                           } else {
-                            alert("Failed to save settings.");
+                            const errData = await res.json();
+                            if (errData.conflicts && errData.conflicts.length > 0) {
+                              setConsultConflicts(errData.conflicts);
+                              const first = errData.conflicts[0];
+                              setConsultSaveError(`${formatHour(parseInt(first.time.split(":")[0]))} ${first.dayLabel} conflicts — "${first.label}" occupies that slot`);
+                            } else {
+                              setConsultSaveError(errData.error || "Failed to save settings.");
+                            }
                           }
                         } catch {
-                          alert("Failed to save settings.");
+                          setConsultSaveError("Failed to save settings.");
                         } finally {
                           setConsultSaving(false);
                         }
@@ -1256,6 +1288,23 @@ export default function AdminPage() {
                     <p className="text-xs text-green-400 mt-1.5 font-medium">
                       ✓ {formatDaysRange(consultSettings.openDays)} · {formatHour(consultSettings.openHours.start)}–{formatHour(consultSettings.openHours.end)} · {consultSettings.duration} min
                     </p>
+                  )}
+                  {consultSaveError && (
+                    <div className="mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <p className="text-xs text-red-400 font-medium">⚠ {consultSaveError}</p>
+                      {consultConflicts.length > 1 && (
+                        <ul className="mt-1.5 space-y-0.5">
+                          {consultConflicts.slice(0, 5).map((c, i) => (
+                            <li key={i} className="text-xs text-red-300/70">
+                              {formatHour(parseInt(c.time.split(":")[0]))} {c.dayLabel} — {c.label}
+                            </li>
+                          ))}
+                          {consultConflicts.length > 5 && (
+                            <li className="text-xs text-red-300/50">+{consultConflicts.length - 5} more conflicts</li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
                   )}
                   <p className="text-xs text-gray-600 mt-1">{consultSettings.ctaText.length}/80</p>
                 </div>
@@ -1283,6 +1332,67 @@ export default function AdminPage() {
                   <p className="text-orange-400/80 text-xs font-medium mt-2 pt-2 border-t border-gray-800">
                     {formatDaysRange(consultSettings.openDays)} · {formatHour(consultSettings.openHours.start)} – {formatHour(consultSettings.openHours.end)} · {consultSettings.duration} min
                   </p>
+                  {/* Available slots preview — computed from current settings + existing appointments/blocks */}
+                  {(() => {
+                    const dayLabels = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+                    const { start, end } = consultSettings.openHours;
+                    const allSlots: string[] = [];
+                    for (let h = start; h <= end; h++) {
+                      if (consultSettings.duration === 60) {
+                        allSlots.push(`${h.toString().padStart(2,"0")}:00`);
+                      } else {
+                        allSlots.push(`${h.toString().padStart(2,"0")}:00`);
+                        allSlots.push(`${h.toString().padStart(2,"0")}:30`);
+                      }
+                    }
+                    // Sample next occurrence of each open day
+                    const previewByDay: { day: number; slots: string[] }[] = [];
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    for (const dow of consultSettings.openDays) {
+                      const sample = new Date(today);
+                      const daysUntil = (dow - today.getDay() + 7) % 7 || 7;
+                      sample.setDate(today.getDate() + daysUntil);
+                      const dateStr = sample.toISOString().split("T")[0];
+                      // Check each slot against appointments + blocked times (using existing admin helpers)
+                      const availableSlots = allSlots.filter(t => {
+                        const endMins = timeToMinutes(t) + consultSettings.duration;
+                        const endTime = `${Math.floor(endMins/60).toString().padStart(2,"0")}:${(endMins%60).toString().padStart(2,"0")}`;
+                        return !slotConflicts(dateStr, t, endTime);
+                      });
+                      previewByDay.push({ day: dow, slots: availableSlots });
+                    }
+                    if (previewByDay.every(d => d.slots.length === 0)) {
+                      return (
+                        <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
+                          <p className="text-xs text-red-400 font-medium">⚠ No available slots — all times conflict with existing appointments or blocked times.</p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs text-gray-500">Available slots preview (next occurrence):</p>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                          {previewByDay.filter(d => d.slots.length > 0).map(({ day, slots }) => (
+                            <div key={day} className="flex items-start gap-2">
+                              <span className="text-xs text-gray-500 w-7 shrink-0 mt-0.5">{dayLabels[day]}</span>
+                              <div className="flex flex-wrap gap-1">
+                                {slots.map(t => (
+                                  <span key={t} className="text-xs px-1.5 py-0.5 bg-green-500/15 border border-green-500/30 text-green-300 rounded">
+                                    {formatTime(t)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          {previewByDay.some(d => d.slots.length === 0) && (
+                            <p className="text-xs text-gray-600 italic">
+                              {previewByDay.filter(d => d.slots.length === 0).map(d => dayLabels[d.day]).join(", ")} — no available slots (conflicts)
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
