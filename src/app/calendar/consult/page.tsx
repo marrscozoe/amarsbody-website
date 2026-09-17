@@ -28,6 +28,8 @@ interface CalendarConsultSettings {
   openDays: number[];
   openHours: { start: number; end: number };
   ctaText: string;
+  noTimeAvailable?: boolean;
+  bookAheadEndDate?: string | null;
 }
 
 const DEFAULT_SETTINGS: CalendarConsultSettings = {
@@ -35,6 +37,8 @@ const DEFAULT_SETTINGS: CalendarConsultSettings = {
   openDays: [1, 2, 3, 4, 5],
   openHours: { start: 9, end: 20 },
   ctaText: "Book a Free Consultation",
+  noTimeAvailable: false,
+  bookAheadEndDate: null,
 };
 
 // Generate time slots filtered by duration + admin open hours
@@ -135,6 +139,8 @@ export default function ConsultPage() {
         openDays: settingsData.openDays || DEFAULT_SETTINGS.openDays,
         openHours: settingsData.openHours || DEFAULT_SETTINGS.openHours,
         ctaText: settingsData.ctaText || DEFAULT_SETTINGS.ctaText,
+        noTimeAvailable: settingsData.noTimeAvailable ?? false,
+        bookAheadEndDate: settingsData.bookAheadEndDate ?? null,
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -184,7 +190,7 @@ export default function ConsultPage() {
     });
   };
 
-  // Get available time slots for a given date, filtered by openDays/openHours + blocked/booked slots.
+  // Get available time slots for a given date, filtered by openDays/openHours + blocked/booked slots + book-ahead end date.
   const getAvailableSlots = (dateStr: string): string[] => {
     const allSlots = generateTimeSlots(settings.duration, settings.openHours);
     const mins24hFromNow = (() => {
@@ -199,6 +205,8 @@ export default function ConsultPage() {
       const [hour, minute] = time.split(':').map(Number);
       const requestedMs = new Date(`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00-05:00`).getTime();
       if (requestedMs < mins24hFromNow) return false;
+      // Book-ahead end date filter
+      if (settings.bookAheadEndDate && dateStr > settings.bookAheadEndDate) return false;
       return true;
     });
   };
@@ -502,7 +510,12 @@ export default function ConsultPage() {
           </div>
 
           <div className="bg-gray-900 rounded-xl p-4 space-y-6">
-            {monthGroups.length === 0 ? (
+            {settings.noTimeAvailable ? (
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-lg">No consultations available right now.</p>
+                <p className="text-gray-500 text-sm mt-2">Check back soon.</p>
+              </div>
+            ) : monthGroups.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-400">No available slots in the next 8 weeks.</p>
                 <p className="text-gray-500 text-sm mt-2">Check back soon or contact us directly.</p>

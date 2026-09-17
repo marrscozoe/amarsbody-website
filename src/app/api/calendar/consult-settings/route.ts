@@ -172,6 +172,8 @@ export interface CalendarConsultSettings {
   openDays: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
   openHours: { start: number; end: number };
   ctaText: string;
+  noTimeAvailable?: boolean; // closed — customers see no slots
+  bookAheadEndDate?: string | null; // YYYY-MM-DD in Chicago, null = no limit
 }
 
 const DEFAULTS: CalendarConsultSettings = {
@@ -179,12 +181,17 @@ const DEFAULTS: CalendarConsultSettings = {
   openDays: [1, 2, 3, 4, 5],
   openHours: { start: 9, end: 20 },
   ctaText: "Book a Free Consultation",
+  noTimeAvailable: false,
+  bookAheadEndDate: null,
 };
 
 export async function GET() {
   try {
     const settings = await kv.get<CalendarConsultSettings>(SETTINGS_KEY);
-    return NextResponse.json(settings ?? DEFAULTS);
+    return NextResponse.json({
+      ...DEFAULTS,
+      ...(settings ?? {}),
+    });
   } catch (e) {
     console.error("Error reading consult settings:", e);
     return NextResponse.json(DEFAULTS);
@@ -205,6 +212,8 @@ export async function POST(request: NextRequest) {
           end: typeof body.openHours?.end === "number" ? Math.max(0, Math.min(23, body.openHours.end)) : DEFAULTS.openHours.end,
         },
         ctaText: typeof body.ctaText === "string" && body.ctaText.trim() ? body.ctaText.trim() : DEFAULTS.ctaText,
+        noTimeAvailable: !!body.noTimeAvailable,
+        bookAheadEndDate: body.bookAheadEndDate === null ? null : (typeof body.bookAheadEndDate === "string" ? body.bookAheadEndDate : DEFAULTS.bookAheadEndDate),
       };
       const result = await validateConsultSettings(settings);
       return NextResponse.json(result);
@@ -218,19 +227,23 @@ export async function POST(request: NextRequest) {
         end: typeof body.openHours?.end === "number" ? Math.max(0, Math.min(23, body.openHours.end)) : DEFAULTS.openHours.end,
       },
       ctaText: typeof body.ctaText === "string" && body.ctaText.trim() ? body.ctaText.trim() : DEFAULTS.ctaText,
+      noTimeAvailable: !!body.noTimeAvailable,
+      bookAheadEndDate: body.bookAheadEndDate === null ? null : (typeof body.bookAheadEndDate === "string" ? body.bookAheadEndDate : DEFAULTS.bookAheadEndDate),
     };
 
-    // Validate before saving — reject ONLY if ZERO free slots exist across all open days
-    const validation = await validateConsultSettings(settings);
-    if (!validation.hasAnyFreeSlot) {
-      return NextResponse.json(
-        {
-          error: "No free consult slots available in the selected window. Choose different days or hours.",
-          conflicts: validation.conflicts,
-          hasAnyFreeSlot: false,
-        },
-        { status: 409 }
-      );
+    // Validate before saving — skip free-slot check when noTimeAvailable is true (allows zero slots)
+    if (!settings.noTimeAvailable) {
+      const validation = await validateConsultSettings(settings);
+      if (!validation.hasAnyFreeSlot) {
+        return NextResponse.json(
+          {
+            error: "No free consult slots available in the selected window. Choose different days or hours.",
+            conflicts: validation.conflicts,
+            hasAnyFreeSlot: false,
+          },
+          { status: 409 }
+        );
+      }
     }
 
     await kv.set(SETTINGS_KEY, settings);

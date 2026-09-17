@@ -241,6 +241,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Book-ahead end date check — reject if booking date is beyond the horizon
+    const consultSettingsRaw = await kv.get<{ bookAheadEndDate?: string | null; noTimeAvailable?: boolean }>("calendar_consult_settings");
+    const bookAheadEndDate = consultSettingsRaw?.bookAheadEndDate ?? null;
+    if (bookAheadEndDate && date > bookAheadEndDate) {
+      return NextResponse.json(
+        { error: 'Consultations cannot be booked that far in advance. Please choose an earlier date.' },
+        { status: 400 }
+      );
+    }
+
     // One consult per email guard
     const existingConsult = appointments.find(
       (apt: any) => apt.status === 'consultation' && apt.clientEmail === clientEmail
