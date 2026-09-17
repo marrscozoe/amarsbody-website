@@ -425,7 +425,7 @@ export default function Home() {
             href="#contact"
             className="inline-block bg-orange-500 text-white font-bold py-3 px-8 rounded-full hover:bg-orange-600 transition-all"
           >
-            Book Your Free Call →
+            {ctaText} →
           </a>
         </div>
       </section>
