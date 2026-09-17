@@ -119,7 +119,9 @@ export default function AdminPage() {
     duration: 30 as 30 | 60,
     openDays: [1, 2, 3, 4, 5] as number[],
     openHours: { start: 9, end: 20 },
-    ctaText: "Book a Free Consultation"
+    ctaText: "Book a Free Consultation",
+    noTimeAvailable: false as boolean,
+    bookAheadEndDate: null as string | null,
   });
   const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
   const [consultSaving, setConsultSaving] = useState(false);
@@ -155,7 +157,9 @@ export default function AdminPage() {
         duration: settingsData.duration || 30,
         openDays: settingsData.openDays || [1, 2, 3, 4, 5],
         openHours: settingsData.openHours || { start: 9, end: 20 },
-        ctaText: settingsData.ctaText || "Book a Free Consultation"
+        ctaText: settingsData.ctaText || "Book a Free Consultation",
+        noTimeAvailable: settingsData.noTimeAvailable ?? false,
+        bookAheadEndDate: settingsData.bookAheadEndDate ?? null,
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -1300,6 +1304,24 @@ export default function AdminPage() {
                 <h3 className="text-base font-semibold text-white">Consult Settings</h3>
                 <p className="text-sm text-gray-500">Available consult times — shared slot pool with client &amp; personal bookings.</p>
               </div>
+
+              {/* No Time Available toggle */}
+              <div className="flex items-center justify-between py-3 px-4 bg-gray-800/50 border border-gray-700/60 rounded-xl">
+                <div>
+                  <p className="text-sm font-medium text-white">No Time Available</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Customers see no bookable slots when closed</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setConsultSettings(s => ({ ...s, noTimeAvailable: !s.noTimeAvailable }))}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${consultSettings.noTimeAvailable ? "bg-orange-500" : "bg-gray-600"}`}
+                >
+                  <span
+                    className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${consultSettings.noTimeAvailable ? "translate-x-6" : "translate-x-0"}`}
+                  />
+                </button>
+              </div>
+
                 {/* Duration */}
                 <div>
                   <label className="block text-xs text-gray-500 mb-1.5">Duration</label>
@@ -1468,7 +1490,7 @@ export default function AdminPage() {
                   </div>
                   {consultSaveSuccess && (
                     <p className="text-xs text-green-400 mt-1.5 font-medium">
-                      ✓ {formatDaysRange(consultSettings.openDays)} · {formatHour(consultSettings.openHours.start)}–{formatHour(consultSettings.openHours.end)} · {consultSettings.duration} min
+                      ✓ {consultSettings.noTimeAvailable ? "Closed — no slots" : `${formatDaysRange(consultSettings.openDays)} · ${formatHour(consultSettings.openHours.start)}–${formatHour(consultSettings.openHours.end)} · ${consultSettings.duration} min`}{consultSettings.bookAheadEndDate ? ` · Book ahead until ${consultSettings.bookAheadEndDate}` : ""}
                     </p>
                   )}
                   {consultSaveError && (
@@ -1489,6 +1511,43 @@ export default function AdminPage() {
                     </div>
                   )}
                   <p className="text-xs text-gray-600 mt-1">{consultSettings.ctaText.length}/80</p>
+                </div>
+
+                {/* Book-Ahead End Date */}
+                <div className="pt-1 border-t border-gray-800">
+                  <label className="block text-xs text-gray-500 mb-2">Book-Ahead Limit</label>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={consultSettings.bookAheadEndDate === null}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setConsultSettings(s => ({ ...s, bookAheadEndDate: null }));
+                          }
+                        }}
+                        disabled={consultSettings.noTimeAvailable}
+                        className="w-4 h-4 accent-orange-500 rounded"
+                      />
+                      <span className="text-sm text-gray-300">No end date</span>
+                    </label>
+                    <span className="text-gray-600 text-sm">or</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-400">Book up to</span>
+                      <input
+                        type="date"
+                        value={consultSettings.bookAheadEndDate ?? ""}
+                        onChange={(e) => setConsultSettings(s => ({ ...s, bookAheadEndDate: e.target.value || null }))}
+                        disabled={consultSettings.noTimeAvailable || consultSettings.bookAheadEndDate === null}
+                        className="px-3 py-1.5 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+                  {consultSettings.bookAheadEndDate && (
+                    <p className="text-xs text-orange-400/70 mt-1.5">
+                      Slots after {consultSettings.bookAheadEndDate} are hidden from customers.
+                    </p>
+                  )}
                 </div>
             </div>
 
@@ -1511,6 +1570,14 @@ export default function AdminPage() {
                     Duration: <span className="text-gray-300">{consultSettings.duration} min</span>
                     <span className="text-gray-600 ml-1">{consultSettings.duration === 60 ? "(slots at :00 only)" : "(slots at :00 &amp; :30)"}</span>
                   </p>
+                  <p className="text-gray-500 text-xs">
+                    Status: <span className={consultSettings.noTimeAvailable ? "text-red-400" : "text-green-400"}>{consultSettings.noTimeAvailable ? "Closed — no slots" : "Open for bookings"}</span>
+                  </p>
+                  {consultSettings.bookAheadEndDate && (
+                    <p className="text-gray-500 text-xs">
+                      Book-ahead end: <span className="text-orange-300">{consultSettings.bookAheadEndDate}</span>
+                    </p>
+                  )}
                   <p className="text-orange-400/80 text-xs font-medium mt-2 pt-2 border-t border-gray-800">
                     {formatDaysRange(consultSettings.openDays)} · {formatHour(consultSettings.openHours.start)} – {formatHour(consultSettings.openHours.end)} · {consultSettings.duration} min
                   </p>

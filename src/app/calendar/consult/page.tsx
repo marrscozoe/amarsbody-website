@@ -28,6 +28,8 @@ interface CalendarConsultSettings {
   openDays: number[];
   openHours: { start: number; end: number };
   ctaText: string;
+  noTimeAvailable?: boolean;
+  bookAheadEndDate?: string | null;
 }
 
 const DEFAULT_SETTINGS: CalendarConsultSettings = {
@@ -35,6 +37,8 @@ const DEFAULT_SETTINGS: CalendarConsultSettings = {
   openDays: [1, 2, 3, 4, 5],
   openHours: { start: 9, end: 20 },
   ctaText: "Book a Free Consultation",
+  noTimeAvailable: false,
+  bookAheadEndDate: null,
 };
 
 // Generate time slots filtered by duration + admin open hours
@@ -199,6 +203,8 @@ export default function ConsultPage() {
       const [hour, minute] = time.split(':').map(Number);
       const requestedMs = new Date(`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00-05:00`).getTime();
       if (requestedMs < mins24hFromNow) return false;
+      // Book-ahead end date filter
+      if (settings.bookAheadEndDate && dateStr > settings.bookAheadEndDate) return false;
       return true;
     });
   };
@@ -229,6 +235,11 @@ export default function ConsultPage() {
         continue;
       }
       const dateStr = formatDateKey(current);
+      // Apply book-ahead end-date filter
+      if (settings.bookAheadEndDate && dateStr > settings.bookAheadEndDate) {
+        current.setDate(current.getDate() + 1);
+        continue;
+      }
       const slots = getAvailableSlots(dateStr);
       if (slots.length > 0) {
         dates.push(new Date(current));

@@ -172,6 +172,8 @@ export interface CalendarConsultSettings {
   openDays: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
   openHours: { start: number; end: number };
   ctaText: string;
+  noTimeAvailable?: boolean;
+  bookAheadEndDate?: string | null;
 }
 
 const DEFAULTS: CalendarConsultSettings = {
@@ -179,6 +181,8 @@ const DEFAULTS: CalendarConsultSettings = {
   openDays: [1, 2, 3, 4, 5],
   openHours: { start: 9, end: 20 },
   ctaText: "Book a Free Consultation",
+  noTimeAvailable: false,
+  bookAheadEndDate: null,
 };
 
 export async function GET() {
@@ -222,19 +226,23 @@ export async function POST(request: NextRequest) {
         end: typeof body.openHours?.end === "number" ? Math.max(0, Math.min(23, body.openHours.end)) : DEFAULTS.openHours.end,
       },
       ctaText: typeof body.ctaText === "string" && body.ctaText.trim() ? body.ctaText.trim() : DEFAULTS.ctaText,
+      noTimeAvailable: !!body.noTimeAvailable,
+      bookAheadEndDate: body.bookAheadEndDate === null ? null : (typeof body.bookAheadEndDate === "string" ? body.bookAheadEndDate : null),
     };
 
-    // Validate before saving — reject ONLY if ZERO free slots exist across all open days
-    const validation = await validateConsultSettings(settings);
-    if (!validation.hasAnyFreeSlot) {
-      return NextResponse.json(
-        {
-          error: "No free consult slots available in the selected window. Choose different days or hours.",
-          conflicts: validation.conflicts,
-          hasAnyFreeSlot: false,
-        },
-        { status: 409 }
-      );
+    // Skip validation when noTimeAvailable is true — closed state is always valid
+    if (!settings.noTimeAvailable) {
+      const validation = await validateConsultSettings(settings);
+      if (!validation.hasAnyFreeSlot) {
+        return NextResponse.json(
+          {
+            error: "No free consult slots available in the selected window. Choose different days or hours.",
+            conflicts: validation.conflicts,
+            hasAnyFreeSlot: false,
+          },
+          { status: 409 }
+        );
+      }
     }
 
     await kv.set(SETTINGS_KEY, settings);
