@@ -634,31 +634,65 @@ export default function AdminPage() {
     const result = new Map<number, { dayLabel: string; label: string }>();
     if (openDays.length === 0) return result;
 
-    for (let h = 4; h <= 20; h++) {
-      const timeStr = `${h.toString().padStart(2, "0")}:00`;
-      // Check if at least one selected day has this slot free
-      const hasFreeDay = openDays.some(dow => {
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const daysUntil = (dow - today.getDay() + 7) % 7 || 7;
-        const sampleDate = new Date(today); sampleDate.setDate(today.getDate() + daysUntil);
-        const dateStr = sampleDate.toISOString().split("T")[0];
-        return !slotConflictsOnDate(dateStr, timeStr, duration).conflict;
-      });
-      if (hasFreeDay) continue; // hour is usable on at least one day
+    // For each selected weekday, check if the time slot conflicts with ANY appointment
+    // on any date that falls on that weekday (recurring pattern detection).
+    const conflictsForDay = openDays.map(dow => {
+      const dayLabel = dayLabels[dow];
+      for (let h = 4; h <= 20; h++) {
+        const timeStr = `${h.toString().padStart(2, "0")}:00`;
+        const mins = timeToMinutes(timeStr);
+        const endMins = mins + duration;
 
-      // Find the first conflict detail for this hour
-      for (const dow of openDays) {
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const daysUntil = (dow - today.getDay() + 7) % 7 || 7;
-        const sampleDate = new Date(today); sampleDate.setDate(today.getDate() + daysUntil);
-        const dateStr = sampleDate.toISOString().split("T")[0];
-        const { conflict, label } = slotConflictsOnDate(dateStr, timeStr, duration);
-        if (conflict && label) {
-          result.set(h, { dayLabel: dayLabels[dow], label });
+        // Check all appointments that fall on this day-of-week and overlap
+        const conflictingApt = appointments.find((a: any) => {
+          if (a.status === "cancelled") return false;
+          const aptDate = new Date(a.date + "T12:00:00");
+          if (aptDate.getDay() !== dow) return false;
+          const aStart = timeToMinutes(a.startTime);
+          const aEnd = timeToMinutes(a.endTime || a.startTime);
+          return mins < aEnd && endMins > aStart;
+        });
+        if (conflictingApt) {
+          return { hour: h, dayLabel, label: conflictingApt.label || conflictingApt.clientName || "Existing appointment" };
+        }
+
+        // Check recurring blocked times for this weekday
+        const conflictingBlock = blockedTimes.find((b: any) => {
+          if (!b.isRecurring || !b.daysOfWeek?.includes(dow)) return false;
+          if (b.endDate) {
+            const endDate = new Date(b.endDate + "T12:00:00");
+            const today = new Date();
+            if (endDate < today) return false;
+          }
+          const bStart = timeToMinutes(b.startTime);
+          const bEnd = timeToMinutes(b.endTime);
+          return mins < bEnd && endMins > bStart;
+        });
+        if (conflictingBlock) {
+          return { hour: h, dayLabel, label: "Blocked time" };
+        }
+      }
+      return null;
+    });
+
+    // Mark hours that are blocked on ALL selected days (no free day has that hour)
+    for (let h = 4; h <= 20; h++) {
+      // Is there at least one selected day where this hour is free?
+      const hasFreeDay = openDays.some(dow => {
+        const dayConflicts = conflictsForDay.find(c => c !== null && c.dayLabel === dayLabels[dow]);
+        return !dayConflicts || dayConflicts.hour !== h;
+      });
+      if (hasFreeDay) continue;
+
+      // Find first conflict detail for this hour
+      for (const c of conflictsForDay) {
+        if (c && c.hour === h) {
+          result.set(h, { dayLabel: c.dayLabel, label: c.label });
           break;
         }
       }
     }
+
     return result;
   }, [appointments, blockedTimes]);
 
@@ -1371,7 +1405,6 @@ export default function AdminPage() {
                     />
                     <button
                       type="button"
-                      disabled={consultSaving}
                       onClick={async () => {
                         setConsultSaving(true);
                         setConsultSaveSuccess(false);
@@ -1425,6 +1458,8 @@ export default function AdminPage() {
                           setConsultSaving(false);
                         }
                       }}
+                      disabled={consultSaving || unavailableStartHours.has(consultSettings.openHours.start)}
+                      title={unavailableStartHours.has(consultSettings.openHours.start) ? `${formatHour(consultSettings.openHours.start)} has no available slots on selected days — choose a free hour` : undefined}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm rounded-lg font-medium transition-colors shrink-0"
                     >
                       {consultSaving ? "Saving..." : "Save"}
