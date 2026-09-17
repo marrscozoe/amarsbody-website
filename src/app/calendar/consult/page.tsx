@@ -384,7 +384,7 @@ export default function ConsultPage() {
               <div className="flex gap-3">
                 <span className="text-orange-500 text-xl">💬</span>
                 <div>
-                  <p className="font-medium">Free {settings.duration}-minute call</p>
+                  <p className="font-medium">{settings.offerLine || DEFAULT_SETTINGS.offerLine}</p>
                   <p className="text-sm text-gray-400">Discuss your goals and see if we're a good fit</p>
                 </div>
               </div>
