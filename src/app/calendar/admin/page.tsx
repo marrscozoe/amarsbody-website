@@ -515,6 +515,71 @@ export default function AdminPage() {
     timeSlots.push(`${hour.toString().padStart(2, "0")}:30`);
   }
 
+  // ── Time conflict helpers for booking modal ──────────────────────────────
+  const timeToMinutes = (time: string): number => {
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  };
+
+  // Check if [startTime, endTime) on dateStr conflicts with any non-cancelled appointment or block.
+  // excludeId lets us ignore the appointment being rescheduled.
+  const slotConflicts = (dateStr: string, startTime: string, endTime: string, excludeId?: string): boolean => {
+    const startMins = timeToMinutes(startTime);
+    const endMins = timeToMinutes(endTime);
+    const dayOfWeek = new Date(dateStr + "T00:00:00").getDay();
+
+    // Check appointments: any non-cancelled booking (booked/consultation/personal-block) blocks the slot
+    const aptConflict = appointments.some(apt => {
+      if (apt.status === 'cancelled') return false;
+      if (excludeId && apt.id === excludeId) return false;
+      if (apt.date !== dateStr) return false;
+      const aptStart = timeToMinutes(apt.startTime);
+      const aptEnd = timeToMinutes(apt.endTime || apt.startTime);
+      // [startMins, endMins) overlaps [aptStart, aptEnd) if startMins < aptEnd && endMins > aptStart
+      return startMins < aptEnd && endMins > aptStart;
+    });
+    if (aptConflict) return true;
+
+    // Check blocked times
+    const blkConflict = blockedTimes.some(blk => {
+      if (blk.date === dateStr) {
+        const blkStart = timeToMinutes(blk.startTime);
+        const blkEnd = timeToMinutes(blk.endTime);
+        return startMins < blkEnd && endMins > blkStart;
+      }
+      if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.includes(dayOfWeek)) {
+        if (blk.endDate && dateStr > blk.endDate) return false;
+        const blkStart = timeToMinutes(blk.startTime);
+        const blkEnd = timeToMinutes(blk.endTime);
+        return startMins < blkEnd && endMins > blkStart;
+      }
+      return false;
+    });
+    return blkConflict;
+  };
+
+  // Filtered time slots for booking modal startTime select
+  // A start time is available if startTime→(startTime+60) doesn't conflict
+  const availableStartTimes = (dateStr: string, excludeId?: string): string[] => {
+    if (!dateStr) return timeSlots;
+    return timeSlots.filter(t => {
+      const endMins = timeToMinutes(t) + 60;
+      const endTime = `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}`;
+      return !slotConflicts(dateStr, t, endTime, excludeId);
+    });
+  };
+
+  // Filtered time slots for booking modal endTime select
+  // An end time is valid if [appointmentForm.startTime, endTime) doesn't conflict
+  const availableEndTimes = (dateStr: string, startTime: string, excludeId?: string): string[] => {
+    if (!dateStr || !startTime) return timeSlots;
+    return timeSlots.filter(t => {
+      // End must be after start
+      if (timeToMinutes(t) <= timeToMinutes(startTime)) return false;
+      return !slotConflicts(dateStr, startTime, t, excludeId);
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
@@ -1412,17 +1477,36 @@ export default function AdminPage() {
               <input
                 type="date"
                 value={appointmentForm.date}
-                onChange={(e) => setAppointmentForm({ ...appointmentForm, date: e.target.value })}
+                onChange={(e) => {
+                  // Reset to valid times when date changes
+                  const validStarts = availableStartTimes(e.target.value, rescheduleId || undefined);
+                  const validEnds = availableEndTimes(e.target.value, validStarts[0] || '08:00', rescheduleId || undefined);
+                  setAppointmentForm({
+                    ...appointmentForm,
+                    date: e.target.value,
+                    startTime: validStarts[0] || '08:00',
+                    endTime: validEnds[0] || '09:00'
+                  });
+                }}
                 className="w-full px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 required
               />
               <div className="grid grid-cols-2 gap-4">
                 <select
                   value={appointmentForm.startTime}
-                  onChange={(e) => setAppointmentForm({ ...appointmentForm, startTime: e.target.value })}
+                  onChange={(e) => {
+                    // When startTime changes, ensure endTime is still valid
+                    const newStart = e.target.value;
+                    const validEnds = availableEndTimes(appointmentForm.date, newStart, rescheduleId || undefined);
+                    setAppointmentForm({
+                      ...appointmentForm,
+                      startTime: newStart,
+                      endTime: validEnds.includes(appointmentForm.endTime) ? appointmentForm.endTime : (validEnds[0] || '09:00')
+                    });
+                  }}
                   className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 >
-                  {timeSlots.map(time => (
+                  {availableStartTimes(appointmentForm.date, rescheduleId || undefined).map(time => (
                     <option key={time} value={time}>{formatTime(time)}</option>
                   ))}
                 </select>
@@ -1431,7 +1515,7 @@ export default function AdminPage() {
                   onChange={(e) => setAppointmentForm({ ...appointmentForm, endTime: e.target.value })}
                   className="px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 >
-                  {timeSlots.map(time => (
+                  {availableEndTimes(appointmentForm.date, appointmentForm.startTime, rescheduleId || undefined).map(time => (
                     <option key={time} value={time}>{formatTime(time)}</option>
                   ))}
                 </select>

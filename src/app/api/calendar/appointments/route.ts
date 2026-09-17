@@ -100,6 +100,12 @@ async function getBlockedFromRedis(): Promise<any[]> {
   }
 }
 
+// Convert HH:MM time string to minutes since midnight
+function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
 async function checkSlotAvailable(
   date: string,
   startTime: string,
@@ -109,6 +115,16 @@ async function checkSlotAvailable(
 ): Promise<{ available: boolean; reason?: string }> {
   const appointments = await getAppointmentsFromRedis();
   const blocked = await getBlockedFromRedis();
+
+  // ── Default missing endTime to startTime + 60 minutes ───────────────────
+  if (!endTime) {
+    const startMins = timeToMinutes(startTime);
+    const endMins = startMins + 60;
+    endTime = `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}`;
+  }
+
+  const startMins = timeToMinutes(startTime);
+  const endMins = timeToMinutes(endTime);
 
   // ── Same-day double-book prevention ──────────────────────────────────────
   // If a client already has an active appointment on this date, reject.
@@ -130,13 +146,15 @@ async function checkSlotAvailable(
   // booked, consultation, personal-block all occupy the same slot pool.
   // Only cancelled appointments are skipped.
   // Uses [start, end) half-open intervals — back-to-back apts do NOT conflict.
+  // Overlap: start < existingEnd && end > existingStart
   const hasConflict = appointments.some((apt: any) => {
     if (apt.status === 'cancelled') return false;
     if (excludeId && apt.id === excludeId) return false;
     if (apt.date !== date) return false;
-    const existingStart = apt.startTime;
-    const existingEnd = apt.endTime;
-    return !(endTime <= existingStart || startTime > existingEnd);
+    const existingStartMins = timeToMinutes(apt.startTime);
+    const existingEndMins = timeToMinutes(apt.endTime || apt.startTime); // guard missing endTime
+    // Overlap check: [startMins, endMins) vs [existingStartMins, existingEndMins)
+    return startMins < existingEndMins && endMins > existingStartMins;
   });
 
   if (hasConflict) return { available: false, reason: 'Time slot not available' };
@@ -147,13 +165,17 @@ async function checkSlotAvailable(
 
   const isBlocked = blocked.some((blk: any) => {
     if (blk.date === date) {
-      // [blk.startTime, blk.endTime) — back-to-back blocks don't overlap
-      return !(endTime <= blk.startTime || startTime > blk.endTime);
+      const blkStartMins = timeToMinutes(blk.startTime);
+      const blkEndMins = timeToMinutes(blk.endTime);
+      // [blkStartMins, blkEndMins) — back-to-back blocks don't overlap
+      return startMins < blkEndMins && endMins > blkStartMins;
     }
     if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.includes(dayOfWeek)) {
       if (blk.endDate && date > blk.endDate) return false;
-      // [blk.startTime, blk.endTime) — back-to-back blocks don't overlap
-      return !(endTime <= blk.startTime || startTime > blk.endTime);
+      const blkStartMins = timeToMinutes(blk.startTime);
+      const blkEndMins = timeToMinutes(blk.endTime);
+      // [blkStartMins, blkEndMins) — back-to-back blocks don't overlap
+      return startMins < blkEndMins && endMins > blkStartMins;
     }
     return false;
   });
