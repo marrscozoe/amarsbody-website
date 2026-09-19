@@ -496,6 +496,8 @@ export default function ProgramsPage() {
   const [showWorkoutActive, setShowWorkoutActive] = useState(false);
   const [shuffleWorkout, setShuffleWorkout] = useState(false);
   const [quickEmphasize, setQuickEmphasize] = useState('');
+  const [renamingIndex, setRenamingIndex] = useState<number | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
   
   // New client form
   const [newClient, setNewClient] = useState({
@@ -1008,6 +1010,43 @@ export default function ProgramsPage() {
   };
 
   // Remove exercise and add replacement
+  const startRenameExercise = (index: number, currentName: string) => {
+    setRenamingIndex(index);
+    setRenameDraft(currentName);
+  };
+
+  const cancelRenameExercise = () => {
+    setRenamingIndex(null);
+    setRenameDraft('');
+  };
+
+  const commitRenameExercise = (index: number) => {
+    if (!generatedWorkout) return;
+    const trimmed = renameDraft.trim();
+    const oldName = generatedWorkout.exercises[index]?.name;
+    if (!trimmed || !oldName) {
+      cancelRenameExercise();
+      return;
+    }
+    if (trimmed === oldName) {
+      cancelRenameExercise();
+      return;
+    }
+    const newExercises = generatedWorkout.exercises.map((ex, i) =>
+      i === index ? { ...ex, name: trimmed } : ex
+    );
+    setGeneratedWorkout({ ...generatedWorkout, exercises: newExercises });
+    setWorkoutWeights((prev) => {
+      const next = { ...prev };
+      if (oldName in next) {
+        next[trimmed] = next[oldName];
+        delete next[oldName];
+      }
+      return next;
+    });
+    cancelRenameExercise();
+  };
+
   const removeAndReplaceExercise = (index: number) => {
     if (!generatedWorkout) return;
     
@@ -1155,9 +1194,44 @@ export default function ProgramsPage() {
                 {generatedWorkout.exercises.map((ex, i) => (
                   <div key={i} className="bg-gray-700 rounded-xl p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <div>
+                      <div className="flex-1 min-w-0 pr-2">
                         <span className="text-orange-400 font-bold mr-2">#{i + 1}</span>
-                        <span className="font-semibold">{ex.name}</span>
+                        {renamingIndex === i ? (
+                          <input
+                            autoFocus
+                            value={renameDraft}
+                            onChange={(e) => setRenameDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                commitRenameExercise(i);
+                              } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelRenameExercise();
+                              }
+                            }}
+                            onBlur={() => {
+                              // blur without change cancels; change commits
+                              const trimmed = renameDraft.trim();
+                              if (!trimmed || trimmed === ex.name) {
+                                cancelRenameExercise();
+                              } else {
+                                commitRenameExercise(i);
+                              }
+                            }}
+                            className="inline-block max-w-[70%] bg-gray-600 text-white px-2 py-1 rounded-lg text-sm font-semibold border border-orange-400"
+                            aria-label="Rename exercise"
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startRenameExercise(i, ex.name)}
+                            className="font-semibold text-left text-white hover:text-orange-300 underline-offset-2 hover:underline"
+                            title="Tap to rename"
+                          >
+                            {ex.name}
+                          </button>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-400 text-sm">{ex.sets} × {ex.reps}</span>
