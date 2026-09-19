@@ -498,9 +498,6 @@ export default function ProgramsPage() {
   const [quickEmphasize, setQuickEmphasize] = useState('');
   const [renamingIndex, setRenamingIndex] = useState<number | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
-  const [editingSetsRepsIndex, setEditingSetsRepsIndex] = useState<number | null>(null);
-  const [setsDraft, setSetsDraft] = useState('');
-  const [repsDraft, setRepsDraft] = useState('');
   
   // New client form
   const [newClient, setNewClient] = useState({
@@ -1050,31 +1047,23 @@ export default function ProgramsPage() {
     cancelRenameExercise();
   };
 
-  const startEditSetsReps = (index: number, sets: number, reps: string) => {
-    setEditingSetsRepsIndex(index);
-    setSetsDraft(String(sets));
-    setRepsDraft(reps);
-  };
-
-  const cancelEditSetsReps = () => {
-    setEditingSetsRepsIndex(null);
-    setSetsDraft('');
-    setRepsDraft('');
-  };
-
-  const commitEditSetsReps = (index: number) => {
+  const updateExerciseSetsReps = (index: number, patch: { sets?: number; reps?: string }) => {
     if (!generatedWorkout) return;
-    const setsNum = parseInt(setsDraft.trim(), 10);
-    const repsTrim = repsDraft.trim();
-    if (!repsTrim || !Number.isFinite(setsNum) || setsNum < 1) {
-      cancelEditSetsReps();
-      return;
-    }
-    const newExercises = generatedWorkout.exercises.map((ex, i) =>
-      i === index ? { ...ex, sets: setsNum, reps: repsTrim } : ex
-    );
-    setGeneratedWorkout({ ...generatedWorkout, exercises: newExercises });
-    cancelEditSetsReps();
+    setGeneratedWorkout({
+      ...generatedWorkout,
+      exercises: generatedWorkout.exercises.map((ex, i) => {
+        if (i !== index) return ex;
+        const next = { ...ex };
+        if (patch.sets !== undefined && Number.isFinite(patch.sets) && patch.sets >= 1) {
+          next.sets = patch.sets;
+        }
+        if (patch.reps !== undefined) {
+          const r = patch.reps.trim();
+          if (r) next.reps = r;
+        }
+        return next;
+      }),
+    });
   };
 
   const deleteExerciseAt = (index: number) => {
@@ -1300,68 +1289,44 @@ export default function ProgramsPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {editingSetsRepsIndex === i ? (
-                          <div className="flex items-center gap-1">
-                            <input
-                              autoFocus
-                              inputMode="numeric"
-                              value={setsDraft}
-                              onChange={(e) => setSetsDraft(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  commitEditSetsReps(i);
-                                } else if (e.key === 'Escape') {
-                                  e.preventDefault();
-                                  cancelEditSetsReps();
-                                }
-                              }}
-                              className="w-10 bg-gray-600 text-white px-1 py-0.5 rounded text-center text-sm border border-orange-400"
-                              aria-label="Sets"
-                            />
-                            <span className="text-gray-400 text-sm">×</span>
-                            <input
-                              value={repsDraft}
-                              onChange={(e) => setRepsDraft(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  commitEditSetsReps(i);
-                                } else if (e.key === 'Escape') {
-                                  e.preventDefault();
-                                  cancelEditSetsReps();
-                                }
-                              }}
-                              onBlur={() => {
-                                // commit if either field changed; cancel if invalid/unchanged
-                                const setsNum = parseInt(setsDraft.trim(), 10);
-                                const repsTrim = repsDraft.trim();
-                                if (
-                                  repsTrim &&
-                                  Number.isFinite(setsNum) &&
-                                  setsNum >= 1 &&
-                                  (setsNum !== ex.sets || repsTrim !== ex.reps)
-                                ) {
-                                  commitEditSetsReps(i);
-                                } else {
-                                  cancelEditSetsReps();
-                                }
-                              }}
-                              className="w-16 bg-gray-600 text-white px-1 py-0.5 rounded text-center text-sm border border-orange-400"
-                              aria-label="Reps"
-                              placeholder="10-15"
-                            />
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => startEditSetsReps(i, ex.sets, ex.reps)}
-                            className="text-gray-400 text-sm hover:text-orange-300 underline-offset-2 hover:underline"
-                            title="Tap to change sets × reps"
-                          >
-                            {ex.sets} × {ex.reps}
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            value={ex.sets}
+                            onChange={(e) => {
+                              const n = parseInt(e.target.value, 10);
+                              if (Number.isFinite(n) && n >= 1) {
+                                updateExerciseSetsReps(i, { sets: n });
+                              }
+                            }}
+                            className="w-12 bg-gray-600 text-white px-1 py-0.5 rounded text-center text-sm border border-gray-500 focus:border-orange-400"
+                            aria-label="Sets"
+                          />
+                          <span className="text-gray-400 text-sm">×</span>
+                          <input
+                            type="text"
+                            value={ex.reps}
+                            onChange={(e) => {
+                              if (!generatedWorkout) return;
+                              const val = e.target.value;
+                              setGeneratedWorkout({
+                                ...generatedWorkout,
+                                exercises: generatedWorkout.exercises.map((ex2, j) =>
+                                  j === i ? { ...ex2, reps: val } : ex2
+                                ),
+                              });
+                            }}
+                            onBlur={(e) => {
+                              const r = e.target.value.trim();
+                              if (!r) updateExerciseSetsReps(i, { reps: '10' });
+                            }}
+                            className="w-20 bg-gray-600 text-white px-1 py-0.5 rounded text-center text-sm border border-gray-500 focus:border-orange-400"
+                            aria-label="Reps"
+                            placeholder="10-15"
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={() => removeAndReplaceExercise(i)}
