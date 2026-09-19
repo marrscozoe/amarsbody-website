@@ -1047,6 +1047,42 @@ export default function ProgramsPage() {
     cancelRenameExercise();
   };
 
+  const deleteExerciseAt = (index: number) => {
+    if (!generatedWorkout) return;
+    const removed = generatedWorkout.exercises[index];
+    const newExercises = generatedWorkout.exercises.filter((_, i) => i !== index);
+    setGeneratedWorkout({ ...generatedWorkout, exercises: newExercises });
+    if (removed) {
+      setWorkoutWeights((prev) => {
+        const next = { ...prev };
+        delete next[removed.name];
+        return next;
+      });
+    }
+    if (renamingIndex === index) cancelRenameExercise();
+    else if (renamingIndex !== null && renamingIndex > index) setRenamingIndex(renamingIndex - 1);
+  };
+
+  const addExtraExercise = () => {
+    if (!generatedWorkout) return;
+    const base = 'Custom Exercise';
+    let name = base;
+    let n = 2;
+    const names = new Set(generatedWorkout.exercises.map((e) => e.name));
+    while (names.has(name)) {
+      name = `${base} ${n++}`;
+    }
+    const newEx = { name, sets: 3, reps: '10', notes: 'Tap name to rename' };
+    setGeneratedWorkout({
+      ...generatedWorkout,
+      exercises: [...generatedWorkout.exercises, newEx],
+    });
+    // Start rename on the new one
+    const newIndex = generatedWorkout.exercises.length;
+    setRenamingIndex(newIndex);
+    setRenameDraft(name);
+  };
+
   const removeAndReplaceExercise = (index: number) => {
     if (!generatedWorkout) return;
     
@@ -1236,11 +1272,20 @@ export default function ProgramsPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-gray-400 text-sm">{ex.sets} × {ex.reps}</span>
                         <button
+                          type="button"
                           onClick={() => removeAndReplaceExercise(i)}
-                          className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                          className="text-orange-400 hover:text-orange-300 text-xs px-2 py-1"
                           title="Replace with similar exercise"
                         >
                           ↻
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteExerciseAt(i)}
+                          className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                          title="Remove exercise"
+                        >
+                          ✕
                         </button>
                       </div>
                     </div>
@@ -1264,8 +1309,15 @@ export default function ProgramsPage() {
               </div>
 
               <button
+                type="button"
+                onClick={addExtraExercise}
+                className="w-full bg-gray-600 hover:bg-gray-500 text-white py-3 rounded-xl font-semibold text-base mt-4 transition-colors border border-orange-400/50"
+              >
+                + Add exercise
+              </button>
+              <button
                 onClick={handleCompleteSession}
-                className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold text-lg mt-6 transition-colors"
+                className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold text-lg mt-3 transition-colors"
               >
                 ✅ Complete Session
               </button>
