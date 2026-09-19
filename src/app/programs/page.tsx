@@ -1248,63 +1248,82 @@ export default function ProgramsPage() {
               <div className="space-y-4">
                 {generatedWorkout.exercises.map((ex, i) => (
                   <div key={i} className="bg-gray-700 rounded-xl p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1 min-w-0 pr-2">
-                        <span className="text-orange-400 font-bold mr-2">#{i + 1}</span>
-                        {renamingIndex === i ? (
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2">
+                          <span className="text-orange-400 font-bold shrink-0">#{i + 1}</span>
+                          {renamingIndex === i ? (
+                            <input
+                              autoFocus
+                              value={renameDraft}
+                              onChange={(e) => setRenameDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  commitRenameExercise(i);
+                                } else if (e.key === 'Escape') {
+                                  e.preventDefault();
+                                  cancelRenameExercise();
+                                }
+                              }}
+                              onBlur={() => {
+                                const trimmed = renameDraft.trim();
+                                if (!trimmed || trimmed === ex.name) {
+                                  cancelRenameExercise();
+                                } else {
+                                  commitRenameExercise(i);
+                                }
+                              }}
+                              className="flex-1 min-w-0 bg-gray-600 text-white px-2 py-1 rounded-lg text-sm font-semibold border border-orange-400"
+                              aria-label="Rename exercise"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => startRenameExercise(i, ex.name)}
+                              className="font-semibold text-left text-white hover:text-orange-300 underline-offset-2 hover:underline break-words"
+                              title="Tap to rename"
+                            >
+                              {ex.name}
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2 ml-6">
+                          <label className="text-xs text-gray-400 shrink-0">Sets</label>
                           <input
-                            autoFocus
-                            value={renameDraft}
-                            onChange={(e) => setRenameDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                commitRenameExercise(i);
-                              } else if (e.key === 'Escape') {
-                                e.preventDefault();
-                                cancelRenameExercise();
+                            type="text"
+                            inputMode="numeric"
+                            value={ex.sets > 0 ? String(ex.sets) : ''}
+                            onChange={(e) => {
+                              if (!generatedWorkout) return;
+                              const raw = e.target.value.replace(/[^0-9]/g, '');
+                              if (raw === '') {
+                                setGeneratedWorkout({
+                                  ...generatedWorkout,
+                                  exercises: generatedWorkout.exercises.map((ex2, j) =>
+                                    j === i ? { ...ex2, sets: 0 } : ex2
+                                  ),
+                                });
+                                return;
+                              }
+                              const n = parseInt(raw, 10);
+                              if (Number.isFinite(n)) {
+                                setGeneratedWorkout({
+                                  ...generatedWorkout,
+                                  exercises: generatedWorkout.exercises.map((ex2, j) =>
+                                    j === i ? { ...ex2, sets: n } : ex2
+                                  ),
+                                });
                               }
                             }}
                             onBlur={() => {
-                              // blur without change cancels; change commits
-                              const trimmed = renameDraft.trim();
-                              if (!trimmed || trimmed === ex.name) {
-                                cancelRenameExercise();
-                              } else {
-                                commitRenameExercise(i);
-                              }
-                            }}
-                            className="inline-block max-w-[70%] bg-gray-600 text-white px-2 py-1 rounded-lg text-sm font-semibold border border-orange-400"
-                            aria-label="Rename exercise"
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => startRenameExercise(i, ex.name)}
-                            className="font-semibold text-left text-white hover:text-orange-300 underline-offset-2 hover:underline"
-                            title="Tap to rename"
-                          >
-                            {ex.name}
-                          </button>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min={1}
-                            value={ex.sets}
-                            onChange={(e) => {
-                              const n = parseInt(e.target.value, 10);
-                              if (Number.isFinite(n) && n >= 1) {
-                                updateExerciseSetsReps(i, { sets: n });
-                              }
+                              if (!ex.sets || ex.sets < 1) updateExerciseSetsReps(i, { sets: 3 });
                             }}
                             className="w-12 bg-gray-600 text-white px-1 py-0.5 rounded text-center text-sm border border-gray-500 focus:border-orange-400"
                             aria-label="Sets"
                           />
                           <span className="text-gray-400 text-sm">×</span>
+                          <label className="text-xs text-gray-400 shrink-0">Reps</label>
                           <input
                             type="text"
                             value={ex.reps}
@@ -1322,11 +1341,13 @@ export default function ProgramsPage() {
                               const r = e.target.value.trim();
                               if (!r) updateExerciseSetsReps(i, { reps: '10' });
                             }}
-                            className="w-20 bg-gray-600 text-white px-1 py-0.5 rounded text-center text-sm border border-gray-500 focus:border-orange-400"
+                            className="w-24 bg-gray-600 text-white px-1 py-0.5 rounded text-center text-sm border border-gray-500 focus:border-orange-400"
                             aria-label="Reps"
                             placeholder="10-15"
                           />
                         </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => removeAndReplaceExercise(i)}
