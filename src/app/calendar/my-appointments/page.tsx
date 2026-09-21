@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -501,3 +500,4 @@ export default function MyAppointmentsPage() {
     </div>
   );
 }
+<!-- Mon Sep 21 17:30:15 CDT 2026 -->
