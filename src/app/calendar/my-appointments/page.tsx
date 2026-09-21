@@ -266,6 +266,12 @@ export default function MyAppointmentsPage() {
           <h1 className="text-xl font-bold text-orange-600">AMarsBody</h1>
           <div className="flex gap-4">
             <button
+              onClick={() => router.push("/calendar")}
+              className="text-gray-600 hover:text-orange-600"
+            >
+              ← Back
+            </button>
+            <button
               onClick={() => router.push("/calendar/book")}
               className="text-gray-600 hover:text-orange-600"
             >
