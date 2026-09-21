@@ -306,19 +306,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 bg-gray-900 border-y border-gray-800">
-        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 gap-8">
-          <div className="text-center">
-            <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">300+</div>
-            <div className="text-gray-400 text-sm">Clients Transformed</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl md:text-5xl font-extrabold text-orange-500 mb-2">15+</div>
-            <div className="text-gray-400 text-sm">Years Experience</div>
-          </div>
-        </div>
-      </section>
-
       {/* Allen in Action */}
       <section className="py-12 bg-gray-900">
         <div className="max-w-6xl mx-auto px-6">

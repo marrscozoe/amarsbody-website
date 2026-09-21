@@ -15,6 +15,15 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Scrollbar hide utility for mobile tab bars */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @theme {
   --color-background: #fafaf9;
   --color-foreground: #1c1917;

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import path from 'path';
+import fs from 'fs';
 import { kv } from '@vercel/kv';
 
 const APPOINTMENTS_KEY = 'calendar_appointments';
 const BLOCKED_KEY = 'calendar_blocked_times';
+const CALENDAR_CLIENTS_KEY = 'calendar_clients';
+const DATA_DIR = path.join(process.cwd(), 'data');
+const CLIENTS_FILE = path.join(DATA_DIR, 'calendar_clients.json');
 
 async function getAppointmentsFromRedis(): Promise<any[]> {
   try {
@@ -19,6 +24,72 @@ async function saveAppointmentsToRedis(appointments: any[]): Promise<void> {
   await kv.set(APPOINTMENTS_KEY, appointments);
 }
 
+// ── Client credit helpers (mirrors clients/route.ts storage) ───────────────
+const hasRedisConfig = !!process.env.KV_REST_API_URL;
+
+function readClientsFromFile(): any[] {
+  try {
+    if (fs.existsSync(CLIENTS_FILE)) {
+      return JSON.parse(fs.readFileSync(CLIENTS_FILE, 'utf-8'));
+    }
+  } catch (e) {
+    console.error('Error reading clients from file:', e);
+  }
+  return [];
+}
+
+function writeClientsToFile(clients: any[]): void {
+  const dir = path.dirname(CLIENTS_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(CLIENTS_FILE, JSON.stringify(clients, null, 2));
+}
+
+async function getClientsFromRedis(): Promise<any[]> {
+  try {
+    const clients = await kv.get<any[]>(CALENDAR_CLIENTS_KEY);
+    return clients || [];
+  } catch (e) {
+    console.error('Error reading clients from Redis:', e);
+    return [];
+  }
+}
+
+async function saveClientsToRedis(clients: any[]): Promise<void> {
+  if (!await kv.set(CALENDAR_CLIENTS_KEY, clients)) {
+    throw new Error('Failed to save clients');
+  }
+}
+
+async function getClients(): Promise<any[]> {
+  if (hasRedisConfig) {
+    const clients = await getClientsFromRedis();
+    if (clients.length > 0) return clients;
+  }
+  return readClientsFromFile();
+}
+
+async function saveClients(clients: any[]): Promise<void> {
+  if (hasRedisConfig) {
+    try {
+      await saveClientsToRedis(clients);
+    } catch (e) {
+      console.error('Failed to save to Redis, falling back to file:', e);
+      writeClientsToFile(clients);
+    }
+  } else {
+    writeClientsToFile(clients);
+  }
+}
+
+async function adjustClientCredit(clientId: string, delta: number): Promise<void> {
+  const clients = await getClients();
+  const idx = clients.findIndex((c: any) => c.id === clientId);
+  if (idx === -1) return;
+  const current = clients[idx].unusedCredits ?? 0;
+  clients[idx].unusedCredits = Math.max(0, current + delta);
+  await saveClients(clients);
+}
+
 async function getBlockedFromRedis(): Promise<any[]> {
   try {
     const blocked = await kv.get<any[]>(BLOCKED_KEY);
@@ -29,39 +100,109 @@ async function getBlockedFromRedis(): Promise<any[]> {
   }
 }
 
-async function checkSlotAvailable(date: string, startTime: string, endTime: string, excludeId?: string): Promise<boolean> {
+// Convert HH:MM time string to minutes since midnight
+function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+async function checkSlotAvailable(
+  date: string,
+  startTime: string,
+  endTime: string,
+  excludeId?: string,
+  clientIdForSameDayCheck?: string
+): Promise<{ available: boolean; reason?: string }> {
   const appointments = await getAppointmentsFromRedis();
   const blocked = await getBlockedFromRedis();
-  
-  // Check appointments
+
+  // ── Default missing endTime to startTime + 60 minutes ───────────────────
+  if (!endTime) {
+    const startMins = timeToMinutes(startTime);
+    const endMins = startMins + 60;
+    endTime = `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}`;
+  }
+
+  const startMins = timeToMinutes(startTime);
+  const endMins = timeToMinutes(endTime);
+
+  // ── Same-day double-book prevention ──────────────────────────────────────
+  // If a client already has an active appointment on this date, reject.
+  // For reschedules (excludeId set), only check OTHER appointments on the same day.
+  if (clientIdForSameDayCheck) {
+    const hasOtherAppointmentOnDay = appointments.some((apt: any) => {
+      if (apt.status === 'cancelled') return false;
+      if (excludeId && apt.id === excludeId) return false;
+      if (apt.date !== date) return false;
+      if (apt.clientId !== clientIdForSameDayCheck) return false;
+      return true;
+    });
+    if (hasOtherAppointmentOnDay) {
+      return { available: false, reason: 'You already have an appointment on this day' };
+    }
+  }
+
+  // ── Slot conflict check — ALL active appointment types hide the slot ─────
+  // booked, consultation, personal-block all occupy the same slot pool.
+  // Only cancelled appointments are skipped.
+  // Uses [start, end) half-open intervals — back-to-back apts do NOT conflict.
+  // Overlap: start < existingEnd && end > existingStart
   const hasConflict = appointments.some((apt: any) => {
     if (apt.status === 'cancelled') return false;
     if (excludeId && apt.id === excludeId) return false;
     if (apt.date !== date) return false;
-    
-    const existingStart = apt.startTime;
-    const existingEnd = apt.endTime;
-    return !(endTime <= existingStart || startTime >= existingEnd);
+    const existingStartMins = timeToMinutes(apt.startTime);
+    const existingEndMins = timeToMinutes(apt.endTime || apt.startTime); // guard missing endTime
+    // Overlap check: [startMins, endMins) vs [existingStartMins, existingEndMins)
+    return startMins < existingEndMins && endMins > existingStartMins;
   });
-  
-  if (hasConflict) return false;
-  
-  // Check blocked times
+
+  if (hasConflict) return { available: false, reason: 'Time slot not available' };
+
+  // ── Blocked time check ───────────────────────────────────────────────────
   const requestedDate = new Date(date + "T00:00:00");
   const dayOfWeek = requestedDate.getDay();
-  
+
   const isBlocked = blocked.some((blk: any) => {
     if (blk.date === date) {
-      return !(endTime <= blk.startTime || startTime >= blk.endTime);
+      const blkStartMins = timeToMinutes(blk.startTime);
+      const blkEndMins = timeToMinutes(blk.endTime);
+      // [blkStartMins, blkEndMins) — back-to-back blocks don't overlap
+      return startMins < blkEndMins && endMins > blkStartMins;
     }
     if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.includes(dayOfWeek)) {
       if (blk.endDate && date > blk.endDate) return false;
-      return !(endTime <= blk.startTime || startTime >= blk.endTime);
+      const blkStartMins = timeToMinutes(blk.startTime);
+      const blkEndMins = timeToMinutes(blk.endTime);
+      // [blkStartMins, blkEndMins) — back-to-back blocks don't overlap
+      return startMins < blkEndMins && endMins > blkStartMins;
     }
     return false;
   });
-  
-  return !isBlocked;
+
+  if (isBlocked) return { available: false, reason: 'Time slot is blocked' };
+
+  return { available: true };
+}
+
+// ── 24-hour lead-time check ──────────────────────────────────────────────────
+// Rejects self-serve bookings (create, create-consult) within 24h of now (America/Chicago).
+// Admin bypass: schedule-recurring is admin-only and is exempt.
+function isWithin24Hours(dateStr: string, startTime: string): boolean {
+  // Get current time in America/Chicago
+  const nowStr = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
+  const nowChicago = new Date(nowStr);
+  const cutoff = new Date(nowChicago.getTime() + 24 * 60 * 60 * 1000);
+
+  // Build the requested datetime in Chicago by parsing date+time and treating as local to Chicago
+  // We reconstruct it as a string and parse it as Chicago time
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = startTime.split(':').map(Number);
+  // Build ISO string that represents the Chicago time
+  const requestedStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00-05:00`;
+  const requestedMs = new Date(requestedStr).getTime();
+
+  return requestedMs < cutoff.getTime();
 }
 
 // GET - List appointments
@@ -69,105 +210,239 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const clientId = searchParams.get('clientId');
   const date = searchParams.get('date');
-  
+
   let appointments = await getAppointmentsFromRedis();
-  
+
   if (clientId) {
     appointments = appointments.filter((a: any) => a.clientId === clientId);
   }
-  
+
   if (date) {
     appointments = appointments.filter((a: any) => a.date === date);
   }
-  
+
   return NextResponse.json(appointments);
 }
 
 // POST - Create or update appointment
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { action, id, clientId, date, startTime, endTime, status, recurringId, recurringPattern } = body;
+  const { action, id, clientId, clientName, clientEmail, clientPhone, date, startTime, endTime, status, duration, recurringId, recurringPattern, label, isPersonalBlock } = body;
 
   const appointments = await getAppointmentsFromRedis();
 
-  if (action === 'create') {
-    if (!await checkSlotAvailable(date, startTime, endTime)) {
-      return NextResponse.json({ error: 'Time slot not available' }, { status: 400 });
+  // ── Create consultation ─────────────────────────────────────────────────
+  if (action === 'create-consult') {
+    // 24h lead time — consult self-serve rejected within 24h
+    if (isWithin24Hours(date, startTime)) {
+      return NextResponse.json(
+        { error: 'Consultations must be booked at least 24 hours in advance. Please choose a later date or time.' },
+        { status: 400 }
+      );
     }
-    
+
+    // One consult per email guard
+    const existingConsult = appointments.find(
+      (apt: any) => apt.status === 'consultation' && apt.clientEmail === clientEmail
+    );
+    if (existingConsult) {
+      return NextResponse.json(
+        { error: 'You already have a consultation scheduled.' },
+        { status: 400 }
+      );
+    }
+
+    // Waiver acknowledgment required
+    const { waiverAck } = body;
+    if (!waiverAck) {
+      return NextResponse.json(
+        { error: 'Waiver acknowledgment is required to book a consultation.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate required fields
+    if (!date || !startTime) {
+      return NextResponse.json({ error: 'date and startTime are required' }, { status: 400 });
+    }
+    if (!duration && !endTime) {
+      return NextResponse.json({ error: 'duration or endTime is required' }, { status: 400 });
+    }
+
+    // Always compute endTime server-side; do not trust the client value.
+    const [hours, minutes] = startTime.split(":").map(Number);
+    const dur = duration || 30;
+    const endMinutes = hours * 60 + minutes + dur;
+    const computedEndTime = `${Math.floor(endMinutes / 60).toString().padStart(2, "0")}:${(endMinutes % 60).toString().padStart(2, "0")}`;
+
+    const check = await checkSlotAvailable(date, startTime, computedEndTime);
+    if (!check.available) {
+      return NextResponse.json({ error: check.reason }, { status: 400 });
+    }
+
+    const newAppointment = {
+      id: crypto.randomUUID(),
+      clientId: clientId || `consult_${crypto.randomUUID()}`,
+      clientName: clientName || '',
+      clientEmail: clientEmail || '',
+      clientPhone: clientPhone || '',
+      date,
+      startTime,
+      endTime: computedEndTime,
+      status: 'consultation',
+      duration: duration || 30,
+      createdAt: new Date().toISOString()
+    };
+
+    appointments.push(newAppointment);
+    await saveAppointmentsToRedis(appointments);
+
+    return NextResponse.json(newAppointment);
+  }
+
+  // ── Create regular appointment ─────────────────────────────────────────
+  if (action === 'create') {
+    // 24h lead time — client self-serve rejected within 24h
+    if (!isPersonalBlock && !body.isAdmin && isWithin24Hours(date, startTime)) {
+      return NextResponse.json(
+        { error: 'Appointments must be booked at least 24 hours in advance. Please choose a later date or time.' },
+        { status: 400 }
+      );
+    }
+
+    // Reject client booking if they have no credits (personal blocks don't need credits)
+    if (!isPersonalBlock) {
+      const creditCheckClients = await getClients();
+      const creditCheckClient = creditCheckClients.find((c: any) => c.id === clientId);
+      const currentCredits = creditCheckClient?.unusedCredits ?? 0;
+      if (currentCredits < 1) {
+        return NextResponse.json({ error: 'No sessions left to schedule' }, { status: 400 });
+      }
+    }
+
+    const check = await checkSlotAvailable(date, startTime, endTime, undefined, clientId);
+    if (!check.available) {
+      return NextResponse.json({ error: check.reason }, { status: 400 });
+    }
+
     const newAppointment = {
       id: crypto.randomUUID(),
       clientId,
       date,
       startTime,
       endTime,
-      status: 'booked',
+      status: isPersonalBlock ? 'personal-block' : 'booked',
       recurringId: recurringId || null,
       recurringPattern: recurringPattern || null,
+      label: label || null,
+      isPersonalBlock: isPersonalBlock || false,
       createdAt: new Date().toISOString()
     };
-    
+
     appointments.push(newAppointment);
     await saveAppointmentsToRedis(appointments);
-    
-    return NextResponse.json(newAppointment);
+
+    // Decrement client credit on booking (personal blocks don't use credits)
+    let unusedCredits = 0;
+    if (!isPersonalBlock) {
+      await adjustClientCredit(clientId, -1);
+      const clients = await getClients();
+      const client = clients.find((c: any) => c.id === clientId);
+      unusedCredits = client?.unusedCredits ?? 0;
+    }
+
+    return NextResponse.json({ ...newAppointment, unusedCredits });
   }
 
+  // ── Reschedule ──────────────────────────────────────────────────────────
+  // When rescheduling FROM date D to new date+time:
+  // - The appointment being moved is temporarily "free" during the check (excludeId)
+  // - The same-day rule still applies: if client has ANOTHER apt on D, can't book another on D
   if (action === 'reschedule') {
     const index = appointments.findIndex((a: any) => a.id === id);
     if (index === -1) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
-    
-    if (!await checkSlotAvailable(date, startTime, endTime, id)) {
-      return NextResponse.json({ error: 'Time slot not available' }, { status: 400 });
+
+    const apt = appointments[index];
+    // Check the new slot — excludeId = id so we don't conflict with the appointment being moved
+    // clientId is the same client, so same-day check fires and prevents booking same day as their other apt
+    const check = await checkSlotAvailable(date, startTime, endTime, id, apt.clientId);
+    if (!check.available) {
+      return NextResponse.json({ error: check.reason }, { status: 400 });
     }
-    
+
     appointments[index] = {
       ...appointments[index],
       date,
       startTime,
       endTime
     };
-    
+
     await saveAppointmentsToRedis(appointments);
     return NextResponse.json(appointments[index]);
   }
 
+  // ── Cancel ────────────────────────────────────────────────────────────
   if (action === 'cancel') {
     const index = appointments.findIndex((a: any) => a.id === id);
     if (index === -1) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
-    
+
+    const apt = appointments[index];
+    const wasBooked = apt.status === 'booked';
+    const isPersonalBlock = apt.isPersonalBlock;
+
     appointments[index].status = 'cancelled';
     await saveAppointmentsToRedis(appointments);
+
+    // Restore +1 unused session credit on cancel (personal blocks don't use credits)
+    if (apt.clientId && wasBooked && !isPersonalBlock) {
+      await adjustClientCredit(apt.clientId, 1);
+    }
+
     return NextResponse.json(appointments[index]);
   }
 
+  // ── Schedule recurring ─────────────────────────────────────────────────
   if (action === 'schedule-recurring') {
-    const { clientId: recClientId, startTime: recStartTime, endTime: recEndTime, daysOfWeek, endDate } = body;
-    
+    const { clientId: recClientId, startTime: recStartTime, endTime: recEndTime, daysOfWeek, endDate, startDate } = body;
+
     if (!recClientId || !recStartTime || !recEndTime || !daysOfWeek || daysOfWeek.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-    
+
+    if (!startDate) {
+      return NextResponse.json({ error: 'Missing startDate' }, { status: 400 });
+    }
+
+    // Check client's unused credits — credit-funded sessions cap the series
+    const allClients = await getClients();
+    const recClient = allClients.find((c: any) => c.id === recClientId);
+    let unusedCredits = recClient?.unusedCredits ?? 0;
+    const hasCredits = unusedCredits > 0;
+
     const recurringId = crypto.randomUUID();
     const createdAppointments = [];
     const today = new Date();
     const maxDate = endDate ? new Date(endDate) : new Date(today);
     maxDate.setFullYear(maxDate.getFullYear() + 1);
-    
-    const currentDate = new Date(today);
+
+    const currentDate = new Date(startDate);
     currentDate.setHours(0, 0, 0, 0);
-    
+
     while (currentDate <= maxDate) {
+      // Stop early if we've exhausted credits
+      if (hasCredits && unusedCredits <= 0) break;
+
       const dayOfWeek = currentDate.getDay();
-      
+
       if (daysOfWeek.includes(dayOfWeek)) {
         const dateStr = currentDate.toISOString().split('T')[0];
-        
-        if (await checkSlotAvailable(dateStr, recStartTime, recEndTime)) {
+
+        const check = await checkSlotAvailable(dateStr, recStartTime, recEndTime, undefined, recClientId);
+        if (check.available) {
           const newAppointment = {
             id: crypto.randomUUID(),
             clientId: recClientId,
@@ -179,29 +454,43 @@ export async function POST(request: NextRequest) {
             recurringPattern: daysOfWeek.join(','),
             createdAt: new Date().toISOString()
           };
-          
+
           appointments.push(newAppointment);
           createdAppointments.push(newAppointment);
+
+          // Spend 1 credit per created session
+          if (hasCredits) {
+            await adjustClientCredit(recClientId, -1);
+            unusedCredits = Math.max(0, unusedCredits - 1);
+          }
         }
       }
-      
+
       currentDate.setDate(currentDate.getDate() + 1);
     }
-    
+
     await saveAppointmentsToRedis(appointments);
-    return NextResponse.json({ 
+
+    // Return final unusedCredits for badge refresh
+    const finalClients = await getClients();
+    const finalClient = finalClients.find((c: any) => c.id === recClientId);
+    const finalUnusedCredits = finalClient?.unusedCredits ?? 0;
+
+    return NextResponse.json({
       message: `Created ${createdAppointments.length} appointments`,
       recurringId,
-      appointments: createdAppointments
+      appointments: createdAppointments,
+      unusedCredits: finalUnusedCredits
     });
   }
 
+  // ── Mark complete ───────────────────────────────────────────────────────
   if (action === 'complete') {
     const index = appointments.findIndex((a: any) => a.id === id);
     if (index === -1) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
-    
+
     appointments[index].status = 'completed';
     await saveAppointmentsToRedis(appointments);
     return NextResponse.json(appointments[index]);
@@ -214,20 +503,20 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
-  
+
   if (!id) {
     return NextResponse.json({ error: 'Appointment ID required' }, { status: 400 });
   }
-  
+
   const appointments = await getAppointmentsFromRedis();
   const index = appointments.findIndex((a: any) => a.id === id);
-  
+
   if (index === -1) {
     return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
   }
-  
+
   appointments.splice(index, 1);
   await saveAppointmentsToRedis(appointments);
-  
+
   return NextResponse.json({ success: true });
 }

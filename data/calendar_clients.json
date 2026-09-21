@@ -1,0 +1,11 @@
+[
+  {
+    "id": "testclient-001-test-0000-000000000001",
+    "firstName": "Testclient",
+    "lastName": "Delet_test",
+    "email": "testclient_delet_test@test.com",
+    "phone": "",
+    "password": "0fadf52a4580cfebb99e61162139af3d3a6403c1d36b83e4962b721d1c8cbd0b",
+    "unusedCredits": 10
+  }
+]

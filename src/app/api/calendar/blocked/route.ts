@@ -51,7 +51,10 @@ export async function GET(request: NextRequest) {
 // POST - Create or update blocked time
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { action, id, date, startTime, endTime, isRecurring, recurringPattern, endDate, daysOfWeek } = body;
+  const { action, id, date, startTime, endTime, isRecurring, recurringPattern, endDate, daysOfWeek, type } = body;
+
+  // type: 'block' (default, regular unavailable block) | 'consult-window' (defines consult hours)
+  const resolvedType = type === 'consult-window' ? 'consult-window' : 'block';
 
   const blocked = await getBlockedFromRedis();
 
@@ -65,6 +68,7 @@ export async function POST(request: NextRequest) {
       recurringPattern: recurringPattern || null,
       endDate: endDate || null,
       daysOfWeek: daysOfWeek || null,
+      type: resolvedType,
       createdAt: new Date().toISOString()
     };
     
@@ -84,6 +88,29 @@ export async function POST(request: NextRequest) {
     await saveBlockedToRedis(blocked);
     
     return NextResponse.json({ success: true });
+  }
+
+  if (action === 'update') {
+    const index = blocked.findIndex((b: any) => b.id === id);
+    if (index === -1) {
+      return NextResponse.json({ error: 'Blocked time not found' }, { status: 404 });
+    }
+    
+    blocked[index] = {
+      ...blocked[index],
+      date,
+      startTime,
+      endTime,
+      isRecurring: isRecurring || false,
+      recurringPattern: recurringPattern || null,
+      endDate: endDate || null,
+      daysOfWeek: daysOfWeek || null,
+      type: resolvedType,
+    };
+    
+    await saveBlockedToRedis(blocked);
+    
+    return NextResponse.json(blocked[index]);
   }
 
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

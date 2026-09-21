@@ -1,17 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function CalendarPage() {
   const router = useRouter();
   const [showClientLogin, setShowClientLogin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [clientForm, setClientForm] = useState({ firstName: "", lastName: "", email: "", phone: "", password: "" });
+  const [ctaText, setCtaText] = useState("Book a Free Consultation");
+  const [clientForm, setClientForm] = useState({ firstName: "", lastName: "", password: "" });
   const [adminPassword, setAdminPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    fetch("/api/calendar/consult-settings")
+      .then(r => r.json())
+      .then(data => {
+        if (data.ctaText) setCtaText(data.ctaText);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleClientLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,13 +43,9 @@ export default function CalendarPage() {
         return;
       }
       
-      // Store client info in localStorage
       localStorage.setItem("calendarClient", JSON.stringify(data));
-      
-      // Show success message briefly before redirecting
       setSuccess("Login successful! Redirecting...");
       
-      // Small delay to ensure localStorage is set before navigation
       setTimeout(() => {
         router.push("/calendar/book");
       }, 500);
@@ -47,46 +53,6 @@ export default function CalendarPage() {
       return;
     } catch (err) {
       setError("Login failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClientRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-    
-    try {
-      const res = await fetch("/api/calendar/clients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", ...clientForm })
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        setError(data.error || "Registration failed");
-        return;
-      }
-      
-      // Auto-login after registration - store client info in localStorage
-      localStorage.setItem("calendarClient", JSON.stringify(data));
-      
-      // Show success message briefly before redirecting
-      setSuccess("Registration successful! Redirecting to booking...");
-      
-      // Small delay to ensure localStorage is set before navigation
-      setTimeout(() => {
-        router.push("/calendar/book");
-      }, 500);
-      
-      // Don't set loading false here - we're redirecting
-      return;
-    } catch (err) {
-      setError("Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -132,16 +98,18 @@ export default function CalendarPage() {
         {/* Main Menu */}
         {!showClientLogin && !showAdminLogin && (
           <div className="space-y-4">
+            {/* Existing Clients */}
             <button
               onClick={() => setShowClientLogin(true)}
-              className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors"
+              className="w-full py-4 px-6 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg border border-gray-700 transition-colors"
             >
-              Client Login / Register
+              Client Login
             </button>
             
+            {/* Admin */}
             <button
               onClick={() => setShowAdminLogin(true)}
-              className="w-full py-4 px-6 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg border border-gray-700 transition-colors"
+              className="w-full py-3 px-6 bg-gray-900 hover:bg-gray-800 text-gray-400 font-medium rounded-lg border border-gray-800 transition-colors text-sm"
             >
               Admin Login
             </button>
@@ -191,63 +159,10 @@ export default function CalendarPage() {
               </button>
             </form>
             
-            <div className="border-t border-gray-800 pt-4">
-              <p className="text-gray-400 text-center mb-3">New client? Register here:</p>
-              <form onSubmit={handleClientRegister} className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="First Name"
-                  value={clientForm.firstName}
-                  onChange={(e) => setClientForm({ ...clientForm, firstName: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Last Name"
-                  value={clientForm.lastName}
-                  onChange={(e) => setClientForm({ ...clientForm, lastName: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email (optional)"
-                  value={clientForm.email}
-                  onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone (optional)"
-                  value={clientForm.phone}
-                  onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
-                />
-                <input
-                  type="password"
-                  placeholder="Create Password"
-                  value={clientForm.password}
-                  onChange={(e) => setClientForm({ ...clientForm, password: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
-                  required
-                />
-                
-                {error && <p className="text-red-500 text-sm">{error}</p>}
-                {success && <p className="text-green-500 text-sm">{success}</p>}
-                
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
-                >
-                  {loading ? "Registering..." : "Register"}
-                </button>
-              </form>
-            </div>
+
             
             <button
-              onClick={() => { setShowClientLogin(false); setError(""); }}
+              onClick={() => { setShowClientLogin(false); setError(""); setClientForm({ firstName: "", lastName: "", password: "" }); }}
               className="w-full py-2 text-gray-400 hover:text-white transition-colors"
             >
               Back
@@ -282,7 +197,7 @@ export default function CalendarPage() {
             </form>
             
             <button
-              onClick={() => { setShowAdminLogin(false); setError(""); }}
+              onClick={() => { setShowAdminLogin(false); setError(""); setAdminPassword(""); }}
               className="w-full py-2 text-gray-400 hover:text-white transition-colors"
             >
               Back
