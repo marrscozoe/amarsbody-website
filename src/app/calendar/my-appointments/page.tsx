@@ -500,4 +500,3 @@ export default function MyAppointmentsPage() {
     </div>
   );
 }
-<!-- Mon Sep 21 17:30:15 CDT 2026 -->
