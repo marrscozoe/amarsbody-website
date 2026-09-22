@@ -14,6 +14,9 @@ interface Client {
 interface Appointment {
   id: string;
   clientId: string;
+  clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
   date: string;
   startTime: string;
   endTime: string;
@@ -231,11 +234,13 @@ export default function GoogleCalendar({
     return null;
   };
 
-  // Get client name by ID
-  const getClientName = (clientId: string): string => {
+  // Get client name by ID — falls back to clientName field for consult appointments
+  const getClientName = (clientId: string, apt?: any): string => {
     if (mode === "client" && client) {
       return `${client.firstName} ${client.lastName}`;
     }
+    // Consult appointments use consult_<uuid> as clientId — fall back to clientName
+    if (apt?.clientName) return apt.clientName;
     const c = clients.find(cl => cl.id === clientId);
     return c ? `${c.firstName} ${c.lastName}` : "Unknown";
   };
@@ -473,7 +478,7 @@ export default function GoogleCalendar({
                               apt.status === "booked" ? "bg-orange-900 text-orange-300" : "bg-gray-700"}
                           `}
                         >
-                          {apt.status === "consultation" ? "🎓 " : ""}{`${formatTime(apt.startTime)} ${getClientName(apt.clientId).split(" ")[0]}`}
+                          {apt.status === "consultation" ? "🎓 " : ""}{`${formatTime(apt.startTime)} ${getClientName(apt.clientId, apt).split(" ")[0]}`}
                         </div>
                       ))}
                       {monthAppts.length > 3 && (
@@ -625,7 +630,7 @@ export default function GoogleCalendar({
                             {apt.status === "consultation" ? "🎓 " : ""}
                             {apt.isPersonalBlock || apt.status === "personal-block"
                               ? (apt.label || "Non-Client")
-                              : getClientName(apt.clientId)}
+                              : getClientName(apt.clientId, apt)}
                           </div>
                           <div className="opacity-80 truncate">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
                           {apt.isPersonalBlock && (
@@ -743,7 +748,7 @@ export default function GoogleCalendar({
                           {apt.status === "consultation" ? "🎓 " : ""}
                           {apt.isPersonalBlock || apt.status === "personal-block"
                             ? (apt.label || "Non-Client Event")
-                            : getClientName(apt.clientId)}
+                            : getClientName(apt.clientId, apt)}
                         </div>
                         <div className="opacity-90">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
                         {apt.isPersonalBlock && (
@@ -847,7 +852,7 @@ export default function GoogleCalendar({
                             {apt.status === "consultation" ? "🎓 " : ""}
                             {apt.isPersonalBlock || apt.status === "personal-block"
                               ? (apt.label || "Non-Client Event")
-                              : mode === "client" ? "Your Session" : getClientName(apt.clientId)}
+                              : mode === "client" ? "Your Session" : getClientName(apt.clientId, apt)}
                           </div>
                           <div className="text-gray-400">
                             {formatTime(apt.startTime)} - {formatTime(apt.endTime)}
@@ -861,6 +866,28 @@ export default function GoogleCalendar({
                           `}>
                             {apt.status === "personal-block" ? "Non-Client Event" : apt.status === "consultation" ? "Consultation" : apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                           </div>
+                          {apt.status === "consultation" && (apt.clientEmail || apt.clientPhone) && (
+                            <div className="mt-2 flex flex-col gap-1">
+                              {apt.clientEmail && (
+                                <a
+                                  href={`mailto:${apt.clientEmail}`}
+                                  onClick={e => e.stopPropagation()}
+                                  className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1"
+                                >
+                                  📧 {apt.clientEmail}
+                                </a>
+                              )}
+                              {apt.clientPhone && (
+                                <a
+                                  href={`tel:${apt.clientPhone}`}
+                                  onClick={e => e.stopPropagation()}
+                                  className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1"
+                                >
+                                  📞 {apt.clientPhone}
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {mode === "admin" && (
                           <div className="flex gap-2">

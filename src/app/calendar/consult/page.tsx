@@ -742,10 +742,10 @@ export default function ConsultPage() {
 
           <div className="mt-6 space-y-3">
             <button
-              onClick={() => router.push("/calendar")}
+              onClick={() => router.push("https://amarsbody.com")}
               className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
             >
-              Back to Calendar
+              Back to Home
             </button>
           </div>
         </div>

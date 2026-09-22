@@ -283,8 +283,8 @@ export default function Home() {
       <section className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 py-10 px-6">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="text-center md:text-left">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2">Book Your Free Consult</h2>
-            <p className="text-orange-100 text-lg">Scan the QR code or tap the button to schedule your free call with Allen.</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2">{ctaText}</h2>
+            <p className="text-orange-100 text-lg">Scan the QR code or tap the button to schedule with Allen.</p>
           </div>
           <div className="flex items-center gap-6 flex-shrink-0">
             <img src="/qr/amarsbody-consult.png" alt="Scan to book a consult" className="w-28 h-28 rounded-xl shadow-lg bg-white p-1" />
@@ -292,7 +292,7 @@ export default function Home() {
               href="/calendar/consult"
               className="bg-white text-orange-600 font-bold px-6 py-4 rounded-full text-lg hover:bg-orange-50 transition-all shadow-lg"
             >
-              {ctaText} →
+              Book a Free Consult →
             </a>
           </div>
         </div>
@@ -425,7 +425,7 @@ export default function Home() {
             href="#contact"
             className="inline-block bg-orange-500 text-white font-bold py-3 px-8 rounded-full hover:bg-orange-600 transition-all"
           >
-            {ctaText} →
+            Book Your Free Call →
           </a>
         </div>
       </section>
