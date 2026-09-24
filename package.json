@@ -12,7 +12,7 @@
     "@vercel/kv": "^3.0.0",
     "@vercel/postgres": "^0.10.0",
     "axios": "^1.13.6",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.11.1",
     "googleapis": "^171.4.0",
     "lucide-react": "^0.577.0",
     "next": "latest",
