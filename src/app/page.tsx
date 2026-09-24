@@ -126,10 +126,10 @@ export default function Home() {
       {showStickyBar && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-orange-500 text-white py-3 px-4 flex items-center justify-center shadow-lg lg:hidden">
           <a
-            href="#contact"
+            href="/calendar/consult"
             className="font-bold text-sm flex items-center gap-1 w-full justify-center"
           >
-            Get Your Free Consultation →
+            Book a Free Consult →
           </a>
         </div>
       )}
