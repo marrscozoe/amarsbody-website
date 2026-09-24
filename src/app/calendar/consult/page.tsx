@@ -742,6 +742,21 @@ export default function ConsultPage() {
 
           <div className="mt-6 space-y-3">
             <button
+              onClick={() => {
+                const params = new URLSearchParams({
+                  firstName: form.firstName,
+                  lastName: form.lastName,
+                  email: form.email,
+                  phone: form.phone || '',
+                  date: selectedDate,
+                });
+                router.push(`/consult-waiver?${params.toString()}`);
+              }}
+              className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition-colors"
+            >
+              Next: Sign Waiver →
+            </button>
+            <button
               onClick={() => router.push("https://amarsbody.com")}
               className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
             >

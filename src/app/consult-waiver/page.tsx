@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 type SubmitStatus = "idle" | "loading" | "success" | "error";
 
 export default function ConsultWaiver() {
+  const searchParams = useSearchParams();
   const [isMinor, setIsMinor] = useState(false);
   const [agreed, setAgreed] = useState({
-    section1: false, // Assumption of Risk
-    section2: false, // Health Representation
-    section3: false, // Release of Liability
-    section4: false, // Indemnification
-    guardian: false, // Guardian acknowledgment
+    section1: false,
+    section2: false,
+    section3: false,
+    section4: false,
+    guardian: false,
   });
   const [clientData, setClientData] = useState({
     firstName: "",
@@ -23,6 +25,25 @@ export default function ConsultWaiver() {
     guardianRelationship: "",
   });
   const [status, setStatus] = useState<SubmitStatus>("idle");
+
+  // Auto-fill from URL params (passed from consult booking)
+  useEffect(() => {
+    const fn = searchParams.get("firstName") || "";
+    const ln = searchParams.get("lastName") || "";
+    const em = searchParams.get("email") || "";
+    const ph = searchParams.get("phone") || "";
+    const dt = searchParams.get("date") || new Date().toISOString().split("T")[0];
+    if (fn || em) {
+      setClientData(prev => ({
+        ...prev,
+        firstName: fn,
+        lastName: ln,
+        email: em,
+        phone: ph,
+        date: dt,
+      }));
+    }
+  }, [searchParams]);
 
   const allAgreed =
     agreed.section1 &&
