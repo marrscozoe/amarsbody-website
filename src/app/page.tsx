@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from "react";
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [ctaText, setCtaText] = useState("Book a Free Consultation");
   const [heroFormData, setHeroFormData] = useState({ firstName: "", email: "", phone: "", goal: "" });
   const [heroFormStatus, setHeroFormStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [contactFormData, setContactFormData] = useState({ name: "", email: "", phone: "", message: "" });
@@ -36,15 +35,6 @@ export default function Home() {
       scrollContainer.scrollLeft = scrollPos;
     }, 30);
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/calendar/consult-settings")
-      .then(r => r.json())
-      .then(data => {
-        if (data.ctaText) setCtaText(data.ctaText);
-      })
-      .catch(() => {});
   }, []);
 
   const handleHeroSubmit = async (e: React.FormEvent) => {
@@ -126,10 +116,10 @@ export default function Home() {
       {showStickyBar && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-orange-500 text-white py-3 px-4 flex items-center justify-center shadow-lg lg:hidden">
           <a
-            href="/calendar/consult"
+            href="#contact"
             className="font-bold text-sm flex items-center gap-1 w-full justify-center"
           >
-            {ctaText} →
+            Get Your Free Consultation →
           </a>
         </div>
       )}
@@ -275,25 +265,6 @@ export default function Home() {
                 <p className="text-center text-gray-400 text-xs mt-2">No spam. Allen responds within 1 business day.</p>
               </form>
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* CONSULT CTA — QR BAND */}
-      <section className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 py-10 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="text-center md:text-left">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2">{ctaText}</h2>
-            <p className="text-orange-100 text-lg">Scan the QR code or tap the button to schedule with Allen.</p>
-          </div>
-          <div className="flex items-center gap-6 flex-shrink-0">
-            <img src="/qr/amarsbody-consult.png" alt="Scan to book a consult" className="w-28 h-28 rounded-xl shadow-lg bg-white p-1" />
-            <a
-              href="/calendar/consult"
-              className="bg-white text-orange-600 font-bold px-6 py-4 rounded-full text-lg hover:bg-orange-50 transition-all shadow-lg"
-            >
-              Book a Free Consult →
-            </a>
           </div>
         </div>
       </section>
@@ -497,7 +468,7 @@ export default function Home() {
               href="#contact"
               className="inline-block bg-orange-500 text-white font-bold py-3 px-10 rounded-full text-lg hover:bg-orange-600 transition-all transform hover:scale-[1.02]"
             >
-              {ctaText} →
+              Get Your Free Consultation →
             </a>
           </div>
         </div>
@@ -638,14 +609,7 @@ export default function Home() {
             <span className="text-gray-100">READY TO </span>
             <span className="text-orange-400">START?</span>
           </h2>
-          <p className="text-xl text-gray-400 mb-6">Fill out the form and Allen will get back to you within 1 business day.</p>
-
-          <a
-            href="/calendar/consult"
-            className="inline-block w-full mb-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-4 px-8 rounded-full text-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg"
-          >
-            {ctaText} →
-          </a>
+          <p className="text-xl text-gray-400 mb-10">Fill out the form and Allen will get back to you within 1 business day.</p>
 
           {contactFormStatus === "success" ? (
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-orange-500/30">
