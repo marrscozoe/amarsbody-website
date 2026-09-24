@@ -218,83 +218,85 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* HERO LEAD CAPTURE FORM */}
-          <div className="max-w-md mx-auto">
-            {heroFormStatus === "success" ? (
-              <div className="bg-white/95 rounded-2xl p-8 text-center shadow-2xl">
-                <div className="text-5xl mb-4">🎉</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re In!</h3>
-                <p className="text-gray-600">Allen will reach out within 1 business day. Can&apos;t wait to help you hit your goals!</p>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleHeroSubmit}
-                className="bg-white/95 rounded-2xl p-6 shadow-2xl"
-              >
-                <p className="text-center text-orange-600 font-bold text-lg mb-4">Start Your Transformation — Free!</p>
-                <div className="space-y-3">
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="FIRST NAME *"
-                      value={heroFormData.firstName}
-                      onChange={(e) => setHeroFormData({ ...heroFormData, firstName: e.target.value })}
-                      required
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="email"
-                      placeholder="EMAIL *"
-                      value={heroFormData.email}
-                      onChange={(e) => setHeroFormData({ ...heroFormData, email: e.target.value })}
-                      required
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="tel"
-                      placeholder="PHONE (optional)"
-                      value={heroFormData.phone}
-                      onChange={(e) => setHeroFormData({ ...heroFormData, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="GOAL / EVENT (e.g. Wedding in June, Beach trip)"
-                      value={heroFormData.goal}
-                      onChange={(e) => setHeroFormData({ ...heroFormData, goal: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400"
-                    />
-                  </div>
+      {/* START YOUR TRANSFORMATION — BELOW HERO on light background */}
+      <section className="py-16 px-6 bg-gray-50">
+        <div className="max-w-md mx-auto">
+          {heroFormStatus === "success" ? (
+            <div className="bg-white rounded-2xl p-8 text-center shadow-2xl border border-gray-200">
+              <div className="text-5xl mb-4">🎉</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re In!</h3>
+              <p className="text-gray-600">Allen will reach out within 1 business day. Can&apos;t wait to help you hit your goals!</p>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleHeroSubmit}
+              className="bg-white rounded-2xl p-6 shadow-2xl border border-gray-200"
+            >
+              <p className="text-center text-orange-600 font-bold text-lg mb-4">Start Your Transformation — Free!</p>
+              <div className="space-y-3">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="FIRST NAME *"
+                    value={heroFormData.firstName}
+                    onChange={(e) => setHeroFormData({ ...heroFormData, firstName: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400"
+                  />
                 </div>
-                {heroFormStatus === "error" && (
-                  <div className="mt-3 text-center">
-                    <p className="text-red-400 text-sm mb-2">Something went wrong. Please try again.</p>
-                    <p className="text-gray-400 text-sm">
-                      Or email Allen directly:{' '}
-                      <a href="mailto:amarsbody@gmail.com" className="text-orange-400 hover:text-orange-300 font-medium">
-                        amarsbody@gmail.com
-                      </a>
-                    </p>
-                  </div>
-                )}
-                <button
-                  type="submit"
-                  disabled={heroFormStatus === "loading"}
-                  className="w-full mt-4 bg-orange-500 text-white font-bold py-3 px-8 rounded-full hover:bg-orange-600 transition-all transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {heroFormStatus === "loading" ? "SENDING..." : "GET STARTED FREE →"}
-                </button>
-                <p className="text-center text-gray-400 text-xs mt-2">No spam. Allen responds within 1 business day.</p>
-              </form>
-            )}
-          </div>
+                <div>
+                  <input
+                    type="email"
+                    placeholder="EMAIL *"
+                    value={heroFormData.email}
+                    onChange={(e) => setHeroFormData({ ...heroFormData, email: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="tel"
+                    placeholder="PHONE (optional)"
+                    value={heroFormData.phone}
+                    onChange={(e) => setHeroFormData({ ...heroFormData, phone: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="GOAL / EVENT (e.g. Wedding in June, Beach trip)"
+                    value={heroFormData.goal}
+                    onChange={(e) => setHeroFormData({ ...heroFormData, goal: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400"
+                  />
+                </div>
+              </div>
+              {heroFormStatus === "error" && (
+                <div className="mt-3 text-center">
+                  <p className="text-red-400 text-sm mb-2">Something went wrong. Please try again.</p>
+                  <p className="text-gray-400 text-sm">
+                    Or email Allen directly:{' '}
+                    <a href="mailto:amarsbody@gmail.com" className="text-orange-400 hover:text-orange-300 font-medium">
+                      amarsbody@gmail.com
+                    </a>
+                  </p>
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={heroFormStatus === "loading"}
+                className="w-full mt-4 bg-orange-500 text-white font-bold py-3 px-8 rounded-full hover:bg-orange-600 transition-all transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {heroFormStatus === "loading" ? "SENDING..." : "GET STARTED FREE →"}
+              </button>
+              <p className="text-center text-gray-400 text-xs mt-2">No spam. Allen responds within 1 business day.</p>
+            </form>
+          )}
         </div>
       </section>
 
