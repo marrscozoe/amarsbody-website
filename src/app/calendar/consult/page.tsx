@@ -112,8 +112,12 @@ export default function ConsultPage() {
   // Contact info
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
 
-  // Waiver checkbox
-  const [waiverChecked, setWaiverChecked] = useState(false);
+  // Waiver agreement state
+  const [waiverAgreed, setWaiverAgreed] = useState({ section1: false, section2: false, section3: false, section4: false, guardian: false });
+  const [isMinor, setIsMinor] = useState(false);
+  const [guardianData, setGuardianData] = useState({ name: "", relationship: "" });
+
+  const waiverComplete = waiverAgreed.section1 && waiverAgreed.section2 && waiverAgreed.section3 && waiverAgreed.section4 && (!isMinor || waiverAgreed.guardian);
 
   // Calendar data
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
@@ -331,7 +335,11 @@ export default function ConsultPage() {
           startTime: selectedTime,
           endTime,
           duration: settings.duration,
-          waiverAck: waiverChecked
+          waiverType: "consult",
+          agreedSections: ["section1", "section2", "section3", "section4"],
+          isMinor,
+          guardianName: isMinor ? guardianData.name : null,
+          guardianRelationship: isMinor ? guardianData.relationship : null,
         })
       });
 
@@ -344,6 +352,24 @@ export default function ConsultPage() {
 
       const data = await res.json();
       setBookingRef(data.id || `CONSULT-${Date.now()}`);
+
+      // Also save waiver to Supabase
+      await fetch("/api/waiver/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: `${form.firstName} ${form.lastName}`,
+          email: form.email,
+          phone: form.phone,
+          date: selectedDate,
+          isMinor,
+          guardianName: isMinor ? guardianData.name : null,
+          guardianRelationship: isMinor ? guardianData.relationship : null,
+          waiverType: "consult",
+          agreedSections: ["section1", "section2", "section3", "section4"],
+        }),
+      });
+
       setStep("done");
     } catch (err) {
       setError("Failed to book. Please try again.");
@@ -674,24 +700,56 @@ export default function ConsultPage() {
               </div>
             </div>
 
-            {/* Waiver checkbox */}
-            <label className="flex items-start gap-3 p-3 bg-gray-800/60 border border-gray-700 rounded-xl cursor-pointer hover:border-gray-600 transition-colors">
-              <input
-                type="checkbox"
-                checked={waiverChecked}
-                onChange={(e) => setWaiverChecked(e.target.checked)}
-                className="w-5 h-5 mt-0.5 accent-orange-500 shrink-0"
-              />
-              <span className="text-sm text-gray-300 leading-relaxed">
-                {settings.waiverText || DEFAULT_SETTINGS.waiverText}
-              </span>
-            </label>
+            {/* Full Waiver — 8 sections */}
+            <div className="space-y-2 text-left">
+              <p className="text-orange-400 font-bold text-sm">Liability Waiver — Please Read & Agree</p>
+              {[
+                { key: "section1", num: "1", title: "Assumption of Risk", text: "I acknowledge participation in physical fitness training involves inherent risks including muscle strains, joint injuries, cardiovascular events, fractures, and in rare cases serious injury or death. I accept all inherent risks." },
+                { key: "section2", num: "2", title: "Health Representation", text: "I represent I am in adequate physical condition. I have consulted a physician or assume full responsibility. I will notify Trainer of any health changes." },
+                { key: "section3", num: "3", title: "Release of Liability", text: "I RELEASE, WAIVE, and COVENANT NOT TO SUE Trainer from any and all liability arising from my participation, INCLUDING ORDINARY NEGLIGENCE. This satisfies Texas Express Negligence Doctrine." },
+                { key: "section4", num: "4", title: "Indemnification", text: "I agree to indemnify and hold harmless Released Parties from any claims, losses, or expenses arising from my participation." },
+              ].map(({ key, num, title, text }) => (
+                <div key={key} className="bg-gray-800/60 border border-gray-700 rounded-xl p-3">
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={waiverAgreed[key as keyof typeof waiverAgreed]}
+                      onChange={(e) => setWaiverAgreed({ ...waiverAgreed, [key]: e.target.checked })}
+                      className="mt-0.5 w-4 h-4 accent-orange-500 shrink-0"
+                    />
+                    <div>
+                      <p className="text-xs font-bold text-gray-300">{num}. {title}</p>
+                      <p className="text-xs text-gray-400 leading-relaxed">{text}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {/* Minor section */}
+              <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-3">
+                <label className="flex items-center gap-2 mb-2">
+                  <input type="checkbox" checked={isMinor} onChange={(e) => setIsMinor(e.target.checked)} className="w-4 h-4 accent-orange-500" />
+                  <span className="text-xs text-gray-300">Client is under 18 years of age</span>
+                </label>
+                {isMinor && (
+                  <div className="space-y-2 pl-6 border-l-2 border-orange-500">
+                    <input type="text" placeholder="Guardian full legal name" value={guardianData.name} onChange={(e) => setGuardianData({ ...guardianData, name: e.target.value })} className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white text-xs focus:outline-none focus:ring-1 focus:ring-orange-500" />
+                    <input type="text" placeholder="Relationship (e.g. Mother, Father)" value={guardianData.relationship} onChange={(e) => setGuardianData({ ...guardianData, relationship: e.target.value })} className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white text-xs focus:outline-none focus:ring-1 focus:ring-orange-500" />
+                    <label className="flex items-start gap-2">
+                      <input type="checkbox" checked={waiverAgreed.guardian} onChange={(e) => setWaiverAgreed({ ...waiverAgreed, guardian: e.target.checked })} className="mt-0.5 w-4 h-4 accent-orange-500 shrink-0" />
+                      <span className="text-xs text-gray-300">I am the parent/legal guardian and agree to all terms on behalf of the minor.</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+              {/* Sections 5-8 acknowledged by proceeding */}
+              <p className="text-xs text-gray-500 leading-relaxed">By clicking Confirm, I acknowledge I have read sections 5 (Compliance), 6 (Equipment), 7 (Governing Law — Texas), and 8 (Entire Agreement). I understand this is a legally binding document under Texas law.</p>
+            </div>
 
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
             <button
               onClick={handleConfirm}
-              disabled={submitting || !waiverChecked}
+              disabled={submitting || !waiverComplete}
               className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
             >
               {submitting ? "Booking..." : "Confirm Booking"}
