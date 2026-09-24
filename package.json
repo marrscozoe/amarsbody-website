@@ -7,6 +7,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@types/nodemailer": "^8.0.2",
     "@upstash/redis": "^1.37.0",
     "@vercel/kv": "^3.0.0",
     "@vercel/postgres": "^0.10.0",
@@ -15,7 +16,7 @@
     "googleapis": "^171.4.0",
     "lucide-react": "^0.577.0",
     "next": "latest",
-    "nodemailer": "^10.0.6",
+    "nodemailer": "^10.0.10",
     "react": "latest",
     "react-dom": "latest",
     "resend": "^6.9.3"

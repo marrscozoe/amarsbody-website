@@ -825,6 +825,7 @@ export default function GoogleCalendar({
                           onBook(selectedDate, prefill, `${endH.toString().padStart(2, "0")}:00`);
                         }
                         setShowDayModal(false);
+
                       }}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
                     >

@@ -507,7 +507,8 @@ export default function BookPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white p-4">
         <div className="max-w-xl mx-auto">
-          <div className="flex items-center justify-between mb-6 pt-4">
+          <div className="flex items-center gap-3 mb-6 pt-4">
+            <button onClick={() => router.push("/calendar")} className="text-gray-400 hover:text-white">← Back</button>
             <h1 className="text-2xl font-bold text-orange-500">My Appointments</h1>
             {(client.unusedCredits ?? 0) > 0
               ? <button onClick={() => setViewMode("pick")} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg font-medium">+ Book New</button>
