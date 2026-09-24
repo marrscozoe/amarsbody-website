@@ -9,11 +9,8 @@ function WaiverContent() {
   const searchParams = useSearchParams();
   const [isMinor, setIsMinor] = useState(false);
   const [agreed, setAgreed] = useState({
-    section1: false,
-    section2: false,
-    section3: false,
-    section4: false,
-    guardian: false,
+    section1: false, section2: false, section3: false, section4: false,
+    section5: false, section6: false, section7: false, section8: false, guardian: false,
   });
   const [clientData, setClientData] = useState({
     firstName: "",
@@ -37,7 +34,9 @@ function WaiverContent() {
     }
   }, [searchParams]);
 
-  const allAgreed = agreed.section1 && agreed.section2 && agreed.section3 && agreed.section4 && (!isMinor || agreed.guardian);
+  const allAgreed = agreed.section1 && agreed.section2 && agreed.section3 && agreed.section4 &&
+    agreed.section5 && agreed.section6 && agreed.section7 && agreed.section8 &&
+    (!isMinor || agreed.guardian);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +54,7 @@ function WaiverContent() {
           isMinor,
           guardianName: isMinor ? clientData.guardianName : null,
           guardianRelationship: isMinor ? clientData.guardianRelationship : null,
+          agreedSections: ["section1", "section2", "section3", "section4", "section5", "section6", "section7", "section8"],
           waiverType: "consult",
         }),
       });
@@ -133,25 +133,41 @@ function WaiverContent() {
           {/* 5. COMPLIANCE */}
           <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
             <h2 className="text-base font-bold text-gray-900 mb-3">5. Compliance with Trainer Instructions</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">Client agrees to follow all instructions, guidelines, and safety protocols provided by Trainer. Client understands that failure to follow Trainer&apos;s instructions may increase the risk of injury and that Trainer shall not be liable for injuries resulting from Client&apos;s failure to comply with instructions. Client has the right and responsibility to stop any exercise that causes pain, dizziness, shortness of breath, or discomfort and to immediately notify Trainer.</p>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">Client agrees to follow all instructions, guidelines, and safety protocols provided by Trainer. Client understands that failure to follow Trainer&apos;s instructions may increase the risk of injury and that Trainer shall not be liable for injuries resulting from Client&apos;s failure to comply with instructions. Client has the right and responsibility to stop any exercise that causes pain, dizziness, shortness of breath, or discomfort and to immediately notify Trainer.</p>
+            <label className="mt-4 flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={agreed.section5} onChange={(e) => setAgreed({ ...agreed, section5: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
+              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Compliance</strong> terms.</span>
+            </label>
           </div>
 
           {/* 6. EQUIPMENT */}
           <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
             <h2 className="text-base font-bold text-gray-900 mb-3">6. Equipment and Facility</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">Client acknowledges that the use of exercise equipment, whether provided by Trainer or belonging to a third-party facility, carries inherent risks. Client agrees to inspect equipment before use and to notify Trainer immediately of any equipment that appears damaged or unsafe. Trainer shall not be liable for injuries caused by defective third-party equipment or facilities not under Trainer&apos;s direct control.</p>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">Client acknowledges that the use of exercise equipment, whether provided by Trainer or belonging to a third-party facility, carries inherent risks. Client agrees to inspect equipment before use and to notify Trainer immediately of any equipment that appears damaged or unsafe. Trainer shall not be liable for injuries caused by defective third-party equipment or facilities not under Trainer&apos;s direct control.</p>
+            <label className="mt-4 flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={agreed.section6} onChange={(e) => setAgreed({ ...agreed, section6: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
+              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Equipment & Facility</strong> terms.</span>
+            </label>
           </div>
 
           {/* 7. GOVERNING LAW */}
           <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
             <h2 className="text-base font-bold text-gray-900 mb-3">7. Governing Law and Severability</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">This Agreement shall be governed by and construed in accordance with the laws of the State of Texas, without regard to its conflict of law provisions. The parties agree that any disputes arising under this Agreement shall be resolved exclusively in the state or federal courts located in the county where training services are provided in Texas. If any provision of this Agreement is found to be unenforceable under applicable law, the remaining provisions shall continue in full force and effect.</p>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">This Agreement shall be governed by and construed in accordance with the laws of the State of Texas, without regard to its conflict of law provisions. The parties agree that any disputes arising under this Agreement shall be resolved exclusively in the state or federal courts located in the county where training services are provided in Texas. If any provision of this Agreement is found to be unenforceable under applicable law, the remaining provisions shall continue in full force and effect.</p>
+            <label className="mt-4 flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={agreed.section7} onChange={(e) => setAgreed({ ...agreed, section7: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
+              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Governing Law</strong> terms.</span>
+            </label>
           </div>
 
           {/* 8. ENTIRE AGREEMENT */}
           <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
             <h2 className="text-base font-bold text-gray-900 mb-3">8. Entire Agreement and Voluntary Execution</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">Client affirms that he/she/they: (1) has read this entire Agreement and understands its contents; (2) is signing this Agreement voluntarily and of their own free will; (3) is at least 18 years of age or, if a minor, a parent/legal guardian is signing on Client&apos;s behalf; (4) has had the opportunity to consult legal counsel before signing; and (5) understands this Agreement limits their legal rights.</p>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">Client affirms that he/she/they: (1) has read this entire Agreement and understands its contents; (2) is signing this Agreement voluntarily and of their own free will; (3) is at least 18 years of age or, if a minor, a parent/legal guardian is signing on Client&apos;s behalf; (4) has had the opportunity to consult legal counsel before signing; and (5) understands this Agreement limits their legal rights.</p>
+            <label className="mt-4 flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={agreed.section8} onChange={(e) => setAgreed({ ...agreed, section8: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
+              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Entire Agreement</strong> terms.</span>
+            </label>
           </div>
 
           {/* CLIENT INFO */}
