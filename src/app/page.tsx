@@ -200,6 +200,25 @@ export default function Home() {
             </p>
           </div>
 
+          {/* CONSULT CTA — QR BAND inside hero */}
+          <div className="max-w-5xl mx-auto mt-8">
+            <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="text-center md:text-left">
+                <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-1">{ctaText}</h2>
+                <p className="text-orange-100 text-base">Scan the QR code or tap the button to schedule with Allen.</p>
+              </div>
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <img src="/qr/amarsbody-consult.png" alt="Scan to book a consult" className="w-20 h-20 rounded-xl shadow-lg bg-white p-1" />
+                <a
+                  href="/calendar/consult"
+                  className="bg-white text-orange-600 font-bold px-5 py-3 rounded-full text-base hover:bg-orange-50 transition-all shadow-lg"
+                >
+                  Book a Free Consult →
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* HERO LEAD CAPTURE FORM */}
           <div className="max-w-md mx-auto">
             {heroFormStatus === "success" ? (
@@ -275,25 +294,6 @@ export default function Home() {
                 <p className="text-center text-gray-400 text-xs mt-2">No spam. Allen responds within 1 business day.</p>
               </form>
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* CONSULT CTA — QR BAND */}
-      <section className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 py-10 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="text-center md:text-left">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2">{ctaText}</h2>
-            <p className="text-orange-100 text-lg">Scan the QR code or tap the button to schedule with Allen.</p>
-          </div>
-          <div className="flex items-center gap-6 flex-shrink-0">
-            <img src="/qr/amarsbody-consult.png" alt="Scan to book a consult" className="w-28 h-28 rounded-xl shadow-lg bg-white p-1" />
-            <a
-              href="/calendar/consult"
-              className="bg-white text-orange-600 font-bold px-6 py-4 rounded-full text-lg hover:bg-orange-50 transition-all shadow-lg"
-            >
-              Book a Free Consult →
-            </a>
           </div>
         </div>
       </section>
