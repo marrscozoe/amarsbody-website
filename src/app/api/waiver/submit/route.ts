@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { clientName, email, phone, date, isMinor, guardianName, guardianRelationship, waiverType } = body;
+    const { clientName, email, phone, date, isMinor, guardianName, guardianRelationship, waiverType, agreedSections } = body;
 
     if (!clientName || !email || !date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
       guardian_name: guardianName || null,
       guardian_relationship: guardianRelationship || null,
       waiver_type: waiverType || 'consult',
+      agreed_sections: agreedSections || null,
     }).select('id').single();
 
     if (error) {
