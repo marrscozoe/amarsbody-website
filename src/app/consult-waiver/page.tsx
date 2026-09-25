@@ -1,6 +1,42 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+
+// Full waiver text — stored here so it can be saved to DB at signing time
+const WAIVER_TEXT = {
+  section1: {
+    title: "1. Assumption of Risk",
+    text: "Client acknowledges that participation in physical fitness training, exercise programs, and related activities involves inherent risks, including but not limited to: muscle strains and tears, joint sprains and dislocations, cardiovascular events, ligament and tendon injuries, bone fractures, heat exhaustion or heat stroke, and in rare cases, serious injury or death. Client acknowledges and accepts all inherent risks associated with physical fitness training.",
+  },
+  section2: {
+    title: "2. Health Representation and Medical Clearance",
+    text: "Client represents that he/she/they is in adequate physical condition to participate in the personal training program. Client represents that no medical professional has advised against participation in exercise or physical fitness activities. Client acknowledges it is his/her/their sole responsibility to consult a licensed physician or qualified healthcare provider before beginning any exercise program, particularly if Client has or suspects any pre-existing medical condition, including but not limited to: cardiovascular disease, hypertension, diabetes, asthma, pregnancy, orthopedic conditions, or any other condition that may be affected by exercise. Client agrees to immediately notify Trainer of any changes in health status, any new diagnoses, medications, or physical limitations that may affect Client's ability to exercise safely. Client confirms they have obtained medical clearance or assume full responsibility for doing so.",
+  },
+  section3: {
+    title: "3. Release of Liability and Waiver of Claims",
+    text: "IN CONSIDERATION of being allowed to participate in personal training services, and pursuant to the laws of the State of Texas, Client hereby expressly and specifically RELEASES, WAIVES, DISCHARGES, and COVENANTS NOT TO SUE Trainer, their employees, agents, independent contractors, representatives, heirs, successors, and assigns (collectively, \"Released Parties\") from any and all liability, claims, demands, losses, damages, costs, and causes of action of any kind or nature whatsoever, whether known or unknown, arising out of or related to Client's participation in personal training services. THIS RELEASE EXPRESSLY INCLUDES CLAIMS ARISING FROM THE NEGLIGENCE OF THE RELEASED PARTIES. CLIENT EXPRESSLY ACKNOWLEDGES THAT THIS RELEASE APPLIES TO CLAIMS ARISING FROM THE ORDINARY NEGLIGENCE OF TRAINER AND ALL RELEASED PARTIES. THIS PROVISION IS SPECIFICALLY INTENDED TO SATISFY TEXAS'S \"EXPRESS NEGLIGENCE DOCTRINE\" AS SET FORTH IN Ethyl Corporation v. Daniel Construction Co., 725 S.W.2d 705 (Tex. 1987). Note: This release does not apply to claims arising from gross negligence, intentional misconduct, or willful/wanton acts by the Released Parties, as such claims may not be waived under Texas law.",
+  },
+  section4: {
+    title: "4. Indemnification",
+    text: "Client agrees to indemnify, defend, and hold harmless the Released Parties from and against any and all claims, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising out of or related to: (a) any breach of this Agreement by Client; (b) any act or omission by Client during training sessions; or (c) any third-party claims arising from Client's participation in the personal training program.",
+  },
+  section5: {
+    title: "5. Compliance with Trainer Instructions",
+    text: "Client agrees to follow all instructions, guidelines, and safety protocols provided by Trainer. Client understands that failure to follow Trainer's instructions may increase the risk of injury and that Trainer shall not be liable for injuries resulting from Client's failure to comply with instructions. Client has the right and responsibility to stop any exercise that causes pain, dizziness, shortness of breath, or discomfort and to immediately notify Trainer.",
+  },
+  section6: {
+    title: "6. Equipment and Facility",
+    text: "Client acknowledges that the use of exercise equipment, whether provided by Trainer or belonging to a third-party facility, carries inherent risks. Client agrees to inspect equipment before use and to notify Trainer immediately of any equipment that appears damaged or unsafe. Trainer shall not be liable for injuries caused by defective third-party equipment or facilities not under Trainer's direct control.",
+  },
+  section7: {
+    title: "7. Governing Law and Severability",
+    text: "This Agreement shall be governed by and construed in accordance with the laws of the State of Texas, without regard to its conflict of law provisions. The parties agree that any disputes arising under this Agreement shall be resolved exclusively in the state or federal courts located in the county where training services are provided in Texas. If any provision of this Agreement is found to be unenforceable under applicable law, the remaining provisions shall continue in full force and effect.",
+  },
+  section8: {
+    title: "8. Entire Agreement and Voluntary Execution",
+    text: "Client affirms that he/she/they: (1) has read this entire Agreement and understands its contents; (2) is signing this Agreement voluntarily and of their own free will; (3) is at least 18 years of age or, if a minor, a parent/legal guardian is signing on Client's behalf; (4) has had the opportunity to consult legal counsel before signing; and (5) understands this Agreement limits their legal rights.",
+  },
+};
 import { useSearchParams, useRouter } from "next/navigation";
 
 type SubmitStatus = "idle" | "loading" | "success" | "error";
@@ -60,6 +96,7 @@ function WaiverContent() {
           guardianRelationship: isMinor ? clientData.guardianRelationship : null,
           agreedSections: ["section1", "section2", "section3", "section4", "section5", "section6", "section7", "section8"],
           waiverType: "consult",
+          waiverText: WAIVER_TEXT,
         }),
       });
       if (!waiverRes.ok) throw new Error("Waiver save failed");
@@ -146,87 +183,22 @@ function WaiverContent() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* 1. ASSUMPTION OF RISK */}
-          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-3">1. Assumption of Risk</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">Client acknowledges that participation in physical fitness training, exercise programs, and related activities involves inherent risks, including but not limited to: muscle strains and tears, joint sprains and dislocations, cardiovascular events, ligament and tendon injuries, bone fractures, heat exhaustion or heat stroke, and in rare cases, serious injury or death. Client acknowledges and accepts all inherent risks associated with physical fitness training.</p>
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={agreed.section1} onChange={(e) => setAgreed({ ...agreed, section1: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
-              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Assumption of Risk</strong> terms.</span>
-            </label>
-          </div>
-
-          {/* 2. HEALTH REPRESENTATION */}
-          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-3">2. Health Representation and Medical Clearance</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">Client represents that he/she/they is in adequate physical condition to participate in the personal training program. Client represents that no medical professional has advised against participation in exercise or physical fitness activities. Client acknowledges it is his/her/their sole responsibility to consult a licensed physician or qualified healthcare provider before beginning any exercise program, particularly if Client has or suspects any pre-existing medical condition, including but not limited to: cardiovascular disease, hypertension, diabetes, asthma, pregnancy, orthopedic conditions, or any other condition that may be affected by exercise. Client agrees to immediately notify Trainer of any changes in health status, any new diagnoses, medications, or physical limitations that may affect Client&apos;s ability to exercise safely. Client confirms they have obtained medical clearance or assume full responsibility for doing so.</p>
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={agreed.section2} onChange={(e) => setAgreed({ ...agreed, section2: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
-              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Health Representation</strong> terms.</span>
-            </label>
-          </div>
-
-          {/* 3. RELEASE OF LIABILITY */}
-          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-3">3. Release of Liability and Waiver of Claims</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">IN CONSIDERATION of being allowed to participate in personal training services, and pursuant to the laws of the State of Texas, Client hereby expressly and specifically RELEASES, WAIVES, DISCHARGES, and COVENANTS NOT TO SUE Trainer, their employees, agents, independent contractors, representatives, heirs, successors, and assigns (collectively, &quot;Released Parties&quot;) from any and all liability, claims, demands, losses, damages, costs, and causes of action of any kind or nature whatsoever, whether known or unknown, arising out of or related to Client&apos;s participation in personal training services.</p>
-            <p className="text-sm text-gray-700 leading-relaxed mt-3">THIS RELEASE EXPRESSLY INCLUDES CLAIMS ARISING FROM THE NEGLIGENCE OF THE RELEASED PARTIES. CLIENT EXPRESSLY ACKNOWLEDGES THAT THIS RELEASE APPLIES TO CLAIMS ARISING FROM THE ORDINARY NEGLIGENCE OF TRAINER AND ALL RELEASED PARTIES. THIS PROVISION IS SPECIFICALLY INTENDED TO SATISFY TEXAS&apos;S &quot;EXPRESS NEGLIGENCE DOCTRINE&quot; AS SET FORTH IN <em>Ethyl Corporation v. Daniel Construction Co.</em>, 725 S.W.2d 705 (Tex. 1987).</p>
-            <p className="text-sm text-gray-700 leading-relaxed mt-3">Note: This release does not apply to claims arising from gross negligence, intentional misconduct, or willful/wanton acts by the Released Parties, as such claims may not be waived under Texas law.</p>
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={agreed.section3} onChange={(e) => setAgreed({ ...agreed, section3: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
-              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Release of Liability</strong> terms, including the express negligence waiver.</span>
-            </label>
-          </div>
-
-          {/* 4. INDEMNIFICATION */}
-          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-3">4. Indemnification</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">Client agrees to indemnify, defend, and hold harmless the Released Parties from and against any and all claims, losses, liabilities, costs, and expenses (including reasonable attorneys&apos; fees) arising out of or related to: (a) any breach of this Agreement by Client; (b) any act or omission by Client during training sessions; or (c) any third-party claims arising from Client&apos;s participation in the personal training program.</p>
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={agreed.section4} onChange={(e) => setAgreed({ ...agreed, section4: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
-              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Indemnification</strong> terms.</span>
-            </label>
-          </div>
-
-          {/* 5. COMPLIANCE */}
-          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-3">5. Compliance with Trainer Instructions</h2>
-            <p className="text-sm text-gray-700 leading-relaxed mb-4">Client agrees to follow all instructions, guidelines, and safety protocols provided by Trainer. Client understands that failure to follow Trainer&apos;s instructions may increase the risk of injury and that Trainer shall not be liable for injuries resulting from Client&apos;s failure to comply with instructions. Client has the right and responsibility to stop any exercise that causes pain, dizziness, shortness of breath, or discomfort and to immediately notify Trainer.</p>
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={agreed.section5} onChange={(e) => setAgreed({ ...agreed, section5: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
-              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Compliance</strong> terms.</span>
-            </label>
-          </div>
-
-          {/* 6. EQUIPMENT */}
-          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-3">6. Equipment and Facility</h2>
-            <p className="text-sm text-gray-700 leading-relaxed mb-4">Client acknowledges that the use of exercise equipment, whether provided by Trainer or belonging to a third-party facility, carries inherent risks. Client agrees to inspect equipment before use and to notify Trainer immediately of any equipment that appears damaged or unsafe. Trainer shall not be liable for injuries caused by defective third-party equipment or facilities not under Trainer&apos;s direct control.</p>
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={agreed.section6} onChange={(e) => setAgreed({ ...agreed, section6: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
-              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Equipment & Facility</strong> terms.</span>
-            </label>
-          </div>
-
-          {/* 7. GOVERNING LAW */}
-          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-3">7. Governing Law and Severability</h2>
-            <p className="text-sm text-gray-700 leading-relaxed mb-4">This Agreement shall be governed by and construed in accordance with the laws of the State of Texas, without regard to its conflict of law provisions. The parties agree that any disputes arising under this Agreement shall be resolved exclusively in the state or federal courts located in the county where training services are provided in Texas. If any provision of this Agreement is found to be unenforceable under applicable law, the remaining provisions shall continue in full force and effect.</p>
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={agreed.section7} onChange={(e) => setAgreed({ ...agreed, section7: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
-              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Governing Law</strong> terms.</span>
-            </label>
-          </div>
-
-          {/* 8. ENTIRE AGREEMENT */}
-          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-3">8. Entire Agreement and Voluntary Execution</h2>
-            <p className="text-sm text-gray-700 leading-relaxed mb-4">Client affirms that he/she/they: (1) has read this entire Agreement and understands its contents; (2) is signing this Agreement voluntarily and of their own free will; (3) is at least 18 years of age or, if a minor, a parent/legal guardian is signing on Client&apos;s behalf; (4) has had the opportunity to consult legal counsel before signing; and (5) understands this Agreement limits their legal rights.</p>
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={agreed.section8} onChange={(e) => setAgreed({ ...agreed, section8: e.target.checked })} className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500" />
-              <span className="text-sm text-gray-700">I have read and agree to the above <strong>Entire Agreement</strong> terms.</span>
-            </label>
-          </div>
+          {/* WAIVER SECTIONS — rendered from WAIVER_TEXT for DB consistency */}
+          {Object.entries(WAIVER_TEXT).map(([key, section]) => (
+            <div key={key} className="bg-white rounded-xl p-6 shadow border border-gray-200">
+              <h2 className="text-base font-bold text-gray-900 mb-3">{section.title}</h2>
+              <p className="text-sm text-gray-700 leading-relaxed">{section.text}</p>
+              <label className="mt-4 flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreed[key as keyof typeof agreed]}
+                  onChange={(e) => setAgreed({ ...agreed, [key]: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
+                />
+                <span className="text-sm text-gray-700">I have read and agree to the above <strong>{section.title}</strong> terms.</span>
+              </label>
+            </div>
+          ))}
 
           {/* CLIENT INFO */}
           <div className="bg-white rounded-xl p-6 shadow border border-gray-200">

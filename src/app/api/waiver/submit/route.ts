@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { clientName, email, phone, date, isMinor, guardianName, guardianRelationship, waiverType, agreedSections } = body;
+    const { clientName, email, phone, date, isMinor, guardianName, guardianRelationship, waiverType, agreedSections, waiverText } = body;
 
     if (!clientName || !email || !date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
         guardian_relationship: guardianRelationship || null,
         waiver_type: waiverType || 'consult',
         agreed_sections: agreedSections || [],
+        waiver_text: waiverText || null,
       }),
     });
 
