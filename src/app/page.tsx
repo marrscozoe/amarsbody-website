@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [ctaText, setCtaText] = useState("Book a Free Consultation");
+  const [ctaText, setCtaText] = useState("Book Now");
   const [heroFormData, setHeroFormData] = useState({ firstName: "", email: "", phone: "", goal: "" });
   const [heroFormStatus, setHeroFormStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [contactFormData, setContactFormData] = useState({ name: "", email: "", phone: "", message: "" });
@@ -129,7 +129,7 @@ export default function Home() {
             href="/calendar/consult"
             className="font-bold text-sm flex items-center gap-1 w-full justify-center"
           >
-            Book a Free Consult →
+            Book Now →
           </a>
         </div>
       )}
@@ -213,7 +213,7 @@ export default function Home() {
                   href="/calendar/consult"
                   className="bg-white text-orange-600 font-bold px-5 py-3 rounded-full text-base hover:bg-orange-50 transition-all shadow-lg"
                 >
-                  Book a Free Consult →
+                  Book Now →
                 </a>
               </div>
             </div>
@@ -427,7 +427,7 @@ export default function Home() {
             href="#contact"
             className="inline-block bg-orange-500 text-white font-bold py-3 px-8 rounded-full hover:bg-orange-600 transition-all"
           >
-            Book Your Free Call →
+            Book Now →
           </a>
         </div>
       </section>

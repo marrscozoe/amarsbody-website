@@ -7,7 +7,7 @@ export default function CalendarPage() {
   const router = useRouter();
   const [showClientLogin, setShowClientLogin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [ctaText, setCtaText] = useState("Book a Free Consultation");
+  const [ctaText, setCtaText] = useState("Book Now");
   const [clientForm, setClientForm] = useState({ firstName: "", lastName: "", password: "" });
   const [adminPassword, setAdminPassword] = useState("");
   const [error, setError] = useState("");
