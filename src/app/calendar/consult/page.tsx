@@ -564,9 +564,10 @@ export default function ConsultPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Phone</label>
+              <label className="block text-sm text-gray-400 mb-1">Phone *</label>
               <input
                 type="tel"
+                required
                 value={form.phone}
                 onChange={e => setForm({ ...form, phone: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
