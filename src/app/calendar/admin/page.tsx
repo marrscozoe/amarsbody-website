@@ -123,6 +123,7 @@ export default function AdminPage() {
     bookAheadEndDate: null as string | null,
     noEndDate: false as boolean,
     offerLine: "Free Consultation",
+    offerLineSubtitle: "Discuss your goals and see if we're a good fit",
     confirmTitle: "Confirm Your Consultation",
     waiverText: "I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.",
     successTitle: "You're Booked!",
@@ -172,6 +173,7 @@ export default function AdminPage() {
         bookAheadEndDate: settingsData.bookAheadEndDate ?? null,
         noEndDate: settingsData.noEndDate ?? false,
         offerLine: settingsData.offerLine || "Free Consultation",
+        offerLineSubtitle: settingsData.offerLineSubtitle || "Discuss your goals and see if we're a good fit",
         confirmTitle: settingsData.confirmTitle || "Confirm Your Consultation",
         waiverText: settingsData.waiverText || "I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.",
         successTitle: settingsData.successTitle || "You're Booked!",
@@ -1579,6 +1581,19 @@ export default function AdminPage() {
                     maxLength={80}
                   />
                   <p className="text-xs text-gray-600 mt-1">{consultSettings.offerLine.length}/80</p>
+                </div>
+
+                {/* Offer Line Subtitle */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Offer Line Subtitle <span className="text-gray-600">(💬 icon — under the offer line title)</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.offerLineSubtitle || ""}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, offerLineSubtitle: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="Discuss your goals and see if we're a good fit"
+                    maxLength={120}
+                  />
                 </div>
 
                 {/* Line 1 Title */}

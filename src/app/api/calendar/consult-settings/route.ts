@@ -177,6 +177,7 @@ export interface CalendarConsultSettings {
   noEndDate?: boolean; // true = no end date cap
   // Customer wording fields
   offerLine?: string;
+  offerLineSubtitle?: string;
   confirmTitle?: string;
   waiverText?: string;
   successTitle?: string;
@@ -197,6 +198,7 @@ const DEFAULTS: CalendarConsultSettings = {
   bookAheadEndDate: null,
   noEndDate: false,
   offerLine: "Free Consultation",
+  offerLineSubtitle: "Discuss your goals and see if we're a good fit",
   confirmTitle: "Confirm Your Consultation",
   waiverText: "I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.",
   successTitle: "You're Booked!",
@@ -259,6 +261,7 @@ export async function POST(request: NextRequest) {
       bookAheadEndDate: body.bookAheadEndDate === null ? null : (typeof body.bookAheadEndDate === "string" ? body.bookAheadEndDate : DEFAULTS.bookAheadEndDate),
       noEndDate: !!body.noEndDate,
       offerLine: typeof body.offerLine === "string" ? body.offerLine.trim() : DEFAULTS.offerLine!,
+      offerLineSubtitle: typeof body.offerLineSubtitle === "string" ? body.offerLineSubtitle.trim() : DEFAULTS.offerLineSubtitle!,
       confirmTitle: typeof body.confirmTitle === "string" ? body.confirmTitle.trim() : DEFAULTS.confirmTitle!,
       waiverText: typeof body.waiverText === "string" ? body.waiverText.trim() : DEFAULTS.waiverText!,
       successTitle: typeof body.successTitle === "string" ? body.successTitle.trim() : DEFAULTS.successTitle!,

@@ -38,6 +38,7 @@ interface CalendarConsultSettings {
   closedEmptyMessage?: string;
   line1Title?: string;
   line1Subtitle?: string;
+  offerLineSubtitle?: string;
   line3Title?: string;
   line3Subtitle?: string;
 }
@@ -50,6 +51,7 @@ const DEFAULT_SETTINGS: CalendarConsultSettings = {
   noTimeAvailable: false,
   bookAheadEndDate: null,
   offerLine: "Free Consultation",
+  offerLineSubtitle: "Discuss your goals and see if we're a good fit",
   confirmTitle: "Confirm Your Consultation",
   waiverText: "I acknowledge this is a free consultation and no services are rendered. I release AMarsBody from liability for any matters discussed.",
   successTitle: "You're Booked!",
@@ -121,11 +123,11 @@ export default function ConsultPage() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
 
   // Waiver agreement state
-  const [waiverAgreed, setWaiverAgreed] = useState({ section1: false, section2: false, section3: false, section4: false, guardian: false });
+  const [waiverAgreed, setWaiverAgreed] = useState({ section1: false, section2: false, section3: false, section4: false, section5: false, section6: false, section7: false, section8: false, guardian: false });
   const [isMinor, setIsMinor] = useState(false);
   const [guardianData, setGuardianData] = useState({ name: "", relationship: "" });
 
-  const waiverComplete = waiverAgreed.section1 && waiverAgreed.section2 && waiverAgreed.section3 && waiverAgreed.section4 && (!isMinor || waiverAgreed.guardian);
+  const waiverComplete = waiverAgreed.section1 && waiverAgreed.section2 && waiverAgreed.section3 && waiverAgreed.section4 && waiverAgreed.section5 && waiverAgreed.section6 && waiverAgreed.section7 && waiverAgreed.section8 && (!isMinor || waiverAgreed.guardian);
 
   // Calendar data
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
@@ -166,6 +168,7 @@ export default function ConsultPage() {
         noTimeAvailable: settingsData.noTimeAvailable ?? false,
         bookAheadEndDate: settingsData.bookAheadEndDate ?? null,
         offerLine: settingsData.offerLine || DEFAULT_SETTINGS.offerLine!,
+        offerLineSubtitle: settingsData.offerLineSubtitle || DEFAULT_SETTINGS.offerLineSubtitle!,
         confirmTitle: settingsData.confirmTitle || DEFAULT_SETTINGS.confirmTitle!,
         waiverText: settingsData.waiverText || DEFAULT_SETTINGS.waiverText!,
         successTitle: settingsData.successTitle || DEFAULT_SETTINGS.successTitle!,
@@ -348,7 +351,7 @@ export default function ConsultPage() {
           endTime,
           duration: settings.duration,
           waiverType: "consult",
-          agreedSections: ["section1", "section2", "section3", "section4"],
+          agreedSections: ["section1", "section2", "section3", "section4", "section5", "section6", "section7", "section8"],
           isMinor,
           guardianName: isMinor ? guardianData.name : null,
           guardianRelationship: isMinor ? guardianData.relationship : null,
@@ -378,7 +381,7 @@ export default function ConsultPage() {
           guardianName: isMinor ? guardianData.name : null,
           guardianRelationship: isMinor ? guardianData.relationship : null,
           waiverType: "consult",
-          agreedSections: ["section1", "section2", "section3", "section4"],
+          agreedSections: ["section1", "section2", "section3", "section4", "section5", "section6", "section7", "section8"],
         }),
       });
 
@@ -420,7 +423,7 @@ export default function ConsultPage() {
                 <span className="text-orange-500 text-xl">💬</span>
                 <div>
                   <p className="font-medium">{settings.offerLine || DEFAULT_SETTINGS.offerLine}</p>
-                  <p className="text-sm text-gray-400">Discuss your goals and see if we're a good fit</p>
+                  <p className="text-sm text-gray-400">{settings.offerLineSubtitle || DEFAULT_SETTINGS.offerLineSubtitle}</p>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -717,6 +720,10 @@ export default function ConsultPage() {
                 { key: "section2", num: "2", title: "Health Representation", text: "I represent I am in adequate physical condition. I have consulted a physician or assume full responsibility. I will notify Trainer of any health changes." },
                 { key: "section3", num: "3", title: "Release of Liability", text: "I RELEASE, WAIVE, and COVENANT NOT TO SUE Trainer from any and all liability arising from my participation, INCLUDING ORDINARY NEGLIGENCE. This satisfies Texas Express Negligence Doctrine." },
                 { key: "section4", num: "4", title: "Indemnification", text: "I agree to indemnify and hold harmless Released Parties from any claims, losses, or expenses arising from my participation." },
+                { key: "section5", num: "5", title: "Compliance", text: "I agree to follow all instructions and safety protocols provided by Trainer. I have the right to stop any exercise that causes pain, dizziness, or discomfort and will notify Trainer immediately." },
+                { key: "section6", num: "6", title: "Equipment", text: "I acknowledge the use of exercise equipment carries inherent risks. I agree to inspect equipment before use and notify Trainer of any damaged or unsafe equipment." },
+                { key: "section7", num: "7", title: "Governing Law", text: "This Agreement is governed by Texas law. Any disputes shall be resolved in state or federal courts in Texas." },
+                { key: "section8", num: "8", title: "Entire Agreement", text: "I confirm I am signing this Agreement voluntarily, of my own free will, and that I understand it limits my legal rights." },
               ].map(({ key, num, title, text }) => (
                 <div key={key} className="bg-gray-800/60 border border-gray-700 rounded-xl p-3">
                   <div className="flex items-start gap-2">
@@ -750,8 +757,6 @@ export default function ConsultPage() {
                   </div>
                 )}
               </div>
-              {/* Sections 5-8 acknowledged by proceeding */}
-              <p className="text-xs text-gray-500 leading-relaxed">By clicking Confirm, I acknowledge I have read sections 5 (Compliance), 6 (Equipment), 7 (Governing Law — Texas), and 8 (Entire Agreement). I understand this is a legally binding document under Texas law.</p>
             </div>
 
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
