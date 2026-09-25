@@ -351,6 +351,7 @@ export default function ConsultPage() {
           endTime,
           duration: settings.duration,
           waiverType: "consult",
+          waiverAck: true,
           agreedSections: ["section1", "section2", "section3", "section4", "section5", "section6", "section7", "section8"],
           isMinor,
           guardianName: isMinor ? guardianData.name : null,
