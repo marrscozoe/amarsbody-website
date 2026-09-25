@@ -47,7 +47,7 @@ const DEFAULT_SETTINGS: CalendarConsultSettings = {
   duration: 30,
   openDays: [1, 2, 3, 4, 5],
   openHours: { start: 9, end: 20 },
-  ctaText: "Book a Free Consultation",
+  ctaText: "Book Now",
   noTimeAvailable: false,
   bookAheadEndDate: null,
   offerLine: "Free Consultation",
