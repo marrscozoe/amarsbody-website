@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -10,24 +9,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const { data, error } = await (supabase.from('consult_waivers') as any).insert({
-      client_name: clientName,
-      email,
-      phone: phone || null,
-      date,
-      is_minor: isMinor || false,
-      guardian_name: guardianName || null,
-      guardian_relationship: guardianRelationship || null,
-      waiver_type: waiverType || 'consult',
-      agreed_sections: agreedSections || null,
-    }).select('id').single();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (error) {
-      console.error('[waiver/submit] Supabase error:', error);
-      return NextResponse.json({ error: 'Failed to save waiver' }, { status: 500 });
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ error: 'Supabase not configured', supabaseUrl, supabaseKey }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, id: data.id });
+    const res = await fetch(`${supabaseUrl}/rest/v1/consult_waivers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({
+        client_name: clientName,
+        email,
+        phone: phone || null,
+        date,
+        is_minor: isMinor ?? false,
+        guardian_name: guardianName || null,
+        guardian_relationship: guardianRelationship || null,
+        waiver_type: waiverType || 'consult',
+        agreed_sections: agreedSections || [],
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('[waiver/submit] Supabase error:', res.status, data);
+      return NextResponse.json({ error: 'Failed to save waiver', detail: data, status: res.status }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, id: data[0]?.id });
   } catch (err: any) {
     console.error('[waiver/submit] Error:', err);
     return NextResponse.json({ error: 'Internal server error', detail: err?.message || String(err) }, { status: 500 });
