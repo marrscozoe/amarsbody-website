@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type SubmitStatus = "idle" | "loading" | "success" | "error";
 
 function WaiverContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [isMinor, setIsMinor] = useState(false);
   const [agreed, setAgreed] = useState({
     section1: false, section2: false, section3: false, section4: false,
@@ -60,6 +61,24 @@ function WaiverContent() {
       });
       if (!res.ok) throw new Error("Submit failed");
       setStatus("success");
+      // Redirect back to consult page to complete booking ONLY if booking data is present
+      const hasBookingData = clientData.firstName || clientData.email;
+      if (hasBookingData) {
+        const params = new URLSearchParams({
+          step: "confirm",
+          firstName: clientData.firstName,
+          lastName: clientData.lastName,
+          email: clientData.email,
+          phone: clientData.phone,
+          date: clientData.date,
+          time: searchParams.get("time") || "",
+          fromWaiver: "1",
+          isMinor: String(isMinor),
+          guardianName: clientData.guardianName || "",
+          guardianRelationship: clientData.guardianRelationship || "",
+        });
+        router.push(`/calendar/consult?${params.toString()}`);
+      }
     } catch {
       setStatus("error");
     }

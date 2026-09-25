@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface Appointment {
@@ -147,6 +147,41 @@ export default function ConsultPage() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  // Handle return from waiver with booking data pre-filled
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stepParam = params.get("step");
+    if (stepParam === "confirm") {
+      const firstName = params.get("firstName") || "";
+      const lastName = params.get("lastName") || "";
+      const email = params.get("email") || "";
+      const phone = params.get("phone") || "";
+      const date = params.get("date") || "";
+      const time = params.get("time") || "";
+      const returnedIsMinor = params.get("isMinor") === "true";
+      const returnedGuardianName = params.get("guardianName") || "";
+      const returnedGuardianRelationship = params.get("guardianRelationship") || "";
+      const fromWaiver = params.get("fromWaiver") === "1";
+      if (firstName || email) {
+        setForm({ firstName, lastName, email, phone });
+        setSelectedDate(date);
+        setSelectedTime(time);
+        if (fromWaiver) {
+          // Waiver was already signed at consult-waiver — pre-fill all sections as checked
+          setWaiverAgreed({
+            section1: true, section2: true, section3: true, section4: true,
+            section5: true, section6: true, section7: true, section8: true,
+            guardian: returnedIsMinor,
+          });
+          setIsMinor(returnedIsMinor);
+          setGuardianData({ name: returnedGuardianName, relationship: returnedGuardianRelationship });
+        }
+        setStep("confirm");
+        window.history.replaceState({}, "", "/calendar/consult");
+      }
+    }
   }, []);
 
   const loadData = async () => {
@@ -319,7 +354,16 @@ export default function ConsultPage() {
 
   const handleSelectTime = (time: string) => {
     setSelectedTime(time);
-    setStep("confirm");
+    // Redirect to waiver page with booking data pre-filled
+    const params = new URLSearchParams({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone,
+      date: selectedDate,
+      time,
+    });
+    router.push(`/consult-waiver?${params.toString()}`);
   };
 
   const handleConfirm = async () => {
