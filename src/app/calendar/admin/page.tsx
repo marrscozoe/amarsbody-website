@@ -128,6 +128,10 @@ export default function AdminPage() {
     successTitle: "You're Booked!",
     successBody: "We'll send a confirmation to {{email}}",
     closedEmptyMessage: "No consultations available right now.",
+    line1Title: "Pick a time that works for you",
+    line1Subtitle: "30-minute consultation available on Mon, Wed, Fri",
+    line3Title: "No commitment",
+    line3Subtitle: "No credit card, no pressure — just a conversation",
   });
   const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
   const [consultSaving, setConsultSaving] = useState(false);
@@ -173,6 +177,10 @@ export default function AdminPage() {
         successTitle: settingsData.successTitle || "You're Booked!",
         successBody: settingsData.successBody || "We'll send a confirmation to {{email}}",
         closedEmptyMessage: settingsData.closedEmptyMessage || "No consultations available right now.",
+        line1Title: settingsData.line1Title || "Pick a time that works for you",
+        line1Subtitle: settingsData.line1Subtitle || "30-minute consultation available on Mon, Wed, Fri",
+        line3Title: settingsData.line3Title || "No commitment",
+        line3Subtitle: settingsData.line3Subtitle || "No credit card, no pressure — just a conversation",
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -1571,6 +1579,58 @@ export default function AdminPage() {
                     maxLength={80}
                   />
                   <p className="text-xs text-gray-600 mt-1">{consultSettings.offerLine.length}/80</p>
+                </div>
+
+                {/* Line 1 Title */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Line 1 Title <span className="text-gray-600">(📅 icon — "Pick a time that works for you")</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.line1Title || ""}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, line1Title: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="Pick a time that works for you"
+                    maxLength={80}
+                  />
+                </div>
+
+                {/* Line 1 Subtitle */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Line 1 Subtitle <span className="text-gray-600">(under Line 1 title)</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.line1Subtitle || ""}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, line1Subtitle: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="30-minute consultation available on Mon, Wed, Fri"
+                    maxLength={120}
+                  />
+                </div>
+
+                {/* Line 3 Title */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Line 3 Title <span className="text-gray-600">(🔒 icon — "No commitment")</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.line3Title || ""}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, line3Title: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="No commitment"
+                    maxLength={80}
+                  />
+                </div>
+
+                {/* Line 3 Subtitle */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Line 3 Subtitle <span className="text-gray-600">(under Line 3 title)</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.line3Subtitle || ""}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, line3Subtitle: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="No credit card, no pressure — just a conversation"
+                    maxLength={120}
+                  />
                 </div>
 
                 {/* Confirm Title */}

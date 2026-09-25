@@ -36,6 +36,10 @@ interface CalendarConsultSettings {
   successTitle?: string;
   successBody?: string;
   closedEmptyMessage?: string;
+  line1Title?: string;
+  line1Subtitle?: string;
+  line3Title?: string;
+  line3Subtitle?: string;
 }
 
 const DEFAULT_SETTINGS: CalendarConsultSettings = {
@@ -51,6 +55,10 @@ const DEFAULT_SETTINGS: CalendarConsultSettings = {
   successTitle: "You're Booked!",
   successBody: "We'll send a confirmation to {{email}}",
   closedEmptyMessage: "No consultations available right now.",
+  line1Title: "Pick a time that works for you",
+  line1Subtitle: "30-minute consultation available on Mon, Wed, Fri",
+  line3Title: "No commitment",
+  line3Subtitle: "No credit card, no pressure — just a conversation",
 };
 
 // Generate time slots filtered by duration + admin open hours
@@ -163,6 +171,10 @@ export default function ConsultPage() {
         successTitle: settingsData.successTitle || DEFAULT_SETTINGS.successTitle!,
         successBody: settingsData.successBody || DEFAULT_SETTINGS.successBody!,
         closedEmptyMessage: settingsData.closedEmptyMessage || DEFAULT_SETTINGS.closedEmptyMessage!,
+        line1Title: settingsData.line1Title || DEFAULT_SETTINGS.line1Title!,
+        line1Subtitle: settingsData.line1Subtitle || DEFAULT_SETTINGS.line1Subtitle!,
+        line3Title: settingsData.line3Title || DEFAULT_SETTINGS.line3Title!,
+        line3Subtitle: settingsData.line3Subtitle || DEFAULT_SETTINGS.line3Subtitle!,
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -400,11 +412,8 @@ export default function ConsultPage() {
               <div className="flex gap-3">
                 <span className="text-orange-500 text-xl">📅</span>
                 <div>
-                  <p className="font-medium">Pick a time that works for you</p>
-                  <p className="text-sm text-gray-400">
-                    {settings.duration}-minute consultation available on{" "}
-                    {settings.openDays.map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(", ")}
-                  </p>
+                  <p className="font-medium">{settings.line1Title || DEFAULT_SETTINGS.line1Title}</p>
+                  <p className="text-sm text-gray-400">{settings.line1Subtitle || DEFAULT_SETTINGS.line1Subtitle}</p>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -417,8 +426,8 @@ export default function ConsultPage() {
               <div className="flex gap-3">
                 <span className="text-orange-500 text-xl">🔒</span>
                 <div>
-                  <p className="font-medium">No commitment</p>
-                  <p className="text-sm text-gray-400">No credit card, no pressure — just a conversation</p>
+                  <p className="font-medium">{settings.line3Title || DEFAULT_SETTINGS.line3Title}</p>
+                  <p className="text-sm text-gray-400">{settings.line3Subtitle || DEFAULT_SETTINGS.line3Subtitle}</p>
                 </div>
               </div>
             </div>

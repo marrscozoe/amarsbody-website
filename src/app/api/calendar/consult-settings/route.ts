@@ -182,6 +182,10 @@ export interface CalendarConsultSettings {
   successTitle?: string;
   successBody?: string;
   closedEmptyMessage?: string;
+  line1Title?: string;
+  line1Subtitle?: string;
+  line3Title?: string;
+  line3Subtitle?: string;
 }
 
 const DEFAULTS: CalendarConsultSettings = {
@@ -198,6 +202,10 @@ const DEFAULTS: CalendarConsultSettings = {
   successTitle: "You're Booked!",
   successBody: "We'll send a confirmation to {{email}}",
   closedEmptyMessage: "No consultations available right now.",
+  line1Title: "Pick a time that works for you",
+  line1Subtitle: "30-minute consultation available on Mon, Wed, Fri",
+  line3Title: "No commitment",
+  line3Subtitle: "No credit card, no pressure — just a conversation",
 };
 
 export async function GET() {
@@ -256,6 +264,10 @@ export async function POST(request: NextRequest) {
       successTitle: typeof body.successTitle === "string" ? body.successTitle.trim() : DEFAULTS.successTitle!,
       successBody: typeof body.successBody === "string" ? body.successBody.trim() : DEFAULTS.successBody!,
       closedEmptyMessage: typeof body.closedEmptyMessage === "string" ? body.closedEmptyMessage.trim() : DEFAULTS.closedEmptyMessage!,
+      line1Title: typeof body.line1Title === "string" ? body.line1Title.trim() : DEFAULTS.line1Title!,
+      line1Subtitle: typeof body.line1Subtitle === "string" ? body.line1Subtitle.trim() : DEFAULTS.line1Subtitle!,
+      line3Title: typeof body.line3Title === "string" ? body.line3Title.trim() : DEFAULTS.line3Title!,
+      line3Subtitle: typeof body.line3Subtitle === "string" ? body.line3Subtitle.trim() : DEFAULTS.line3Subtitle!,
     };
 
     // Validate before saving — skip free-slot check when noTimeAvailable is true (allows zero slots)
