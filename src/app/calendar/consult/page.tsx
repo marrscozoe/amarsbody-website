@@ -160,9 +160,6 @@ export default function ConsultPage() {
       const phone = params.get("phone") || "";
       const date = params.get("date") || "";
       const time = params.get("time") || "";
-      const returnedIsMinor = params.get("isMinor") === "true";
-      const returnedGuardianName = params.get("guardianName") || "";
-      const returnedGuardianRelationship = params.get("guardianRelationship") || "";
       const fromWaiver = params.get("fromWaiver") === "1";
       if (firstName || email) {
         setForm({ firstName, lastName, email, phone });
@@ -173,12 +170,31 @@ export default function ConsultPage() {
           setWaiverAgreed({
             section1: true, section2: true, section3: true, section4: true,
             section5: true, section6: true, section7: true, section8: true,
-            guardian: returnedIsMinor,
+            guardian: params.get("isMinor") === "true",
           });
-          setIsMinor(returnedIsMinor);
-          setGuardianData({ name: returnedGuardianName, relationship: returnedGuardianRelationship });
+          setIsMinor(params.get("isMinor") === "true");
+          setGuardianData({
+            name: params.get("guardianName") || "",
+            relationship: params.get("guardianRelationship") || "",
+          });
         }
         setStep("confirm");
+        window.history.replaceState({}, "", "/calendar/consult");
+      }
+    } else if (stepParam === "done") {
+      const firstName = params.get("firstName") || "";
+      const lastName = params.get("lastName") || "";
+      const email = params.get("email") || "";
+      const phone = params.get("phone") || "";
+      const date = params.get("date") || "";
+      const time = params.get("time") || "";
+      const ref = params.get("bookingRef") || `CONSULT-${Date.now()}`;
+      if (firstName || email) {
+        setForm({ firstName, lastName, email, phone });
+        setSelectedDate(date);
+        setSelectedTime(time);
+        setBookingRef(ref);
+        setStep("done");
         window.history.replaceState({}, "", "/calendar/consult");
       }
     }
@@ -857,29 +873,12 @@ export default function ConsultPage() {
             </div>
           </div>
 
-          <div className="mt-6 space-y-3">
-            <button
-              onClick={() => {
-                const params = new URLSearchParams({
-                  firstName: form.firstName,
-                  lastName: form.lastName,
-                  email: form.email,
-                  phone: form.phone || '',
-                  date: selectedDate,
-                });
-                router.push(`/consult-waiver?${params.toString()}`);
-              }}
-              className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition-colors"
-            >
-              Next: Sign Waiver →
-            </button>
-            <button
-              onClick={() => router.push("https://amarsbody.com")}
-              className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
-            >
-              Back to Home
-            </button>
-          </div>
+          <button
+            onClick={() => router.push("https://amarsbody.com")}
+            className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Back to Home
+          </button>
         </div>
       </div>
     );

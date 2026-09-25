@@ -44,7 +44,10 @@ function WaiverContent() {
     if (!allAgreed) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/waiver/submit", {
+      const hasBookingData = clientData.firstName || clientData.email;
+
+      // Save waiver to Supabase
+      const waiverRes = await fetch("/api/waiver/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -59,23 +62,59 @@ function WaiverContent() {
           waiverType: "consult",
         }),
       });
-      if (!res.ok) throw new Error("Submit failed");
-      setStatus("success");
-      // Redirect back to consult page to complete booking ONLY if booking data is present
-      const hasBookingData = clientData.firstName || clientData.email;
+      if (!waiverRes.ok) throw new Error("Waiver save failed");
+
+      // If booking in progress, also create the calendar appointment
       if (hasBookingData) {
+        const time = searchParams.get("time") || "";
+        const [hours, minutes] = time.split(":").map(Number);
+        const [year, month, day] = clientData.date.split("-").map(Number);
+        const consultRes = await fetch("/api/calendar/consult-settings");
+        const settingsData = await consultRes.json();
+        const duration = settingsData.duration || 30;
+        const endMinutes = hours * 60 + minutes + duration;
+        const endHours = Math.floor(endMinutes / 60);
+        const endMins = endMinutes % 60;
+        const endTime = `${endHours.toString().padStart(2, "0")}:${endMins.toString().padStart(2, "0")}`;
+        const consultClientId = `consult_${Date.now()}`;
+
+        const aptRes = await fetch("/api/calendar/appointments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "create-consult",
+            clientId: consultClientId,
+            clientName: `${clientData.firstName} ${clientData.lastName}`.trim(),
+            clientEmail: clientData.email,
+            clientPhone: clientData.phone,
+            date: clientData.date,
+            startTime: time,
+            endTime,
+            duration,
+            waiverType: "consult",
+            waiverAck: true,
+            agreedSections: ["section1", "section2", "section3", "section4", "section5", "section6", "section7", "section8"],
+            isMinor,
+            guardianName: isMinor ? clientData.guardianName : null,
+            guardianRelationship: isMinor ? clientData.guardianRelationship : null,
+          }),
+        });
+        if (!aptRes.ok) throw new Error("Booking failed");
+      }
+
+      setStatus("success");
+      // Redirect to done page with booking details
+      if (hasBookingData) {
+        const bookingRef = `CONSULT-${Date.now()}`;
         const params = new URLSearchParams({
-          step: "confirm",
+          step: "done",
           firstName: clientData.firstName,
           lastName: clientData.lastName,
           email: clientData.email,
           phone: clientData.phone,
           date: clientData.date,
           time: searchParams.get("time") || "",
-          fromWaiver: "1",
-          isMinor: String(isMinor),
-          guardianName: clientData.guardianName || "",
-          guardianRelationship: clientData.guardianRelationship || "",
+          bookingRef,
         });
         router.push(`/calendar/consult?${params.toString()}`);
       }
