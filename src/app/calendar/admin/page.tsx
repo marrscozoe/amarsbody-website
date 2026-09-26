@@ -1895,16 +1895,16 @@ export default function AdminPage() {
                     <tr key={w.id} className="hover:bg-gray-800/50">
                       <td className="px-4 py-3 font-medium text-white">{w.client_name}</td>
                       <td className="px-4 py-3 text-orange-400"><a href={`mailto:${w.email}`}>{w.email}</a></td>
-                      <td className="px-4 py-3 text-gray-400">{w.phone || '-'}</td>
-                      <td className="px-4 py-3 text-gray-400">{w.date}</td>
+                      <td className="px-4 py-3 text-gray-300">{w.phone || '-'}</td>
+                      <td className="px-4 py-3 text-gray-300">{w.date}</td>
                       <td className="px-4 py-3 text-center">
                         <input type="checkbox" checked={w.invoice_sent || false} onChange={e => updateWaiver(w.id, 'invoice_sent', e.target.checked)} className="w-5 h-5 accent-orange-500" />
                       </td>
-                      <td className="px-4 py-3 text-gray-400">{w.invoice_sent_date || '-'}</td>
+                      <td className="px-4 py-3 text-gray-300">{w.invoice_sent_date || '-'}</td>
                       <td className="px-4 py-3 text-center">
                         <input type="checkbox" checked={w.paid || false} onChange={e => updateWaiver(w.id, 'paid', e.target.checked)} className="w-5 h-5 accent-orange-500" />
                       </td>
-                      <td className="px-4 py-3 text-gray-400">{w.paid_date || '-'}</td>
+                      <td className="px-4 py-3 text-gray-300">{w.paid_date || '-'}</td>
                       <td className="px-4 py-3">
                         <select value={w.payment_method || ''} onChange={e => updateWaiver(w.id, 'payment_method', e.target.value)}
                           className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 text-xs">
