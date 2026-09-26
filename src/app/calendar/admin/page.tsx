@@ -1892,19 +1892,19 @@ export default function AdminPage() {
             </div>
             <div className="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-x-auto">
               <table className="w-full text-xs min-w-[900px]">
-                <thead className="bg-gray-800 text-gray-400">
+                <thead className="bg-gray-800 text-gray-400 text-xs">
                   <tr>
-                    <th className="px-4 py-3 text-left">Name</th>
-                    <th className="px-4 py-3 text-left">Email</th>
-                    <th className="px-4 py-3 text-left">Phone</th>
-                    <th className="px-4 py-3 text-left">Date</th>
-                    <th className="px-4 py-3 text-center">Invoiced</th>
-                    <th className="px-4 py-3 text-left">Inv. Date</th>
-                    <th className="px-4 py-3 text-center">Paid</th>
-                    <th className="px-4 py-3 text-left">Paid Date</th>
-                    <th className="px-4 py-3 text-left">Method</th>
-                    <th className="px-4 py-3 text-left">Amount</th>
-                    <th className="px-4 py-3 text-left">Action</th>
+                    <th className="px-2 py-2 text-left">Name</th>
+                    <th className="px-2 py-2 text-left">Email</th>
+                    <th className="px-2 py-2 text-left">Phone</th>
+                    <th className="px-2 py-2 text-left">Date</th>
+                    <th className="px-2 py-2 text-center">Inv</th>
+                    <th className="px-2 py-2 text-left">Inv Date</th>
+                    <th className="px-2 py-2 text-center">Paid</th>
+                    <th className="px-2 py-2 text-left">Paid Date</th>
+                    <th className="px-2 py-2 text-left">Method</th>
+                    <th className="px-2 py-2 text-left">Amt</th>
+                    <th className="px-2 py-2 text-left"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
@@ -1912,33 +1912,47 @@ export default function AdminPage() {
                     <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-500">No waivers found</td></tr>
                   ) : filteredWaivers.map(w => (
                     <tr key={w.id} className="hover:bg-gray-800/50">
-                      <td className="px-4 py-3 font-medium text-white">
+                      <td className="px-2 py-2 font-medium text-white min-w-[100px]">
                         <input value={w.client_name} onChange={e => updateWaiverField(w.id, 'client_name', e.target.value)}
-                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 w-full" />
+                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 w-full max-w-[140px]" />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2 min-w-[140px]">
                         <input value={w.email} onChange={e => updateWaiverField(w.id, 'email', e.target.value)}
-                          className="bg-gray-800 text-orange-400 border border-gray-700 rounded px-2 py-1 w-full text-orange-400" />
+                          className="bg-gray-800 text-orange-400 border border-gray-700 rounded px-2 py-1 w-full max-w-[180px] text-orange-400 text-xs" />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <input value={w.phone || ''} onChange={e => updateWaiverField(w.id, 'phone', e.target.value)}
-                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 w-28" placeholder="Phone" />
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 w-24 text-xs" placeholder="Phone" />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <input value={w.date} onChange={e => updateWaiverField(w.id, 'date', e.target.value)}
-                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 w-32" />
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 w-28 text-xs" />
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <input type="checkbox" checked={w.invoice_sent || false} onChange={e => updateWaiver(w.id, 'invoice_sent', e.target.checked)} className="w-5 h-5 accent-orange-500" />
+                      <td className="px-2 py-2 text-center">
+                        <input type="checkbox" checked={w.invoice_sent || false} onChange={e => {
+                          const checked = e.target.checked;
+                          updateWaiver(w.id, 'invoice_sent', checked);
+                          if (checked && !w.invoice_sent_date) updateWaiver(w.id, 'invoice_sent_date', new Date().toISOString().split('T')[0]);
+                        }} className="w-4 h-4 accent-orange-500" />
                       </td>
-                      <td className="px-4 py-3 text-gray-300">{w.invoice_sent_date || '-'}</td>
-                      <td className="px-4 py-3 text-center">
-                        <input type="checkbox" checked={w.paid || false} onChange={e => updateWaiver(w.id, 'paid', e.target.checked)} className="w-5 h-5 accent-orange-500" />
+                      <td className="px-2 py-2">
+                        <input type="date" value={w.invoice_sent_date || ''} onChange={e => updateWaiver(w.id, 'invoice_sent_date', e.target.value)}
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 w-28 text-xs" />
                       </td>
-                      <td className="px-4 py-3 text-gray-300">{w.paid_date || '-'}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2 text-center">
+                        <input type="checkbox" checked={w.paid || false} onChange={e => {
+                          const checked = e.target.checked;
+                          updateWaiver(w.id, 'paid', checked);
+                          if (checked && !w.paid_date) updateWaiver(w.id, 'paid_date', new Date().toISOString().split('T')[0]);
+                        }} className="w-4 h-4 accent-orange-500" />
+                      </td>
+                      <td className="px-2 py-2">
+                        <input type="date" value={w.paid_date || ''} onChange={e => updateWaiver(w.id, 'paid_date', e.target.value)}
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 w-28 text-xs" />
+                      </td>
+                      <td className="px-2 py-2">
                         <select value={w.payment_method || ''} onChange={e => updateWaiver(w.id, 'payment_method', e.target.value)}
-                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 text-xs">
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 text-xs w-20">
                           <option value="">-</option>
                           <option value="Venmo">Venmo</option>
                           <option value="Card">Card</option>
@@ -1946,14 +1960,14 @@ export default function AdminPage() {
                           <option value="Other">Other</option>
                         </select>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex items-center gap-1">
                           <span className="text-gray-400 text-xs">$</span>
                           <input type="number" value={w.amount || ''} onChange={e => updateAmount(w.id, e.target.value)}
-                            className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 w-20" placeholder="0.00" min="0" step="0.01" />
+                            className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 w-16 text-xs" placeholder="0.00" min="0" step="0.01" />
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <button
                           onClick={() => { if (confirm(`Delete ${w.client_name}?`)) { deleteWaiver(w.id); } }}
                           className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900 hover:border-red-700 transition-colors"
