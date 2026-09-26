@@ -205,7 +205,7 @@ const DEFAULTS: CalendarConsultSettings = {
   successBody: "We'll send a confirmation to {{email}}",
   closedEmptyMessage: "No consultations available right now.",
   line1Title: "Pick a time that works for you",
-  line1Subtitle: "30-minute consultation available on Mon, Wed, Fri",
+  line1Subtitle: "30-minute consultation",
   line3Title: "No commitment",
   line3Subtitle: "No credit card, no pressure — just a conversation",
 };
