@@ -781,6 +781,12 @@ export default function AdminPage() {
     : waviverFilter === 'Invoiced' ? waivers.filter(w => w.invoice_sent && !w.paid)
     : waivers.filter(w => w.paid);
 
+  // Update a specific field on a waiver (text fields)
+  const updateWaiverField = (id: string, field: string, value: string) => {
+    setWaivers(waivers.map(w => w.id === id ? { ...w, [field]: value } : w));
+    updateWaiver(id, field, value);
+  };
+
   const updateWaiver = async (id: string, field: string, value: any) => {
     const body: any = { [field]: value };
     if (field === 'invoice_sent') body.invoice_sent_date = value ? new Date().toISOString().split('T')[0] : null;
@@ -791,6 +797,19 @@ export default function AdminPage() {
       body: JSON.stringify({ id, ...body }),
     });
     setWaivers(waivers.map(w => w.id === id ? { ...w, [field]: value, ...(body.invoice_sent_date ? { invoice_sent_date: body.invoice_sent_date } : {}), ...(body.paid_date ? { paid_date: body.paid_date } : {}) } : w));
+  };
+
+  // Debounced amount update — fires 600ms after user stops typing
+  const pendingAmountRef = { current: {} } as React.MutableRefObject<Record<string, NodeJS.Timeout>>;
+  const updateAmount = (id: string, value: string) => {
+    // Update local state immediately
+    setWaivers(waivers.map(w => w.id === id ? { ...w, amount: value } : w));
+    // Clear existing timer
+    if (pendingAmountRef.current[id]) clearTimeout(pendingAmountRef.current[id]);
+    // Set new timer to save after 600ms
+    pendingAmountRef.current[id] = setTimeout(() => {
+      updateWaiver(id, 'amount', value);
+    }, 600);
   };
 
   const deleteWaiver = async (id: string) => {
@@ -1872,7 +1891,7 @@ export default function AdminPage() {
               ))}
             </div>
             <div className="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-x-auto">
-              <table className="w-full text-sm min-w-[800px]">
+              <table className="w-full text-xs min-w-[900px]">
                 <thead className="bg-gray-800 text-gray-400">
                   <tr>
                     <th className="px-4 py-3 text-left">Name</th>
@@ -1893,10 +1912,22 @@ export default function AdminPage() {
                     <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-500">No waivers found</td></tr>
                   ) : filteredWaivers.map(w => (
                     <tr key={w.id} className="hover:bg-gray-800/50">
-                      <td className="px-4 py-3 font-medium text-white">{w.client_name}</td>
-                      <td className="px-4 py-3 text-orange-400"><a href={`mailto:${w.email}`}>{w.email}</a></td>
-                      <td className="px-4 py-3 text-gray-300">{w.phone || '-'}</td>
-                      <td className="px-4 py-3 text-gray-300">{w.date}</td>
+                      <td className="px-4 py-3 font-medium text-white">
+                        <input value={w.client_name} onChange={e => updateWaiverField(w.id, 'client_name', e.target.value)}
+                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 w-full" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input value={w.email} onChange={e => updateWaiverField(w.id, 'email', e.target.value)}
+                          className="bg-gray-800 text-orange-400 border border-gray-700 rounded px-2 py-1 w-full text-orange-400" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input value={w.phone || ''} onChange={e => updateWaiverField(w.id, 'phone', e.target.value)}
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 w-28" placeholder="Phone" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input value={w.date} onChange={e => updateWaiverField(w.id, 'date', e.target.value)}
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 w-32" />
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <input type="checkbox" checked={w.invoice_sent || false} onChange={e => updateWaiver(w.id, 'invoice_sent', e.target.checked)} className="w-5 h-5 accent-orange-500" />
                       </td>
@@ -1918,8 +1949,8 @@ export default function AdminPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <span className="text-gray-400 text-xs">$</span>
-                          <input type="number" value={w.amount || ''} onChange={e => updateWaiver(w.id, 'amount', e.target.value)}
-                            className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 text-sm w-24" placeholder="0.00" min="0" step="0.01" />
+                          <input type="number" value={w.amount || ''} onChange={e => updateAmount(w.id, e.target.value)}
+                            className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 w-20" placeholder="0.00" min="0" step="0.01" />
                         </div>
                       </td>
                       <td className="px-4 py-3">
