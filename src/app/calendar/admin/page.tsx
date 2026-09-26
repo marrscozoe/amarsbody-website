@@ -1866,8 +1866,8 @@ export default function AdminPage() {
                 </button>
               ))}
             </div>
-            <div className="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-x-auto">
+              <table className="w-full text-sm min-w-[800px]">
                 <thead className="bg-gray-800 text-gray-400">
                   <tr>
                     <th className="px-4 py-3 text-left">Name</th>
