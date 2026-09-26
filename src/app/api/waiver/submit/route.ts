@@ -45,6 +45,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to save waiver', detail: data, status: res.status }, { status: 500 });
     }
 
+    // Send Telegram notification
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    if (botToken && chatId) {
+      const msg = `📋 *New Consult Signup!*\n\n*Name:* ${clientName}\n*Email:* ${email}\n*Phone:* ${phone || '—'}\n*Date:* ${date}\n${isMinor ? `*Minor:* Yes (Guardian: ${guardianName})` : ''}`;
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'Markdown' }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ success: true, id: data[0]?.id });
   } catch (err: any) {
     console.error('[waiver/submit] Error:', err);
