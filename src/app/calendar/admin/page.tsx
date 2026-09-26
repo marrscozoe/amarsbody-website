@@ -793,6 +793,11 @@ export default function AdminPage() {
     setWaivers(waivers.map(w => w.id === id ? { ...w, [field]: value, ...(body.invoice_sent_date ? { invoice_sent_date: body.invoice_sent_date } : {}), ...(body.paid_date ? { paid_date: body.paid_date } : {}) } : w));
   };
 
+  const deleteWaiver = async (id: string) => {
+    await fetch(`/api/waiver/delete?id=${id}`, { method: 'DELETE' });
+    setWaivers(waivers.filter(w => w.id !== id));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
@@ -1880,11 +1885,12 @@ export default function AdminPage() {
                     <th className="px-4 py-3 text-left">Paid Date</th>
                     <th className="px-4 py-3 text-left">Method</th>
                     <th className="px-4 py-3 text-left">Amount</th>
+                    <th className="px-4 py-3 text-left">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
                   {filteredWaivers.length === 0 ? (
-                    <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-500">No waivers found</td></tr>
+                    <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-500">No waivers found</td></tr>
                   ) : filteredWaivers.map(w => (
                     <tr key={w.id} className="hover:bg-gray-800/50">
                       <td className="px-4 py-3 font-medium text-white">{w.client_name}</td>
@@ -1910,8 +1916,19 @@ export default function AdminPage() {
                         </select>
                       </td>
                       <td className="px-4 py-3">
-                        <input type="number" value={w.amount || ''} onChange={e => updateWaiver(w.id, 'amount', e.target.value)}
-                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 text-xs w-20" placeholder="$" />
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-400 text-xs">$</span>
+                          <input type="number" value={w.amount || ''} onChange={e => updateWaiver(w.id, 'amount', e.target.value)}
+                            className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 text-sm w-24" placeholder="0.00" min="0" step="0.01" />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => { if (confirm(`Delete ${w.client_name}?`)) { deleteWaiver(w.id); } }}
+                          className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900 hover:border-red-700 transition-colors"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
