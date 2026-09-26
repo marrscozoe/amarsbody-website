@@ -47,7 +47,7 @@ export default function CalendarPage() {
       setSuccess("Login successful! Redirecting...");
       
       setTimeout(() => {
-        router.push("/calendar/book");
+        router.push("/calendar/my-appointments");
       }, 500);
       
       return;
