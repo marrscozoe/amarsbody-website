@@ -58,7 +58,7 @@ export default function AdminPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
-  const [activeTab, setActiveTab] = useState<"calendar" | "block" | "schedule" | "clients" | "consult">("calendar");
+  const [activeTab, setActiveTab] = useState<"calendar" | "block" | "schedule" | "clients" | "consult" | "book-now">("calendar");
   const [loading, setLoading] = useState(true);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingDate, setBookingDate] = useState("");
@@ -139,6 +139,8 @@ export default function AdminPage() {
   const [consultSaveSuccess, setConsultSaveSuccess] = useState(false);
   const [consultSaveError, setConsultSaveError] = useState<string | null>(null);
   const [consultConflicts, setConsultConflicts] = useState<Array<{ dayLabel: string; time: string; label: string }>>([]);
+  const [waivers, setWaivers] = useState<any[]>([]);
+  const [waviverFilter, setWaviverFilter] = useState('All');
 
   useEffect(() => {
     // Check admin auth
@@ -149,6 +151,14 @@ export default function AdminPage() {
     }
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'book-now') return;
+    fetch('/api/waiver/list')
+      .then(r => r.json())
+      .then(data => setWaivers(data.waivers || []))
+      .catch(() => setWaivers([]));
+  }, [activeTab]);
 
   const loadData = async () => {
     setLoading(true);
@@ -766,6 +776,23 @@ export default function AdminPage() {
     consultSettings.duration
   );
 
+  const filteredWaivers = waviverFilter === 'All' ? waivers
+    : waviverFilter === 'Not Invoiced' ? waivers.filter(w => !w.invoice_sent)
+    : waviverFilter === 'Invoiced' ? waivers.filter(w => w.invoice_sent && !w.paid)
+    : waivers.filter(w => w.paid);
+
+  const updateWaiver = async (id: string, field: string, value: any) => {
+    const body: any = { [field]: value };
+    if (field === 'invoice_sent') body.invoice_sent_date = value ? new Date().toISOString().split('T')[0] : null;
+    if (field === 'paid') body.paid_date = value ? new Date().toISOString().split('T')[0] : null;
+    await fetch('/api/waiver/update', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...body }),
+    });
+    setWaivers(waivers.map(w => w.id === id ? { ...w, [field]: value, ...(body.invoice_sent_date ? { invoice_sent_date: body.invoice_sent_date } : {}), ...(body.paid_date ? { paid_date: body.paid_date } : {}) } : w));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
@@ -854,6 +881,16 @@ export default function AdminPage() {
             }`}
           >
             Consult
+          </button>
+          <button
+            onClick={() => setActiveTab("book-now")}
+            className={`px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shrink-0 snap-start ${
+              activeTab === "book-now"
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/80"
+            }`}
+          >
+            Book Now
           </button>
         </div>
 
@@ -1814,6 +1851,72 @@ export default function AdminPage() {
                   </>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Book Now Tab */}
+        {activeTab === "book-now" && (
+          <div className="space-y-4">
+            <div className="flex gap-2 flex-wrap">
+              {['All', 'Not Invoiced', 'Invoiced', 'Paid'].map(f => (
+                <button key={f} onClick={() => setWaviverFilter(f)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${waviverFilter === f ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+                  {f}
+                </button>
+              ))}
+            </div>
+            <div className="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-800 text-gray-400">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Name</th>
+                    <th className="px-4 py-3 text-left">Email</th>
+                    <th className="px-4 py-3 text-left">Phone</th>
+                    <th className="px-4 py-3 text-left">Date</th>
+                    <th className="px-4 py-3 text-center">Invoiced</th>
+                    <th className="px-4 py-3 text-left">Inv. Date</th>
+                    <th className="px-4 py-3 text-center">Paid</th>
+                    <th className="px-4 py-3 text-left">Paid Date</th>
+                    <th className="px-4 py-3 text-left">Method</th>
+                    <th className="px-4 py-3 text-left">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800">
+                  {filteredWaivers.length === 0 ? (
+                    <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-500">No waivers found</td></tr>
+                  ) : filteredWaivers.map(w => (
+                    <tr key={w.id} className="hover:bg-gray-800/50">
+                      <td className="px-4 py-3 font-medium text-white">{w.client_name}</td>
+                      <td className="px-4 py-3 text-orange-400"><a href={`mailto:${w.email}`}>{w.email}</a></td>
+                      <td className="px-4 py-3 text-gray-400">{w.phone || '-'}</td>
+                      <td className="px-4 py-3 text-gray-400">{w.date}</td>
+                      <td className="px-4 py-3 text-center">
+                        <input type="checkbox" checked={w.invoice_sent || false} onChange={e => updateWaiver(w.id, 'invoice_sent', e.target.checked)} className="w-5 h-5 accent-orange-500" />
+                      </td>
+                      <td className="px-4 py-3 text-gray-400">{w.invoice_sent_date || '-'}</td>
+                      <td className="px-4 py-3 text-center">
+                        <input type="checkbox" checked={w.paid || false} onChange={e => updateWaiver(w.id, 'paid', e.target.checked)} className="w-5 h-5 accent-orange-500" />
+                      </td>
+                      <td className="px-4 py-3 text-gray-400">{w.paid_date || '-'}</td>
+                      <td className="px-4 py-3">
+                        <select value={w.payment_method || ''} onChange={e => updateWaiver(w.id, 'payment_method', e.target.value)}
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 text-xs">
+                          <option value="">-</option>
+                          <option value="Venmo">Venmo</option>
+                          <option value="Card">Card</option>
+                          <option value="Cash">Cash</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <input type="number" value={w.amount || ''} onChange={e => updateWaiver(w.id, 'amount', e.target.value)}
+                          className="bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1 text-xs w-20" placeholder="$" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
