@@ -31,6 +31,7 @@ interface Workout {
   clientId: string;
   type: 'full-body' | 'knee-friendly' | 'back-friendly' | 'shoulder-friendly' | 'wrist-friendly' | 'hip-friendly' | 'mobility-friendly' | 'heart-friendly' | 'emphasize';
   focusArea?: string;
+  customName?: string;
   exercises: Exercise[];
   createdAt: string;
   weekNumber?: number;
@@ -498,6 +499,8 @@ export default function ProgramsPage() {
   const [quickEmphasize, setQuickEmphasize] = useState('');
   const [renamingIndex, setRenamingIndex] = useState<number | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
+  const [editingWorkoutName, setEditingWorkoutName] = useState<string | null>(null);
+  const [workoutNameDraft, setWorkoutNameDraft] = useState('');
   
   // New client form
   const [newClient, setNewClient] = useState({
@@ -1015,6 +1018,54 @@ export default function ProgramsPage() {
     setRenameDraft(currentName);
   };
 
+  const startEditWorkoutName = () => {
+    if (!generatedWorkout) return;
+    setWorkoutNameDraft(generatedWorkout.customName || getDefaultWorkoutName(generatedWorkout.type, generatedWorkout.focusArea));
+    setEditingWorkoutName('edit');
+  };
+
+  const commitWorkoutName = () => {
+    if (!generatedWorkout) return;
+    const trimmed = workoutNameDraft.trim();
+    const defaultName = getDefaultWorkoutName(generatedWorkout.type, generatedWorkout.focusArea);
+    setGeneratedWorkout({ ...generatedWorkout, customName: trimmed === defaultName ? undefined : trimmed });
+    setEditingWorkoutName(null);
+  };
+
+  const getDefaultWorkoutName = (type: string, focusArea?: string): string => {
+    if (type === 'emphasize') return focusArea ? `${focusArea.charAt(0).toUpperCase() + focusArea.slice(1)} Focus` : 'Emphasize Workout';
+    if (type === 'knee-friendly') return 'Knee-Friendly Full Body';
+    if (type === 'back-friendly') return 'Back-Friendly Full Body';
+    if (type === 'shoulder-friendly') return 'Shoulder-Friendly Full Body';
+    if (type === 'wrist-friendly') return 'Wrist-Friendly Full Body';
+    if (type === 'hip-friendly') return 'Hip-Friendly Full Body';
+    if (type === 'mobility-friendly') return 'Mobility-Friendly Full Body';
+    if (type === 'heart-friendly') return 'Heart-Friendly Full Body';
+    return 'Full Body Circuit';
+  };
+
+  const copyWorkoutAsText = () => {
+    if (!generatedWorkout) return;
+    const name = generatedWorkout.customName || getDefaultWorkoutName(generatedWorkout.type, generatedWorkout.focusArea);
+    const lines = [`${name}`, `Client: ${selectedClient?.firstName} ${selectedClient?.lastName}`, `Date: ${new Date().toLocaleDateString()}`, ''];
+    generatedWorkout.exercises.forEach((ex, i) => {
+      lines.push(`${i + 1}. ${ex.name} — ${ex.sets} × ${ex.reps}${ex.notes ? ` (${ex.notes})` : ''}`);
+    });
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Workout copied to clipboard!');
+    }).catch(() => {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert('Workout copied to clipboard!');
+    });
+  };
+
   const cancelRenameExercise = () => {
     setRenamingIndex(null);
     setRenameDraft('');
@@ -1214,12 +1265,48 @@ export default function ProgramsPage() {
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
             <div className="bg-gray-800 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-gray-700">
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-xl font-bold text-white">Today&apos;s Workout</h2>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    {editingWorkoutName === 'edit' ? (
+                      <input
+                        autoFocus
+                        value={workoutNameDraft}
+                        onChange={(e) => setWorkoutNameDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') commitWorkoutName();
+                          if (e.key === 'Escape') setEditingWorkoutName(null);
+                        }}
+                        onBlur={commitWorkoutName}
+                        className="flex-1 bg-gray-600 text-white px-2 py-1 rounded-lg text-xl font-bold border border-orange-400"
+                      />
+                    ) : (
+                      <h2
+                        onClick={startEditWorkoutName}
+                        className="text-xl font-bold text-white cursor-pointer hover:text-orange-300"
+                        title="Click to rename workout"
+                      >
+                        {generatedWorkout.customName || getDefaultWorkoutName(generatedWorkout.type, generatedWorkout.focusArea)}
+                      </h2>
+                    )}
+                    <button
+                      onClick={startEditWorkoutName}
+                      className="text-gray-400 hover:text-white text-sm"
+                      title="Rename workout"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={copyWorkoutAsText}
+                      className="text-gray-400 hover:text-white text-sm"
+                      title="Copy workout as text"
+                    >
+                      📋
+                    </button>
+                  </div>
                   <p className="text-orange-400 text-sm">{selectedClient.firstName} {selectedClient.lastName}</p>
                   <p className="text-gray-400 text-xs">
-                    {generatedWorkout.type === 'emphasize' 
-                      ? `Emphasize: ${generatedWorkout.focusArea}` 
+                    {generatedWorkout.type === 'emphasize'
+                      ? `Emphasize: ${generatedWorkout.focusArea}`
                       : generatedWorkout.type === 'knee-friendly'
                       ? 'Knee-Friendly Full Body'
                       : generatedWorkout.type === 'back-friendly'
@@ -1237,7 +1324,7 @@ export default function ProgramsPage() {
                       : 'Full Body Circuit'} • {generatedWorkout.exercises.length} exercises
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowWorkoutActive(false)}
                   className="text-gray-400 hover:text-white text-2xl"
                 >
@@ -1590,7 +1677,32 @@ export default function ProgramsPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {getClientSessions(selectedClient.id).map(session => (
+                    {getClientSessions(selectedClient.id).map(session => {
+                      const workoutName = session.workout?.customName || (
+                        session.workout?.type === 'emphasize'
+                          ? `${(session.workout.focusArea || '').charAt(0).toUpperCase() + (session.workout.focusArea || '').slice(1)} Focus`
+                          : session.workout?.type === 'knee-friendly' ? 'Knee-Friendly Full Body'
+                          : session.workout?.type === 'back-friendly' ? 'Back-Friendly Full Body'
+                          : session.workout?.type === 'shoulder-friendly' ? 'Shoulder-Friendly Full Body'
+                          : session.workout?.type === 'wrist-friendly' ? 'Wrist-Friendly Full Body'
+                          : session.workout?.type === 'hip-friendly' ? 'Hip-Friendly Full Body'
+                          : session.workout?.type === 'mobility-friendly' ? 'Mobility-Friendly Full Body'
+                          : session.workout?.type === 'heart-friendly' ? 'Heart-Friendly Full Body'
+                          : 'Full Body Circuit'
+                      );
+                      const copySessionAsText = () => {
+                        const lines = [
+                          workoutName,
+                          `Client: ${selectedClient.firstName} ${selectedClient.lastName}`,
+                          `Date: ${new Date(session.date).toLocaleDateString()}`,
+                          '',
+                          ...(session.exercises || []).map((ex, i) =>
+                            `${i + 1}. ${ex.name} — ${ex.reps}${ex.weight ? ` @ ${ex.weight}lbs` : ''}`
+                          )
+                        ];
+                        navigator.clipboard.writeText(lines.join('\n')).then(() => alert('Copied!')).catch(() => {});
+                      };
+                      return (
                       <div key={session.id} className="bg-gray-800 rounded-xl p-5">
                         <div className="flex justify-between items-start mb-3">
                           <div>
@@ -1602,29 +1714,20 @@ export default function ProgramsPage() {
                               })}
                             </p>
                             <p className="text-gray-400 text-sm">
-                              {session.workout?.type === 'emphasize' 
-                                ? `Emphasize: ${session.workout.focusArea}`
-                                : session.workout?.type === 'knee-friendly'
-                                ? 'Knee-Friendly Full Body'
-                                : session.workout?.type === 'back-friendly'
-                                ? 'Back-Friendly Full Body'
-                                : session.workout?.type === 'shoulder-friendly'
-                                ? 'Shoulder-Friendly Full Body'
-                                : session.workout?.type === 'wrist-friendly'
-                                ? 'Wrist-Friendly Full Body'
-                                : session.workout?.type === 'hip-friendly'
-                                ? 'Hip-Friendly Full Body'
-                                : session.workout?.type === 'mobility-friendly'
-                                ? 'Mobility-Friendly Full Body'
-                                : session.workout?.type === 'heart-friendly'
-                                ? 'Heart-Friendly Full Body'
-                                : 'Full Body Circuit'} • {session.workout?.exercises.length} exercises
+                              {workoutName} • {session.workout?.exercises.length} exercises
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="bg-green-500/20 text-green-400 text-xs px-3 py-1 rounded-full">
                               Completed
                             </span>
+                            <button
+                              onClick={copySessionAsText}
+                              className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1"
+                              title="Copy workout as text"
+                            >
+                              📋 Copy
+                            </button>
                             <button
                               onClick={() => deleteSession(session.id)}
                               className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
@@ -1636,12 +1739,12 @@ export default function ProgramsPage() {
                         
                         {session.exercises && session.exercises.length > 0 && (
                           <div className="bg-gray-700 rounded-lg p-3 mb-3">
-                            <p className="text-gray-400 text-xs mb-2">Exercises:</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <p className="text-gray-400 text-xs mb-2">Exercises ({session.exercises.length}):</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                               {session.exercises.map((ex, i) => (
-                                <div key={i} className="text-sm flex justify-between">
-                                  <span className="text-gray-300">{ex.name}</span>
-                                  <span className="text-white">{ex.weight}lbs × {ex.reps}</span>
+                                <div key={i} className="text-sm flex justify-between gap-4">
+                                  <span className="text-gray-300">{i + 1}. {ex.name}</span>
+                                  <span className="text-white shrink-0">{ex.weight ? `${ex.weight}lbs × ` : ''}{ex.reps}</span>
                                 </div>
                               ))}
                             </div>
@@ -1655,7 +1758,7 @@ export default function ProgramsPage() {
                           🔄 Repeat Workout
                         </button>
                       </div>
-                    ))}
+                    );})}
                   </div>
                 )}
               </div>
