@@ -454,7 +454,7 @@ export default function BookPage() {
                     <div className="grid grid-cols-7 gap-1">
                       {dates.map(date => {
                         const ds = formatDateKey(date);
-                        const dayNames = ["S", "M", "T", "W", "T", "F", "S"];
+                        const dayNames = ["S", "M", "T", "W", "Th", "F", "S"];
                         const isSelected = ds === selectedDate;
                         return (
                           <button key={ds} onClick={() => handleRescheduleDatePick(date)}
@@ -652,7 +652,7 @@ export default function BookPage() {
                   <div className="grid grid-cols-7 gap-1">
                     {dates.map(date => {
                       const ds = formatDateKey(date);
-                      const dayNames = ["S", "M", "T", "W", "T", "F", "S"];
+                      const dayNames = ["S", "M", "T", "W", "Th", "F", "S"];
                       return (
                         <button key={ds} onClick={() => handleSelectDate(date)}
                           className="flex flex-col items-center p-2 rounded-lg bg-gray-800 hover:bg-orange-500 transition-colors">
