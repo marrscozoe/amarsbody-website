@@ -48,11 +48,20 @@ const formatDate = (dateStr: string): string => {
   return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 };
 
-const formatDateKey = (d: Date): string => {
+const formatDateKey = (d: Date) => {
   const y = d.getFullYear();
   const mo = String(d.getMonth() + 1).padStart(2, "0");
   const da = String(d.getDate()).padStart(2, "0");
   return `${y}-${mo}-${da}`;
+};
+
+// Check if an appointment date/time is within 24h from now (Chicago time)
+const isWithin24Hours = (dateStr: string, timeStr: string): boolean => {
+  const now = new Date();
+  const [h, m] = timeStr.split(":").map(Number);
+  const aptDate = new Date(`${dateStr}T${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:00`);
+  // Simple: if apt is less than 24h from now
+  return aptDate.getTime() - now.getTime() < 24 * 60 * 60 * 1000;
 };
 
 // 60-min: :00 only. 30-min: :00 or :30
@@ -546,7 +555,12 @@ export default function BookPage() {
                     <p className="font-semibold">{formatDate(apt.date)}</p>
                     <p className="text-gray-400 text-sm">{formatTime(apt.startTime)} – {formatTime(apt.endTime)}</p>
                   </div>
-                  <button onClick={() => handleReschedule(apt)} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">Reschedule</button>
+                  {!isWithin24Hours(apt.date, apt.startTime) &&
+                    <button onClick={() => handleReschedule(apt)} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">Reschedule</button>
+                  }
+                  {isWithin24Hours(apt.date, apt.startTime) &&
+                    <span className="text-gray-500 text-xs px-2 py-1">Too soon to reschedule</span>
+                  }
                 </div>
               ))}
             </div>

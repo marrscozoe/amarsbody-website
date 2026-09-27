@@ -384,6 +384,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
 
+    // 24h lead time — client self-serve rejected within 24h
+    if (isWithin24Hours(date, startTime)) {
+      return NextResponse.json(
+        { error: 'Appointments must be rescheduled at least 24 hours in advance. Please choose a later date or time.' },
+        { status: 400 }
+      );
+    }
+
     const apt = appointments[index];
     // Check the new slot — excludeId = id so we don't conflict with the appointment being moved
     // clientId is the same client, so same-day check fires and prevents booking same day as their other apt
