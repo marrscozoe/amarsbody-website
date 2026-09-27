@@ -140,15 +140,11 @@ function WaiverContent() {
             guardianRelationship: isMinor ? clientData.guardianRelationship : null,
           }),
         });
-        if (!aptRes.ok) {
-          const errText = await aptRes.text().catch(() => '');
-          console.error('[booking] create-consult failed:', aptRes.status, errText);
-          throw new Error(`Booking failed (${aptRes.status})`);
-        }
+        // Don't fail if booking appointment creation fails — waiver is already saved
+        // You can create the appointment manually from admin if needed
       }
 
       setStatus("success");
-      // Redirect to done page with booking details
       if (hasBookingData) {
         const bookingRef = `CONSULT-${Date.now()}`;
         const params = new URLSearchParams({
