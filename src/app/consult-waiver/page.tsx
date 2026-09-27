@@ -96,10 +96,14 @@ function WaiverContent() {
           guardianRelationship: isMinor ? clientData.guardianRelationship : null,
           agreedSections: ["section1", "section2", "section3", "section4", "section5", "section6", "section7", "section8"],
           waiverType: "consult",
-          waiverText: WAIVER_TEXT,
+          waiverText: null, // skip sending full waiver text to reduce payload size
         }),
       });
-      if (!waiverRes.ok) throw new Error("Waiver save failed");
+      if (!waiverRes.ok) {
+        const errText = await waiverRes.text().catch(() => '');
+        console.error('[waiver] save failed:', waiverRes.status, errText);
+        throw new Error(`Waiver save failed (${waiverRes.status})`);
+      }
 
       // If booking in progress, also create the calendar appointment
       if (hasBookingData) {
@@ -136,7 +140,11 @@ function WaiverContent() {
             guardianRelationship: isMinor ? clientData.guardianRelationship : null,
           }),
         });
-        if (!aptRes.ok) throw new Error("Booking failed");
+        if (!aptRes.ok) {
+          const errText = await aptRes.text().catch(() => '');
+          console.error('[booking] create-consult failed:', aptRes.status, errText);
+          throw new Error(`Booking failed (${aptRes.status})`);
+        }
       }
 
       setStatus("success");
@@ -155,7 +163,8 @@ function WaiverContent() {
         });
         router.push(`/calendar/consult?${params.toString()}`);
       }
-    } catch {
+    } catch (err: any) {
+      console.error('[waiver form] submit error:', err);
       setStatus("error");
     }
   };
