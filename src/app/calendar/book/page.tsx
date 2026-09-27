@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface Client {
   id: string;
@@ -80,10 +80,7 @@ export default function BookPage() {
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const searchParams = useSearchParams();
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    searchParams?.get("view") === "appointments" ? "appointments" : "pick"
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>("pick");
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
 
@@ -103,6 +100,10 @@ export default function BookPage() {
     if (!stored) { router.push("/calendar"); return; }
     const clientData = JSON.parse(stored);
     setClient(clientData);
+    // If redirected from login with view=appointments, show appointments
+    if (new URLSearchParams(window.location.search).get("view") === "appointments") {
+      setViewMode("appointments");
+    }
     loadData(clientData.id);
   }, []);
 
