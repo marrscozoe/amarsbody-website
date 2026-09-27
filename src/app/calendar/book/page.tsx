@@ -337,8 +337,8 @@ export default function BookPage() {
   const rescheduleOldDaySlots = rescheduleApt ? getAvailableSlots(rescheduleApt.date, rescheduleApt.id) : [];
   // For reschedule new date view: same but no exclusion
   const rescheduleNewDaySlots = selectedDate ? getAvailableSlots(selectedDate) : [];
-  const timeSlots30 = generateTimeSlots(30);
-  const timeSlots60 = generateTimeSlots(60);
+  const timeSlots30 = generateTimeSlots(30, 5, 19);  // endHour=19 excludes 20:30 (block ends at 20:30)
+  const timeSlots60 = generateTimeSlots(60, 5, 20);
 
   // ── Render helpers ────────────────────────────────────────────────────
 
