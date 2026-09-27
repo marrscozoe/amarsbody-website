@@ -187,6 +187,7 @@ export interface CalendarConsultSettings {
   line1Subtitle?: string;
   line3Title?: string;
   line3Subtitle?: string;
+  payButtonText?: string;
 }
 
 const DEFAULTS: CalendarConsultSettings = {
@@ -208,6 +209,7 @@ const DEFAULTS: CalendarConsultSettings = {
   line1Subtitle: "30-minute consultation",
   line3Title: "No commitment",
   line3Subtitle: "No credit card, no pressure — just a conversation",
+  payButtonText: "Open Venmo App",
 };
 
 export async function GET() {
@@ -271,6 +273,7 @@ export async function POST(request: NextRequest) {
       line1Subtitle: typeof body.line1Subtitle === "string" ? body.line1Subtitle.trim() : DEFAULTS.line1Subtitle!,
       line3Title: typeof body.line3Title === "string" ? body.line3Title.trim() : DEFAULTS.line3Title!,
       line3Subtitle: typeof body.line3Subtitle === "string" ? body.line3Subtitle.trim() : DEFAULTS.line3Subtitle!,
+      payButtonText: typeof body.payButtonText === "string" ? body.payButtonText.trim() : DEFAULTS.payButtonText!,
     };
 
     // Validate before saving — skip free-slot check when noTimeAvailable is true (allows zero slots)

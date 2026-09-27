@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function PATCH(request: Request) {
   try {
-    const { id, invoice_sent, invoice_sent_date, paid, paid_date, payment_method, amount } = await request.json();
+    const { id, invoice_sent, invoice_sent_date, paid, paid_date, payment_method, amount, client_name, email, phone, date } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Missing waiver id' }, { status: 400 });
@@ -22,6 +22,10 @@ export async function PATCH(request: Request) {
     if (paid_date !== undefined) updates.paid_date = paid_date;
     if (payment_method !== undefined) updates.payment_method = payment_method || null;
     if (amount !== undefined) updates.amount = amount ? parseFloat(amount) : null;
+    if (client_name !== undefined) updates.client_name = client_name;
+    if (email !== undefined) updates.email = email;
+    if (phone !== undefined) updates.phone = phone || null;
+    if (date !== undefined) updates.date = date;
 
     const res = await fetch(`${supabaseUrl}/rest/v1/consult_waivers?id=eq.${id}`, {
       method: 'PATCH',

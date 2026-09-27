@@ -1,11 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function PayPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [buttonText, setButtonText] = useState('Open Venmo App');
+
+  useEffect(() => {
+    fetch('/api/calendar/consult-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.payButtonText) setButtonText(data.payButtonText);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +57,7 @@ export default function PayPage() {
               rel="noopener noreferrer"
               className="block w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold text-center transition-colors mb-6"
             >
-              Open Venmo App
+              {buttonText}
             </a>
 
             {/* Divider */}

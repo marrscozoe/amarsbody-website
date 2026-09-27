@@ -133,6 +133,7 @@ export default function AdminPage() {
     line1Subtitle: "30-minute consultation available on Mon, Wed, Fri",
     line3Title: "No commitment",
     line3Subtitle: "No credit card, no pressure — just a conversation",
+    payButtonText: "Open Venmo App",
   });
   const [consultSettingsOpen, setConsultSettingsOpen] = useState(false);
   const [consultSaving, setConsultSaving] = useState(false);
@@ -193,6 +194,7 @@ export default function AdminPage() {
         line1Subtitle: settingsData.line1Subtitle || "30-minute consultation available on Mon, Wed, Fri",
         line3Title: settingsData.line3Title || "No commitment",
         line3Subtitle: settingsData.line3Subtitle || "No credit card, no pressure — just a conversation",
+        payButtonText: settingsData.payButtonText || "Open Venmo App",
       });
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -815,6 +817,18 @@ export default function AdminPage() {
   const deleteWaiver = async (id: string) => {
     await fetch(`/api/waiver/delete?id=${id}`, { method: 'DELETE' });
     setWaivers(waivers.filter(w => w.id !== id));
+  };
+
+  const addWaiver = async () => {
+    const res = await fetch('/api/waiver/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setWaivers([data.waiver, ...waivers]);
+    }
   };
 
   if (loading) {
@@ -1709,6 +1723,19 @@ export default function AdminPage() {
                   />
                 </div>
 
+                {/* Pay Button Text */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">Pay Page Button Text <span className="text-gray-600">(Venmo button on /pay)</span></label>
+                  <input
+                    type="text"
+                    value={consultSettings.payButtonText || ""}
+                    onChange={(e) => setConsultSettings(s => ({ ...s, payButtonText: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 transition-all"
+                    placeholder="Open Venmo App"
+                    maxLength={60}
+                  />
+                </div>
+
                 {/* Confirm Title */}
                 <div>
                   <label className="block text-xs text-gray-500 mb-1.5">Confirm Screen Title</label>
@@ -1891,6 +1918,14 @@ export default function AdminPage() {
               ))}
             </div>
             <div className="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-x-auto">
+              <div className="p-3 border-b border-gray-800 flex justify-end">
+                <button
+                  onClick={addWaiver}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  + Add Customer
+                </button>
+              </div>
               <table className="w-full text-xs min-w-[900px]">
                 <thead className="bg-gray-800 text-gray-400 text-xs">
                   <tr>
