@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Client {
   id: string;
@@ -80,7 +80,10 @@ export default function BookPage() {
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("pick");
+  const searchParams = useSearchParams();
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    searchParams?.get("view") === "appointments" ? "appointments" : "pick"
+  );
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
 
