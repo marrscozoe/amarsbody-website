@@ -550,9 +550,9 @@ export default function AdminPage() {
   };
 
   const timeSlots: string[] = [];
-  for (let hour = 4; hour <= 20; hour++) {
+  for (let hour = 4; hour <= 21; hour++) {
     timeSlots.push(`${hour.toString().padStart(2, "0")}:00`);
-    timeSlots.push(`${hour.toString().padStart(2, "0")}:30`);
+    if (hour < 21) timeSlots.push(`${hour.toString().padStart(2, "0")}:30`);
   }
 
   // ── Time conflict helpers for booking modal ──────────────────────────────
