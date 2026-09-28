@@ -649,7 +649,7 @@ export default function ConsultPage() {
                     {dates.map(date => {
                       const dateStr = formatDateKey(date);
                       const slots = getAvailableSlots(dateStr);
-                      const dayNames = ["S", "M", "T", "W", "T", "F", "S"];
+                      const dayNames = ["S", "M", "T", "W", "Th", "F", "S"];
                       return (
                         <button
                           key={dateStr}
