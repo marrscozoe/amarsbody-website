@@ -221,6 +221,18 @@ export default function Home() {
         </div>
       </section>
 
+      {/* DONATE / PAY BUTTON */}
+      <section className="py-6 px-6 bg-gray-50">
+        <div className="max-w-md mx-auto">
+          <a
+            href="/pay"
+            className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-full text-center transition-colors shadow-lg"
+          >
+            Donate / Pay Here
+          </a>
+        </div>
+      </section>
+
       {/* START YOUR TRANSFORMATION — BELOW HERO on light background */}
       <section className="py-16 px-6 bg-gray-50">
         <div className="max-w-md mx-auto">
