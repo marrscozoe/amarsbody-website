@@ -790,8 +790,8 @@ export default function GoogleCalendar({
             className="bg-gray-900 rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-gray-800">
-              <div className="flex justify-between items-center">
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+              <div>
                 <h3 className="text-xl font-bold">
                   {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { 
                     weekday: "long", 
@@ -799,6 +799,24 @@ export default function GoogleCalendar({
                     day: "numeric" 
                   })}
                 </h3>
+                <p className="text-gray-400 text-sm mt-1">
+                  {selectedDayAppointments.length} appointment{selectedDayAppointments.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <div className="flex gap-2 items-center">
+                {mode === "admin" && (
+                  <button
+                    onClick={() => {
+                      const prefill = prefillHour !== null ? `${prefillHour.toString().padStart(2, "0")}:00` : "08:00";
+                      const endH = prefillHour !== null ? prefillHour + 1 : 9;
+                      if (onBook) onBook(selectedDate, prefill, `${endH.toString().padStart(2, "0")}:00`, true);
+                      setShowDayModal(false);
+                    }}
+                    className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg"
+                  >
+                    + Add
+                  </button>
+                )}
                 <button
                   onClick={() => setShowDayModal(false)}
                   className="text-gray-400 hover:text-white"
@@ -806,33 +824,12 @@ export default function GoogleCalendar({
                   ✕
                 </button>
               </div>
-              <p className="text-gray-400 text-sm mt-1">
-                {selectedDayAppointments.length} appointment{selectedDayAppointments.length !== 1 ? "s" : ""}
-              </p>
             </div>
 
             <div className="p-4">
               {selectedDayAppointments.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">No appointments for this day</p>
-                  {mode === "admin" && (
-                    <button
-                      onClick={() => {
-                        if (onBook) {
-                          // Use prefillHour if available, else default to 08:00
-                          const prefill = prefillHour !== null ? `${prefillHour.toString().padStart(2, "0")}:00` : "08:00";
-                          const endH = prefillHour !== null ? prefillHour + 1 : 9;
-                          // Always show all times when using "Add Appointment" from day modal
-                          onBook(selectedDate, prefill, `${endH.toString().padStart(2, "0")}:00`, true);
-                        }
-                        setShowDayModal(false);
-
-                      }}
-                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg"
-                    >
-                      Add Appointment
-                    </button>
-                  )}
+                  <p className="text-gray-500">No appointments for this day</p>
                 </div>
               ) : (
                 <div className="space-y-3">
