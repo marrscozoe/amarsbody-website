@@ -418,6 +418,17 @@ export default function GoogleCalendar({
           >
             Day
           </button>
+          {mode === "admin" && view === "month" && (
+            <button
+              onClick={() => {
+                const dateStr = formatDateToString(currentDate);
+                if (onBook) onBook(dateStr, "08:00", "09:00", true);
+              }}
+              className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+            >
+              + Add
+            </button>
+          )}
         </div>
       </div>
 
@@ -440,7 +451,11 @@ export default function GoogleCalendar({
 
               const dateStr = formatDateToString(day);
               const dayAppts = getAppointmentsForDate(dateStr);
-              const monthAppts = dayAppts.filter(apt => apt.status !== "personal-block" && !apt.isPersonalBlock);
+              // Admin sees all appointments in month view (including non-client/personal-block)
+              // Client mode hides personal blocks (admin's private notes)
+              const monthAppts = (mode === "admin")
+                ? dayAppts
+                : dayAppts.filter(apt => apt.status !== "personal-block" && !apt.isPersonalBlock);
               const isToday = dateStr === today;
               const isSelected = dateStr === selectedDate;
               const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
