@@ -514,6 +514,20 @@ export default function AdminPage() {
 
   // Calendar callback handlers
   const handleBook = useCallback((date: string, startTime: string, endTime: string) => {
+    // Auto-enable forceBookBlocked if the clicked slot falls within a blocked range
+    const dayOfWeek = new Date(date + "T00:00:00").getDay();
+    const startMins = timeToMinutes(startTime);
+    const isBlockedSlot = blockedTimes.some(blk => {
+      if (blk.date === date) {
+        return startMins >= timeToMinutes(blk.startTime) && startMins < timeToMinutes(blk.endTime);
+      }
+      if (blk.isRecurring && blk.daysOfWeek && blk.daysOfWeek.includes(dayOfWeek)) {
+        if (blk.endDate && date > blk.endDate) return false;
+        return startMins >= timeToMinutes(blk.startTime) && startMins < timeToMinutes(blk.endTime);
+      }
+      return false;
+    });
+
     setAppointmentForm({
       clientId: "",
       date,
@@ -523,8 +537,9 @@ export default function AdminPage() {
     setRescheduleId(null);
     setBookingMode("client");
     setPersonalLabel("");
+    setForceBookBlocked(isBlockedSlot);
     setShowBookingModal(true);
-  }, []);
+  }, [blockedTimes]);
 
   const handleCancel = useCallback(async (id: string) => {
     await handleCancelAppointment(id);
