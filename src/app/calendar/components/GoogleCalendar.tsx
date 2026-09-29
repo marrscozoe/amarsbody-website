@@ -43,7 +43,7 @@ interface CalendarProps {
   appointments: Appointment[];
   blockedTimes: BlockedTime[];
   onRefresh?: () => void;
-  onBook?: (date: string, startTime: string, endTime: string) => void;
+  onBook?: (date: string, startTime: string, endTime: string, forceBookBlocked?: boolean) => void;
   onCancel?: (id: string) => void;
   onReschedule?: (appointment: Appointment) => void;
   /** Duration in minutes for client booking. Default 60. */
@@ -819,10 +819,11 @@ export default function GoogleCalendar({
                     <button
                       onClick={() => {
                         if (onBook) {
-                          // FIX 2: Use prefillHour if available, else default to 08:00
+                          // Use prefillHour if available, else default to 08:00
                           const prefill = prefillHour !== null ? `${prefillHour.toString().padStart(2, "0")}:00` : "08:00";
                           const endH = prefillHour !== null ? prefillHour + 1 : 9;
-                          onBook(selectedDate, prefill, `${endH.toString().padStart(2, "0")}:00`);
+                          // Always show all times when using "Add Appointment" from day modal
+                          onBook(selectedDate, prefill, `${endH.toString().padStart(2, "0")}:00`, true);
                         }
                         setShowDayModal(false);
 
