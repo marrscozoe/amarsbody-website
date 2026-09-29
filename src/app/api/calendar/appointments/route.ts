@@ -111,7 +111,9 @@ async function checkSlotAvailable(
   startTime: string,
   endTime: string,
   excludeId?: string,
-  clientIdForSameDayCheck?: string
+  clientIdForSameDayCheck?: string,
+  /** Admin override: skip the blocked-time check so admin can book over blocked slots. */
+  skipBlocked?: boolean
 ): Promise<{ available: boolean; reason?: string }> {
   const appointments = await getAppointmentsFromRedis();
   const blocked = await getBlockedFromRedis();
@@ -180,7 +182,7 @@ async function checkSlotAvailable(
     return false;
   });
 
-  if (isBlocked) return { available: false, reason: 'Time slot is blocked' };
+  if (isBlocked && !skipBlocked) return { available: false, reason: 'Time slot is blocked' };
 
   return { available: true };
 }
@@ -340,7 +342,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const check = await checkSlotAvailable(date, startTime, endTime, undefined, clientId);
+    const check = await checkSlotAvailable(date, startTime, endTime, undefined, clientId, !!body.isAdmin);
     if (!check.available) {
       return NextResponse.json({ error: check.reason }, { status: 400 });
     }
@@ -395,7 +397,7 @@ export async function POST(request: NextRequest) {
     const apt = appointments[index];
     // Check the new slot — excludeId = id so we don't conflict with the appointment being moved
     // clientId is the same client, so same-day check fires and prevents booking same day as their other apt
-    const check = await checkSlotAvailable(date, startTime, endTime, id, apt.clientId);
+    const check = await checkSlotAvailable(date, startTime, endTime, id, apt.clientId, !!body.isAdmin);
     if (!check.available) {
       return NextResponse.json({ error: check.reason }, { status: 400 });
     }
