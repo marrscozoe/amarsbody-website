@@ -934,10 +934,6 @@ export default function ProgramsPage() {
       setShowWorkoutActive(false);
       setGeneratedWorkout(null);
       setActiveTab('history');
-      const confirmed = confirm('Session completed and saved! Would you like to pay now with Venmo?');
-      if (confirmed) {
-        window.open('/pay', '_blank');
-      }
     } catch (err) {
       console.error('Failed to complete session:', err);
     }
