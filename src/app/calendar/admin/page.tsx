@@ -1985,13 +1985,13 @@ export default function AdminPage() {
                     <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-500">No waivers found</td></tr>
                   ) : filteredWaivers.map(w => (
                     <tr key={w.id} className="hover:bg-gray-800/50">
-                      <td className="px-2 py-2 font-medium text-white min-w-[100px]">
+                      <td className="px-2 py-2 font-medium text-white min-w-[160px]">
                         <input value={w.client_name} onChange={e => updateWaiverField(w.id, 'client_name', e.target.value)}
-                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 w-full max-w-[140px]" />
+                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 w-full max-w-[200px]" />
                       </td>
-                      <td className="px-2 py-2 min-w-[140px]">
+                      <td className="px-2 py-2 min-w-[180px]">
                         <input value={w.email} onChange={e => updateWaiverField(w.id, 'email', e.target.value)}
-                          className="bg-gray-800 text-orange-400 border border-gray-700 rounded px-2 py-1 w-full max-w-[180px] text-orange-400 text-xs" />
+                          className="bg-gray-800 text-orange-400 border border-gray-700 rounded px-2 py-1 w-full max-w-[220px] text-orange-400" />
                       </td>
                       <td className="px-2 py-2">
                         <input value={w.phone || ''} onChange={e => updateWaiverField(w.id, 'phone', e.target.value)}
