@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import GoogleCalendar from "../components/GoogleCalendar";
 
@@ -807,10 +807,24 @@ export default function AdminPage() {
     : waviverFilter === 'Invoiced' ? waivers.filter(w => w.invoice_sent && !w.paid)
     : waivers.filter(w => w.paid);
 
-  // Update a specific field on a waiver (text fields)
+  // Debounced field update — fires 600ms after user stops typing
+  const pendingWaiverFieldRef = useRef<Record<string, NodeJS.Timeout>>({});
   const updateWaiverField = (id: string, field: string, value: string) => {
     setWaivers(waivers.map(w => w.id === id ? { ...w, [field]: value } : w));
-    updateWaiver(id, field, value);
+    if (pendingWaiverFieldRef.current[id]) clearTimeout(pendingWaiverFieldRef.current[id]);
+    pendingWaiverFieldRef.current[id] = setTimeout(() => {
+      updateWaiver(id, field, value);
+    }, 600);
+  };
+
+  // Debounced checkbox update — 400ms delay to batch rapid clicks
+  const pendingCheckRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const updateWaiverCheck = (id: string, field: string, checked: boolean) => {
+    setWaivers(waivers.map(w => w.id === id ? { ...w, [field]: checked } : w));
+    if (pendingCheckRef.current[id + field]) clearTimeout(pendingCheckRef.current[id + field]);
+    pendingCheckRef.current[id + field] = setTimeout(() => {
+      updateWaiver(id, field, checked);
+    }, 400);
   };
 
   const updateWaiver = async (id: string, field: string, value: any) => {
@@ -826,7 +840,7 @@ export default function AdminPage() {
   };
 
   // Debounced amount update — fires 600ms after user stops typing
-  const pendingAmountRef = { current: {} } as React.MutableRefObject<Record<string, NodeJS.Timeout>>;
+  const pendingAmountRef = useRef<Record<string, NodeJS.Timeout>>({});
   const updateAmount = (id: string, value: string) => {
     // Update local state immediately
     setWaivers(waivers.map(w => w.id === id ? { ...w, amount: value } : w));
@@ -1990,7 +2004,7 @@ export default function AdminPage() {
                       <td className="px-2 py-2 text-center">
                         <input type="checkbox" checked={w.invoice_sent || false} onChange={e => {
                           const checked = e.target.checked;
-                          updateWaiver(w.id, 'invoice_sent', checked);
+                          updateWaiverCheck(w.id, 'invoice_sent', checked);
                           if (checked && !w.invoice_sent_date) updateWaiver(w.id, 'invoice_sent_date', new Date().toISOString().split('T')[0]);
                         }} className="w-4 h-4 accent-orange-500" />
                       </td>
@@ -2001,7 +2015,7 @@ export default function AdminPage() {
                       <td className="px-2 py-2 text-center">
                         <input type="checkbox" checked={w.paid || false} onChange={e => {
                           const checked = e.target.checked;
-                          updateWaiver(w.id, 'paid', checked);
+                          updateWaiverCheck(w.id, 'paid', checked);
                           if (checked && !w.paid_date) updateWaiver(w.id, 'paid_date', new Date().toISOString().split('T')[0]);
                         }} className="w-4 h-4 accent-orange-500" />
                       </td>
