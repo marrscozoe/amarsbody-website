@@ -644,7 +644,7 @@ export default function GoogleCalendar({
                           <div className="font-medium truncate">
                             {apt.status === "consultation" ? "🎓 " : ""}
                             {apt.isPersonalBlock || apt.status === "personal-block"
-                              ? (apt.label || "Non-Client")
+                              ? (apt.label || "Non-Client Event")
                               : getClientName(apt.clientId, apt)}
                           </div>
                           <div className="opacity-80 truncate">{formatTime(apt.startTime)} - {formatTime(apt.endTime)}</div>
