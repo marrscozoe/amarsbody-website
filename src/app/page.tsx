@@ -228,7 +228,7 @@ export default function Home() {
             href="/pay"
             className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-full text-center transition-colors shadow-lg"
           >
-            Donate / Pay Here
+            Donate Here
           </a>
         </div>
       </section>
