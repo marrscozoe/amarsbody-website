@@ -642,10 +642,11 @@ export default function GoogleCalendar({
                             setShowDayModal(true);
                           }}
                         >
-                          <div className="font-medium truncate">
-                            <span className="bg-orange-500 text-white text-[8px] px-1 rounded mr-1">CAL</span>
+                          <div className="font-medium truncate flex items-center gap-1">
+                            <span className="bg-orange-500 text-white text-[8px] px-1 rounded">CAL</span>
+                            <span className="bg-red-500 text-white text-[8px] px-1 rounded">{String(apt.isPersonalBlock)}</span>
+                            <span className="bg-blue-500 text-white text-[8px] px-1 rounded">{apt.status}</span>
                             {apt.status === "consultation" ? "🎓 " : ""}
-                            {console.log("MONTH_RENDER", apt.id, apt.status, apt.isPersonalBlock, typeof apt.isPersonalBlock, apt.label) || true}
                             {apt.isPersonalBlock || apt.status === "personal-block"
                               ? (apt.label || "Non-Client Event")
                               : getClientName(apt.clientId, apt)}
