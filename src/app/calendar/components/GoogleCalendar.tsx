@@ -235,7 +235,7 @@ export default function GoogleCalendar({
     return null;
   };
 
-  // Get client name by ID — falls back to clientName field for consult appointments
+  // Get client name by ID — falls back to clientName/label for consult + personal blocks
   const getClientName = (clientId: string, apt?: any): string => {
     if (mode === "client" && client) {
       return `${client.firstName} ${client.lastName}`;
@@ -243,7 +243,12 @@ export default function GoogleCalendar({
     // Consult appointments use consult_<uuid> as clientId — fall back to clientName
     if (apt?.clientName) return apt.clientName;
     const c = clients.find(cl => cl.id === clientId);
-    return c ? `${c.firstName} ${c.lastName}` : "TESTBUG";
+    if (c) return `${c.firstName} ${c.lastName}`;
+    // Personal blocks / non-client events: use label, never Unknown/TESTBUG
+    if (apt?.isPersonalBlock || apt?.status === "personal-block") {
+      return apt.label || "Non-Client Event";
+    }
+    return "Unknown";
   };
 
   // Navigate functions
@@ -494,7 +499,7 @@ export default function GoogleCalendar({
                               apt.status === "booked" ? "bg-orange-900 text-orange-300" : "bg-gray-700"}
                           `}
                         >
-                          {apt.status === "consultation" ? "🎓 " : ""}{`${formatTime(apt.startTime)} ${getClientName(apt.clientId, apt).split(" ")[0]}`}
+                          {apt.status === "consultation" ? "🎓 " : ""}{`${formatTime(apt.startTime)} ${(apt.isPersonalBlock || apt.status === "personal-block" ? (apt.label || "Non-Client Event") : getClientName(apt.clientId, apt)).split(" ")[0]}`}
                         </div>
                       ))}
                       {monthAppts.length > 3 && (
@@ -643,9 +648,6 @@ export default function GoogleCalendar({
                           }}
                         >
                           <div className="font-medium truncate flex items-center gap-1">
-                            <span className="bg-orange-500 text-white text-[8px] px-1 rounded">CAL</span>
-                            <span className="bg-red-500 text-white text-[8px] px-1 rounded">{String(apt.isPersonalBlock)}</span>
-                            <span className="bg-blue-500 text-white text-[8px] px-1 rounded">{apt.status}</span>
                             {apt.status === "consultation" ? "🎓 " : ""}
                             {apt.isPersonalBlock || apt.status === "personal-block"
                               ? (apt.label || "Non-Client Event")
