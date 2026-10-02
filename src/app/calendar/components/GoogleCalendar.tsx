@@ -243,7 +243,7 @@ export default function GoogleCalendar({
     // Consult appointments use consult_<uuid> as clientId — fall back to clientName
     if (apt?.clientName) return apt.clientName;
     const c = clients.find(cl => cl.id === clientId);
-    return c ? `${c.firstName} ${c.lastName}` : "Unknown";
+    return c ? `${c.firstName} ${c.lastName}` : "TESTBUG";
   };
 
   // Navigate functions
