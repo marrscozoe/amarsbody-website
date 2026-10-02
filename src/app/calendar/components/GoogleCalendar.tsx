@@ -1,4 +1,5 @@
 "use client";
+// v2.1 - month view non-client label fix
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
